@@ -2,6 +2,8 @@
 """
 
 
+from __future__ import print_function
+
 import sys
 try:
     from termcolor import colored
