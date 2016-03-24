@@ -44,8 +44,8 @@ class TaskGraph:
 
     def __init__(self):
         self.transitions = {}
-        self.initials = set()
-        self.terminals = set()
+        self.initial = set()
+        self.terminal = set()
 
     def add_transition(self, s1, a, s2):
         if s1 not in self.transitions:
@@ -60,7 +60,20 @@ class TaskGraph:
         if not check_path(path):
             raise ValueError('Invalid path.')
         if len(path) > 0:
-            self.initials.add(path[0])
-            self.terminals.add(path[-1])
+            self.initial.add(path[0])
+            self.terminal.add(path[-1])
         for (s1, a, s2) in split_path(path):
             self.add_transition(s1, a, s2)
+
+    def has_path(self, path):
+        """Checks if the path is a valid path for this task model.
+        """
+        if not check_path(path):
+            raise ValueError('Invalid path.')
+        return ((len(path) == 0) or
+                (path[0] in self.initial and
+                 path[-1] in self.terminal and
+                 all([self.has_transition(s1, a, s2)
+                      for (s1, a, s2) in split_path(path)
+                      ])
+                 ))

@@ -179,3 +179,55 @@ class TestTaskGraph(TestCase):
         self.graph.add_path(self.path)
         self.assertTrue(self.graph.has_transition(*self.path[:3]))
         self.assertTrue(self.graph.has_transition(*self.path[2:5]))
+
+    def test_always_has_empty_path(self):
+        self.assertTrue(self.graph.has_path([]))
+        self.graph.add_path(self.path)
+        self.assertTrue(self.graph.has_path([]))
+
+    def test_has_singleton_path(self):
+        s = DummyState(8)
+        self.assertFalse(self.graph.has_path([DummyState(8)]))
+        self.graph.initial.add(s)  # Needs to be initial
+        self.assertFalse(self.graph.has_path([DummyState(8)]))
+        self.graph.terminal.add(s)  # Needs to be terminal
+        self.assertTrue(self.graph.has_path([DummyState(8)]))
+        self.graph.add_path(self.path)  # Should not matter
+        self.assertTrue(self.graph.has_path([DummyState(8)]))
+        # Final but not initial:
+        self.assertFalse(self.graph.has_path([DummyState(1 + 2 + 4)]))
+        # Should be false too
+        self.assertFalse(self.graph.has_path([DummyState(1 + 4)]))
+
+    def test_invalid_paths_raises_error(self):
+        self.graph.add_path(self.path)
+        with self.assertRaises(ValueError):
+            self.graph.has_path([
+                DummyState(0),
+                get_action((1 + 2, 0), (1 + 2, 1)),
+                DummyState(1 + 2 + 4),
+                ])
+
+    def test_must_have_same_transitions(self):
+        path = [DummyState(0),
+                get_action((1, 0), (1, 1)),
+                DummyState(1),  # Different intermediate state
+                get_action((1 + 2, 1), (1 + 2, 1 + 2)),
+                DummyState(1 + 2 + 4),
+                ]
+        self.graph.add_path(self.path)
+        self.assertFalse(self.graph.has_path(path))
+        self.graph.add_path(path)
+        self.assertTrue(self.graph.has_path(path))
+
+    def test_must_have_same_transitions2(self):
+        path = [DummyState(0),
+                get_action((1, 0), (1, 1)),
+                DummyState(1 + 4),
+                get_action((1 + 2, 1), (1 + 4, 1 + 4)),  # Different action
+                DummyState(1 + 2 + 4),
+                ]
+        self.graph.add_path(self.path)
+        self.assertFalse(self.graph.has_path(path))
+        self.graph.add_path(path)
+        self.assertTrue(self.graph.has_path(path))
