@@ -13,6 +13,11 @@ class Condition:
         self.mask = mask
         self.value = value
 
+    def __eq__(self, other):
+        return (isinstance(other, Condition) and
+                np.array_equal(self.mask, other.mask) and
+                np.array_equal(self.value, other.value))
+
     def check(self, state):
         return (state.get_features() * self.mask == self.value).all()
 
@@ -23,6 +28,11 @@ class Action:
         self.pre = pre_condition
         self.post = post_condition
         self.name = name
+
+    def __eq__(self, other):
+        return (isinstance(other, Action) and
+                self.pre == other.pre and
+                self.post == other.post)
 
     def check(self, before, after):
         return self.pre.check(before) and self.post.check(after)

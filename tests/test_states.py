@@ -39,3 +39,48 @@ class TestSnapCircuitState(TestCase):
             0 + state.board_cols * part2.id))
         expected_features[i] = 1
         np.testing.assert_equal(expected_features, state.get_features())
+
+    def test_equals(self):
+        part1 = SnapCircuitPart(0, "first part")
+        part2 = SnapCircuitPart(2, "second part")
+        state = SnapCircuitState(
+            (2, 3),
+            [((1, 2, WEST), part1), ((0, 1, NORTH), part2)]
+            )
+        part1 = SnapCircuitPart(0, "first part")
+        part2 = SnapCircuitPart(2, "second part")
+        state_bis = SnapCircuitState(
+            (2, 3),
+            [((1, 2, WEST), part1), ((0, 1, NORTH), part2)]
+            )
+        self.assertEqual(state, state_bis)
+
+    def test_mismatch_part(self):
+        part1 = SnapCircuitPart(0, "first part")
+        part2 = SnapCircuitPart(2, "second part")
+        state = SnapCircuitState(
+            (2, 3),
+            [((1, 2, WEST), part1), ((0, 1, NORTH), part2)]
+            )
+        part1 = SnapCircuitPart(0, "first part")
+        part2 = SnapCircuitPart(3, "second part")
+        state_bis = SnapCircuitState(
+            (2, 3),
+            [((1, 2, WEST), part1), ((0, 1, NORTH), part2)]
+            )
+        self.assertNotEqual(state, state_bis)
+
+    def test_mismatch_dimensions(self):
+        part1 = SnapCircuitPart(0, "first part")
+        part2 = SnapCircuitPart(2, "second part")
+        state = SnapCircuitState(
+            (2, 3),
+            [((1, 2, WEST), part1), ((0, 1, NORTH), part2)]
+            )
+        part1 = SnapCircuitPart(0, "first part")
+        part2 = SnapCircuitPart(2, "second part")
+        state_bis = SnapCircuitState(
+            (2, 4),
+            [((1, 2, WEST), part1), ((0, 1, NORTH), part2)]
+            )
+        self.assertNotEqual(state, state_bis)

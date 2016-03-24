@@ -58,3 +58,22 @@ class TestAction(TestCase):
     def test_check_false(self):
         self.assertFalse(self.action.check(self.before, self.before))
         self.assertFalse(self.action.check(self.after, self.before))
+
+    def test_equality(self):
+        mask = np.array([0, 1, 0, 0, 1])
+        value = np.array([0, 0, 0, 0, -1])
+        pre = Condition(mask, value)
+        mask = np.array([1, 0, 0, 0, 0])
+        value = np.array([1, 0, 0, 0, 0])
+        post = Condition(mask, value)
+        action = Action(pre, post)
+        self.assertEqual(self.action, action)
+
+    def test_inequality(self):
+        mask = np.array([0, 1, 0, 0, 1])
+        value = np.array([0, 0, 0, 0, 1])
+        pre = Condition(mask, value)
+        action = Action(pre, self.post)
+        self.assertNotEqual(self.action, action)
+        action = Action(self.pre, self.pre)
+        self.assertNotEqual(self.action, action)
