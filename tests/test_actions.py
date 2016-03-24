@@ -68,12 +68,17 @@ class TestAction(TestCase):
         post = Condition(mask, value)
         action = Action(pre, post)
         self.assertEqual(self.action, action)
+        self.assertEqual(hash(self.action), hash(action))
 
     def test_inequality(self):
+        """Note that the test of hash inequality is not guaranteed to succeed.
+        It should however be very unlikely to fail.
+        """
         mask = np.array([0, 1, 0, 0, 1])
         value = np.array([0, 0, 0, 0, 1])
         pre = Condition(mask, value)
         action = Action(pre, self.post)
         self.assertNotEqual(self.action, action)
+        self.assertNotEqual(hash(self.action), hash(action))
         action = Action(self.pre, self.pre)
-        self.assertNotEqual(self.action, action)
+        self.assertNotEqual(hash(self.action), hash(action))
