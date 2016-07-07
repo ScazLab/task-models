@@ -6,8 +6,8 @@ represented as continuous vectors).
 """
 
 
-from htm.state import State
-from htm.action import Action, MatchAllCondition
+from .state import State
+from .action import Action
 
 
 def check_path(path):
@@ -126,14 +126,14 @@ class TaskGraph(BaseGraph):
 
 class AbstractAction(Action):
 
-    def __init__(self, name):
-        super().__init__(MatchAllCondition(), MatchAllCondition(), name=name)
-
     def __hash__(self):
         return hash(self.name)
 
     def __eq__(self, other):
         return isinstance(other, AbstractAction) and self.name == other.name
+
+    def check(self, pre, post):
+        return True
 
 
 class ConjugateTaskGraph(BaseGraph):

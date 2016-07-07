@@ -1,7 +1,8 @@
 from unittest import TestCase
 import numpy as np
 
-from htm.state import SnapCircuitState, SnapCircuitPart, NORTH, WEST
+from htm.state import (SnapCircuitState, SnapCircuitPart, NORTH, WEST, EAST,
+                       SOUTH, ORIENTATION_NAMES)
 
 
 class TestSnapCircuitState(TestCase):
@@ -84,3 +85,15 @@ class TestSnapCircuitState(TestCase):
             [((1, 2, WEST), part1), ((0, 1, NORTH), part2)]
             )
         self.assertNotEqual(state, state_bis)
+
+
+class TestOrientationNames(TestCase):
+
+    def test_four_orientations(self):
+        self.assertEqual(len(ORIENTATION_NAMES), 4)
+
+    def test_orientation_names_fits_variables(self):
+        self.assertEqual(
+            [ORIENTATION_NAMES[o] for o in [NORTH, EAST, SOUTH, WEST]],
+            ["north", "east", "south", "west"]
+            )

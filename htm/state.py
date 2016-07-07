@@ -42,6 +42,7 @@ NORTH = 0
 EAST = 1
 SOUTH = 2
 WEST = 3
+ORIENTATION_NAMES = ["north", "east", "south", "west"]
 
 
 class SnapCircuitPart:
@@ -66,11 +67,11 @@ class SnapCircuitState(State):
     """Represent a SnapCircuit board state.
 
     A board is given as number of rows and columns.
-    It state corresponds to a list of parts with locations.
+    Its state corresponds to a list of parts with locations.
     """
 
     N_PARTS = 20  # TODO improve this
-    N_ORIENTATIONS = 4
+    N_ORIENTATIONS = len(ORIENTATION_NAMES)
 
     def __init__(self, board, parts):
         self.board_cols = board[0]

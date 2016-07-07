@@ -2,7 +2,7 @@ from unittest import TestCase
 import numpy as np
 
 from htm.state import NDimensionalState
-from htm.action import Condition, Action
+from htm.action import Condition, PrePostConditionAction
 
 
 class TestCondition(TestCase):
@@ -34,7 +34,7 @@ class TestCondition(TestCase):
         self.assertFalse(Condition(mask, value).check(state))
 
 
-class TestAction(TestCase):
+class TestPrePostConditionAction(TestCase):
 
     def setUp(self):
         mask = np.array([0, 1, 0, 0, 1])
@@ -49,7 +49,7 @@ class TestAction(TestCase):
         self.before = NDimensionalState(state_feat.copy())
         state_feat[0] = 1
         self.after = NDimensionalState(state_feat)
-        self.action = Action(self.pre, self.post)
+        self.action = PrePostConditionAction(self.pre, self.post)
 
     def test_check_true(self):
         self.assertTrue(self.action.check(self.before, self.after))
@@ -66,7 +66,7 @@ class TestAction(TestCase):
         mask = np.array([1, 0, 0, 0, 0])
         value = np.array([1, 0, 0, 0, 0])
         post = Condition(mask, value)
-        action = Action(pre, post)
+        action = PrePostConditionAction(pre, post)
         self.assertEqual(self.action, action)
         self.assertEqual(hash(self.action), hash(action))
 
@@ -77,8 +77,8 @@ class TestAction(TestCase):
         mask = np.array([0, 1, 0, 0, 1])
         value = np.array([0, 0, 0, 0, 1])
         pre = Condition(mask, value)
-        action = Action(pre, self.post)
+        action = PrePostConditionAction(pre, self.post)
         self.assertNotEqual(self.action, action)
         self.assertNotEqual(hash(self.action), hash(action))
-        action = Action(self.pre, self.pre)
+        action = PrePostConditionAction(self.pre, self.pre)
         self.assertNotEqual(hash(self.action), hash(action))

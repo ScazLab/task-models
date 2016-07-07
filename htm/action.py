@@ -44,10 +44,22 @@ class MatchAllCondition(Condition):
 
 class Action:
 
+    def __init__(self, name="unnamed-action"):
+        self.name = name
+
+    def __str__(self):
+        return "Action<{}>".format(self.name)
+
+    def check(self, before, after):
+        raise NotImplementedError
+
+
+class PrePostConditionAction(Action):
+
     def __init__(self, pre_condition, post_condition, name="unnamed-action"):
+        super().__init__(name=name)
         self.pre = pre_condition
         self.post = post_condition
-        self.name = name
 
     def __hash__(self):
         return hash((self.pre, self.post))

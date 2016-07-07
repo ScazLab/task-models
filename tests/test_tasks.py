@@ -2,7 +2,7 @@ from unittest import TestCase
 
 import numpy as np
 
-from htm.action import Condition, Action
+from htm.action import Condition, PrePostConditionAction
 from htm.state import NDimensionalState
 from htm.task import check_path, split_path, TaskGraph, ConjugateTaskGraph
 
@@ -56,11 +56,12 @@ class TestDummyState(TestCase):
 def get_action(pre, post, name=""):
     """Shortcut to get action from conditions represented as pairs of int.
     """
-    return Action(Condition(DummyState.to_array(pre[0]),
-                            DummyState.to_array(pre[1])),
-                  Condition(DummyState.to_array(post[0]),
-                            DummyState.to_array(post[1])),
-                  name=name)
+    return PrePostConditionAction(
+              Condition(DummyState.to_array(pre[0]),
+                        DummyState.to_array(pre[1])),
+              Condition(DummyState.to_array(post[0]),
+                        DummyState.to_array(post[1])),
+              name=name)
 
 
 class TestPathCheck(TestCase):
