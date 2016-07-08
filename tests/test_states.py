@@ -7,6 +7,11 @@ from htm.state import (SnapCircuitState, SnapCircuitPart, NORTH, WEST, EAST,
 
 class TestSnapCircuitState(TestCase):
 
+    def test_order_is_row_column(self):
+        state = SnapCircuitState((5, 6), [])
+        self.assertEqual(state.board_rows, 5)
+        self.assertEqual(state.board_cols, 6)
+
     def test_dimensions(self):
         state = SnapCircuitState((5, 6), [])
         self.assertEqual(state.n_dim, 5 * 6 * 4 * 20)
@@ -33,11 +38,11 @@ class TestSnapCircuitState(TestCase):
             )
         state.N_PARTS = 3
         expected_features = np.zeros((state.n_dim))
-        i = WEST + state.N_ORIENTATIONS * (2 + state.board_rows * (
-            1 + state.board_cols * part1.id))
+        i = WEST + state.N_ORIENTATIONS * (2 + state.board_cols * (
+            1 + state.board_rows * part1.id))
         expected_features[i] = 1
-        i = NORTH + state.N_ORIENTATIONS * (1 + state.board_rows * (
-            0 + state.board_cols * part2.id))
+        i = NORTH + state.N_ORIENTATIONS * (1 + state.board_cols * (
+            0 + state.board_rows * part2.id))
         expected_features[i] = 1
         np.testing.assert_equal(expected_features, state.get_features())
 

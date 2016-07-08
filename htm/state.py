@@ -43,6 +43,7 @@ EAST = 1
 SOUTH = 2
 WEST = 3
 ORIENTATION_NAMES = ["north", "east", "south", "west"]
+# Locations are always given as (row, column)
 
 
 class SnapCircuitPart:
@@ -74,8 +75,8 @@ class SnapCircuitState(State):
     N_ORIENTATIONS = len(ORIENTATION_NAMES)
 
     def __init__(self, board, parts):
-        self.board_cols = board[0]
-        self.board_rows = board[1]
+        self.board_rows = board[0]
+        self.board_cols = board[1]
         self._parts = set(parts)
 
     def __hash__(self):
