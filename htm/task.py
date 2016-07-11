@@ -64,6 +64,25 @@ class BaseGraph:
             for (a, s_next) in self.transitions[s]:
                 yield (s, a, s_next)
 
+    def all_nodes(self):
+        nodes = set()
+        for s, l, d in self.all_transitions():
+            nodes.add(s)
+            nodes.add(d)
+        return nodes
+
+    def as_dictionary(self, name=''):
+        d = {'name': name}
+        all_nodes = list(enumerate(self.all_nodes()))
+        d['nodes'] = [{'id': i, 'value': {'label': str(node)}}
+                      for i, node in all_nodes]
+        nodes_ids = dict([(n, i) for i, n in all_nodes])
+        d['links'] = [{'u': nodes_ids[u],
+                       'v': nodes_ids[v],
+                       'value': {'label': str(l)}}
+                      for u, l, v in self.all_transitions()]
+        return d
+
 
 class TaskGraph(BaseGraph):
     """Represents valid transitions in a task model.

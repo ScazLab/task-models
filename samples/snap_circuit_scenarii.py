@@ -1,3 +1,5 @@
+import json
+
 import numpy as np
 
 from htm.snap_circuit import (SnapCircuitState, SnapCircuitPart, PlaceAction,
@@ -30,6 +32,7 @@ def random_paths_make_L():
 
 
 tg = TaskGraph()
-for __ in range(10):
+for __ in range(3):
     tg.add_path(random_paths_make_L())
-
+d = tg.as_dictionary()
+print(json.dumps(d, indent=2))
