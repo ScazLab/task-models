@@ -47,8 +47,11 @@ class Action:
     def __init__(self, name="unnamed-action"):
         self.name = name
 
-    def __str__(self):
+    def __repr__(self):
         return "Action<{}>".format(self.name)
+
+    def __str__(self):
+        return self.name
 
     def check(self, before, after):
         raise NotImplementedError
@@ -68,9 +71,6 @@ class PrePostConditionAction(Action):
         return (isinstance(other, Action) and
                 self.pre == other.pre and
                 self.post == other.post)
-
-    def __str__(self):
-        return "Action<{}>".format(self.name)
 
     def check(self, before, after):
         return self.pre.check(before) and self.post.check(after)

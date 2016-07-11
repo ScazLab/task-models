@@ -1,8 +1,12 @@
 from unittest import TestCase
 import numpy as np
 
-from htm.snap_circuit import (SnapCircuitState, SnapCircuitPart, NORTH, WEST,
-                              EAST, SOUTH, ORIENTATION_NAMES)
+from htm.snap_circuit import (SnapCircuitState, SnapCircuitPart, PlaceAction,
+                              PartPresenceCondition,
+                              NORTH, WEST, EAST, SOUTH, ORIENTATION_NAMES)
+
+
+BOARD = (7, 10)
 
 
 class TestSnapCircuitState(TestCase):
@@ -91,6 +95,18 @@ class TestSnapCircuitState(TestCase):
             )
         self.assertNotEqual(state, state_bis)
 
+    def test_str(self):
+        part1 = SnapCircuitPart(5, "first-part")
+        part2 = SnapCircuitPart(2, "second part")
+        state = SnapCircuitState((2, 3), [((1, 2, WEST), part1)])
+        self.assertEqual(str(state),
+                         "{first-part<5> at (1, 2) oriented west}")
+        state = SnapCircuitState((2, 3), [((1, 2, WEST), part1),
+                                          ((0, 1, NORTH), part2)])
+        self.assertEqual(str(state),
+                         "{first-part<5> at (1, 2) oriented west, "
+                         "second part<2> at (0, 1) oriented north}")
+
 
 class TestOrientationNames(TestCase):
 
@@ -102,3 +118,68 @@ class TestOrientationNames(TestCase):
             [ORIENTATION_NAMES[o] for o in [NORTH, EAST, SOUTH, WEST]],
             ["north", "east", "south", "west"]
             )
+
+
+class TestPartPresenceCondition(TestCase):
+
+    def setUp(self):
+        self.part = SnapCircuitPart(1, '2')
+        self.location = (2, 3, NORTH)
+
+    def test_is_there_true(self):
+        cond = PartPresenceCondition(BOARD, self.part, self.location)
+        state = SnapCircuitState(BOARD, [(self.location, self.part)])
+        self.assertTrue(cond.check(state))
+
+    def test_is_there_false(self):
+        cond = PartPresenceCondition(BOARD, self.part, self.location)
+        state = SnapCircuitState(BOARD, [])
+        self.assertFalse(cond.check(state))
+
+    def test_is_there_false_wrong_orientation(self):
+        cond = PartPresenceCondition(BOARD, self.part, self.location)
+        state = SnapCircuitState(BOARD, [((2, 3, EAST), self.part)])
+        self.assertFalse(cond.check(state))
+
+    def test_is_there_false_wrong_part(self):
+        cond = PartPresenceCondition(BOARD, self.part, self.location)
+        state = SnapCircuitState(BOARD,
+                                 [(self.location, SnapCircuitPart(0, '2'))])
+        self.assertFalse(cond.check(state))
+
+    def test_is_not_there_true(self):
+        cond = PartPresenceCondition(BOARD, self.part, self.location,
+                                     is_there=False)
+        state = SnapCircuitState(BOARD, [])
+        self.assertTrue(cond.check(state))
+
+    def test_is_not_there_false(self):
+        cond = PartPresenceCondition(BOARD, self.part, self.location,
+                                     is_there=False)
+        state = SnapCircuitState(BOARD, [(self.location, self.part)])
+        self.assertFalse(cond.check(state))
+
+
+class TestAction(TestCase):
+
+    def setUp(self):
+        self.part = SnapCircuitPart(1, '2')
+        self.location = (2, 3, NORTH)
+
+    def test_is_place_valid(self):
+        action = PlaceAction(BOARD, self.part, self.location)
+        before = SnapCircuitState(BOARD, [])
+        after = SnapCircuitState(BOARD, [(self.location, self.part)])
+        self.assertTrue(action.check(before, after))
+
+    def test_place_not_valid_if_no_place(self):
+        action = PlaceAction(BOARD, self.part, self.location)
+        before = SnapCircuitState(BOARD, [])
+        after = SnapCircuitState(BOARD, [])
+        self.assertFalse(action.check(before, after))
+
+    def test_place_not_valid_if_already_there(self):
+        action = PlaceAction(BOARD, self.part, self.location)
+        before = SnapCircuitState(BOARD, [(self.location, self.part)])
+        after = SnapCircuitState(BOARD, [(self.location, self.part)])
+        self.assertFalse(action.check(before, after))
