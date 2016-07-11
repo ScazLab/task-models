@@ -1,8 +1,8 @@
 from unittest import TestCase
 import numpy as np
 
-from htm.state import (SnapCircuitState, SnapCircuitPart, NORTH, WEST, EAST,
-                       SOUTH, ORIENTATION_NAMES)
+from htm.snap_circuit import (SnapCircuitState, SnapCircuitPart, NORTH, WEST,
+                              EAST, SOUTH, ORIENTATION_NAMES)
 
 
 class TestSnapCircuitState(TestCase):
