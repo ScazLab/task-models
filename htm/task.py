@@ -200,9 +200,9 @@ class Combination:
         self.highlighted = highlighted
 
     def _meta_dictionary(self, parent_id, id_generator):
-        attr = {}
+        attr = []
         if self.highlighted:
-            attr['highlighted'] = True
+            attr.append('highlighted')
         return {'name': self.name,
                 'id': next(id_generator),
                 'parent': parent_id,

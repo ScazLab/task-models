@@ -14,7 +14,7 @@ mount_leg_combinations = [
     for i in range(4)
     ]
 mount_frame = SequentialCombination(
-    [LeafCombination(AbstractAction('Take frame')),
+    [LeafCombination(AbstractAction('Take frame'), highlighted=True),
      LeafCombination(AbstractAction('Attach frame'))
      ],
     name='Mount frame')
