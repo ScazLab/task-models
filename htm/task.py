@@ -183,6 +183,13 @@ class ConjugateTaskGraph(BaseGraph):
 
 # Hierarchical task definition
 
+def int_generator():
+    i = -1
+    while True:
+        i += 1
+        yield i
+
+
 class Combination:
 
     kind = 'Undefined'
@@ -192,18 +199,40 @@ class Combination:
         self.name = name
         self.highlighted = highlighted
 
-    def as_dictionary(self):
+    def _meta_dictionary(self, parent_id, id_generator):
         attr = {}
         if self.highlighted:
             attr['highlighted'] = True
         return {'name': self.name,
+                'id': next(id_generator),
+                'parent': parent_id,
                 'combination': self.kind,
-                'children': [
-                    str(c) if HierarchicalTask.is_leaf(c) else c.as_dictionary()
-                    for c in self.children
-                    ],
                 'attributes': attr,
                 }
+
+    def as_dictionary(self, parent_id, id_generator):
+        d = self._meta_dictionary(parent_id, id_generator)
+        d['children'] = [
+            c.as_dictionary(d['id'], id_generator)
+            for c in self.children
+            ]
+        return d
+
+
+class LeafCombination(Combination):
+
+    kind = None
+
+    def __init__(self, action, highlighted=False):
+        self.highlighted = highlighted
+        self.action = action
+
+    @property
+    def name(self):
+        return self.action.name
+
+    def as_dictionary(self, parent, id_generator):
+        return self._meta_dictionary(parent, id_generator)
 
 
 class SequentialCombination(Combination):
@@ -230,12 +259,9 @@ class HierarchicalTask:
     def is_empty(self):
         return self.root is None
 
-    @staticmethod
-    def is_leaf(node):
-        return isinstance(node, Action)
-
     def as_dictionary(self, name=None):
         return {
             'name': 'Hierarchical task tree' if name is None else name,
-            'nodes': None if self.is_empty() else self.root.as_dictionary(),
+            'nodes': None if self.is_empty()
+                else self.root.as_dictionary(None, int_generator()),
             }

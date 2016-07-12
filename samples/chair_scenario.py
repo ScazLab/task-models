@@ -1,18 +1,22 @@
 import json
 
 from htm.task import (HierarchicalTask, AbstractAction, SequentialCombination,
-                      ParallelCombination)
+                      ParallelCombination, LeafCombination)
 
 
-take_base = AbstractAction('Take base')
+take_base = LeafCombination(AbstractAction('Take base'))
 mount_leg_combinations = [
-    SequentialCombination([AbstractAction('Take leg {}'.format(i)),
-                           AbstractAction('Attach leg {}'.format(i))],
-                          name='Mount leg {}'.format(i))
+    SequentialCombination(
+        [LeafCombination(AbstractAction('Take leg {}'.format(i))),
+         LeafCombination(AbstractAction('Attach leg {}'.format(i)))
+         ],
+        name='Mount leg {}'.format(i))
     for i in range(4)
     ]
 mount_frame = SequentialCombination(
-    [AbstractAction('Take frame'), AbstractAction('Attach frame')],
+    [LeafCombination(AbstractAction('Take frame')),
+     LeafCombination(AbstractAction('Attach frame'))
+     ],
     name='Mount frame')
 
 chair_task = HierarchicalTask(
