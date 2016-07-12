@@ -179,3 +179,63 @@ class ConjugateTaskGraph(BaseGraph):
                         # ...and add transitions of the form: a --(s')--> a'
                         ctg.add_transition(a, next_state, next_action)
         return ctg
+
+
+# Hierarchical task definition
+
+class Combination:
+
+    kind = 'Undefined'
+
+    def __init__(self, children, name='unnamed', highlighted=False):
+        self.children = children  # Actions or combinations
+        self.name = name
+        self.highlighted = highlighted
+
+    def as_dictionary(self):
+        attr = {}
+        if self.highlighted:
+            attr['highlighted'] = True
+        return {'name': self.name,
+                'combination': self.kind,
+                'children': [
+                    str(c) if HierarchicalTask.is_leaf(c) else c.as_dictionary()
+                    for c in self.children
+                    ],
+                'attributes': attr,
+                }
+
+
+class SequentialCombination(Combination):
+
+    kind = 'Sequence'
+
+
+class AlternativeCombination(Combination):
+
+    kind = 'Alternative'
+
+
+class ParallelCombination(Combination):
+
+    kind = 'Parallel'
+
+
+class HierarchicalTask:
+    """Tree representing a hierarchy of tasks which leaves are actions."""
+
+    def __init__(self, root=None):
+        self.root = root
+
+    def is_empty(self):
+        return self.root is None
+
+    @staticmethod
+    def is_leaf(node):
+        return isinstance(node, Action)
+
+    def as_dictionary(self, name=None):
+        return {
+            'name': 'Hierarchical task tree' if name is None else name,
+            'nodes': None if self.is_empty() else self.root.as_dictionary(),
+            }
