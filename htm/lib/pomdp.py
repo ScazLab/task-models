@@ -136,6 +136,7 @@ class POMDP:
         self.actions = list(actions)
         self.observations = list(observations)
         self._assert_shapes()
+        self._assert_normal()
         if discount > 1 or discount < 0:
             raise ValueError('Discount factor must be ≤ 1 and ≥ 0.')
         self.discount = discount
@@ -154,6 +155,17 @@ class POMDP:
         assert_shape(self.T, 'T', (a, s, s))
         assert_shape(self.O, 'O', (a, s, o))
         assert_shape(self.R, 'R', (a, s, s, o))
+
+    def _assert_normal(self):
+        message = "Probabilities in {} should sum to 1."
+
+        def assert_normal(array, name):
+            if not np.allclose(array.sum(-1), 1.):
+                raise ValueError(message.format(name))
+
+        assert_normal(self.start, 'start')
+        assert_normal(self.T, 'T')
+        assert_normal(self.O, 'O')
 
     def dump(self):
         """Write POMDP description following:

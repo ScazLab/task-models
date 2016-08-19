@@ -144,6 +144,20 @@ class TestPOMDP(TestCase):
             POMDP(self.T, self.O, self.R, np.random.dirichlet(np.ones((2))),
                   1., states=range(3), actions=range(4), observations=range(2))
 
+    def test_ValueError_on_nonnormal(self):
+        with self.assertRaises(ValueError):
+            T = np.random.random((4, 3, 3))
+            POMDP(T, self.O, self.R, self.start, 1.,
+                  states=range(3), actions=range(4), observations=range(2))
+        with self.assertRaises(ValueError):
+            O = np.random.random((4, 3, 2))
+            POMDP(self.T, O, self.R, self.start, 1.,
+                  states=range(3), actions=range(4), observations=range(2))
+        with self.assertRaises(ValueError):
+            start = np.random.random((3,))
+            POMDP(self.T, self.O, self.R, start, 1.,
+                  states=range(3), actions=range(4), observations=range(2))
+
     def test_default_states(self):
         p = POMDP(self.T, self.O, self.R, self.start, 1.,
                   actions=range(4), observations=range(2))
