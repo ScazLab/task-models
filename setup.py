@@ -29,5 +29,6 @@ setup(
         'Programming Language :: Python :: 3.5',
     ],
     packages=find_packages(exclude=['tests']),
+    package_data={'htm': ['lib/bundle/pomdp-solve']},
     test_suite="tests.test_suite",
 )

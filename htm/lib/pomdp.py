@@ -1,4 +1,25 @@
+import io
+import os
+import stat
+import tempfile
+import subprocess
+from pkg_resources import resource_string
+
 import numpy as np
+
+
+# This is the content of the binary
+SOLVER_NAME = 'pomdp-solve'
+POMDP_SOLVE = resource_string(__name__, 'bundle/' + SOLVER_NAME)
+
+
+def copy_solver(dest):
+    path = os.path.join(dest, SOLVER_NAME)
+    with io.open(path, 'wb') as f:
+        f.write(POMDP_SOLVE)
+    st = os.stat(path)
+    os.chmod(path, st.st_mode | stat.S_IEXEC)
+    return path
 
 
 class ValueFunctionParseError(ValueError):
@@ -181,3 +202,34 @@ class POMDP:
         O = _dump_3d_array(self.O, 'O', self.actions)
         R = _dump_4d_array(self.R, 'R', self.actions, self.states)
         return '\n\n'.join([preamble, start, T, O, R])
+
+    def dump_to(self, path, name):
+        full_path = os.path.join(path, name + '.pomdp')
+        with open(full_path, 'w') as f:
+            f.write(self.dump())
+        return full_path
+
+    def solve(self):
+        out_fmt = '{name}-{pid}.{ext}'
+        name = 'tosolve'
+        with tempfile.TemporaryDirectory() as tmpdir:
+            pomdp_file = self.dump_to('/tmp', name)
+            pomdp_file = self.dump_to(tmpdir, name)
+            solver_path = copy_solver(tmpdir)
+            solver = subprocess.Popen([solver_path, '-pomdp', pomdp_file],
+                                      stdout=subprocess.PIPE)
+            if solver.wait() != 0:
+                print(solver.stdout.read().decode())  # TODO improve
+                raise RuntimeError('Solver failed.')
+            pid = solver.pid
+            value_function_file = os.path.join(
+                tmpdir, out_fmt.format(name=name, pid=pid, ext='alpha'))
+            policy_graph_file = os.path.join(
+                tmpdir, out_fmt.format(name=name, pid=pid, ext='pg'))
+            with open(value_function_file, 'r') as vf:
+                actions, vf = parse_value_function(vf)
+            with open(policy_graph_file, 'r') as pf:
+                actions2, pg = parse_policy_graph(pf)
+            assert(actions == actions2)
+            assert(max(actions) < len(self.actions))
+            return actions, vf, pg
