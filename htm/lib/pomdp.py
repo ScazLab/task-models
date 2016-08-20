@@ -43,7 +43,7 @@ def parse_value_function(reader):
         # else: skip line
     if has_action:
         raise ValueFunctionParseError('Action defined but no vectors follows.')
-    return actions, vectors
+    return actions, np.vstack(vectors)
 
 
 def parse_policy_graph(reader):
@@ -232,4 +232,48 @@ class POMDP:
                 actions2, pg = parse_policy_graph(pf)
             assert(actions == actions2)
             assert(max(actions) < len(self.actions))
-            return actions, vf, pg
+            action_names = [self.actions[a] for a in actions]
+            init = vf.dot(self.start[:, np.newaxis]).argmax()
+            return GraphPolicy(action_names, self.observations, pg, init)
+
+
+class GraphPolicy:
+
+    def __init__(self, actions, observations, transitions, init):
+        self.actions = actions
+        self.observations = observations
+        self.transitions = np.asarray(transitions)
+        assert(self.transitions.shape == (self.n_nodes, len(observations)))
+        self.init = init
+
+    @property
+    def n_nodes(self):
+        return len(self.actions)
+
+    def get_action(self, current):
+        return self.actions[current]
+
+    def next(self, current, observation):
+        return self.transitions[current, self.observations.index(observation)]
+
+    def print(self):
+        print('Actions:', self.actions)
+        print('Init:', self.init)
+        print('Policy graph:')
+        print(self.transitions)
+
+
+class GraphPolicyRunner:
+
+    def __init__(self, graph_policy):
+        self.gp = graph_policy
+        self.reset()
+
+    def reset(self):
+        self.current = self.gp.init
+
+    def get_action(self):
+        return self.gp.get_action(self.current)
+
+    def step(self, observation):
+        self.current = self.gp.next(self.current, observation)

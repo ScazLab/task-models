@@ -1,6 +1,6 @@
 import numpy as np
 
-from htm.lib.pomdp import POMDP
+from htm.lib.pomdp import POMDP, GraphPolicyRunner
 
 
 C_WAIT = 1.
@@ -30,9 +30,11 @@ p = POMDP(T, O, R, start, 1,
           states=['zero', 'one', 'final'],
           observations=['nothing', 'doing', 'done'],
           values='cost')
-actions, vf, pg = p.solve()
-print('Actions:', actions)
-print('Value functions:')
-print(np.vstack(vf))
-print('Policy graph:')
-print(np.asarray(pg))
+pgr = GraphPolicyRunner(p.solve())
+pgr.gp.print()
+for i in range(10):
+    print("|{: 3}. current state: {}, action: {}".format(
+        i, pgr.current, pgr.get_action()))
+    o = np.random.choice(p.observations)   # TODO actually simulate POMDP
+    print("    observed: " + o)
+    pgr.step(o)
