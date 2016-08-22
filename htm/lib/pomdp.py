@@ -5,11 +5,12 @@ from __future__ import print_function
 import io
 import os
 import stat
-import tempfile
 import subprocess
 from pkg_resources import resource_string
 
 import numpy as np
+
+from py23 import TemporaryDirectory
 
 
 # This is the content of the binary
@@ -216,7 +217,7 @@ class POMDP:
     def solve(self):
         out_fmt = '{name}-{pid}.{ext}'
         name = 'tosolve'
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with TemporaryDirectory() as tmpdir:
             pomdp_file = self.dump_to('/tmp', name)
             pomdp_file = self.dump_to(tmpdir, name)
             solver_path = copy_solver(tmpdir)
