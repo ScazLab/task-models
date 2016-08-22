@@ -1,6 +1,6 @@
 import numpy as np
 
-from lib.pomdp import POMDP
+from .lib.pomdp import POMDP
 
 
 def hold_and_release_pomdp(cost_wait, cost_failure, cost_communication,

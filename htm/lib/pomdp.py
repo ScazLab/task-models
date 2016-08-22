@@ -2,29 +2,16 @@
 
 from __future__ import print_function
 
-import io
 import os
-import stat
 import subprocess
-from pkg_resources import resource_string
+from distutils import spawn
 
 import numpy as np
 
 from .py23 import TemporaryDirectory
 
 
-# This is the content of the binary
 SOLVER_NAME = 'pomdp-solve'
-POMDP_SOLVE = resource_string(__name__, 'bundle/' + SOLVER_NAME)
-
-
-def copy_solver(dest):
-    path = os.path.join(dest, SOLVER_NAME)
-    with io.open(path, 'wb') as f:
-        f.write(POMDP_SOLVE)
-    st = os.stat(path)
-    os.chmod(path, st.st_mode | stat.S_IEXEC)
-    return path
 
 
 class ValueFunctionParseError(ValueError):
@@ -136,10 +123,12 @@ class POMDP:
         Default to range(n_observations).
     :values: ('reward' | 'cost')
         How to interpret reward coefficients.
+    :solver_path: string
+        Path in which to look for the executable (default to $PATH)
     """
 
     def __init__(self, T, O, R, start, discount, states=None, actions=None,
-                 observations=None, values='reward'):
+                 observations=None, values='reward', solver_path=None):
         # Defaults for actions, states and observations
         a, s, o = O.shape
         if states is None:
@@ -166,6 +155,10 @@ class POMDP:
         if discount > 1 or discount < 0:
             raise ValueError('Discount factor must be ≤ 1 and ≥ 0.')
         self.discount = discount
+        self._solver_path = spawn.find_executable(SOLVER_NAME,
+                                                  path=solver_path)
+        if self._solver_path is None:
+            raise ImportError('Could not find executable for pomdp-solve.')
 
     def _assert_shapes(self):
         s = len(self.states)
@@ -220,9 +213,9 @@ class POMDP:
         with TemporaryDirectory() as tmpdir:
             pomdp_file = self.dump_to('/tmp', name)
             pomdp_file = self.dump_to(tmpdir, name)
-            solver_path = copy_solver(tmpdir)
-            solver = subprocess.Popen([solver_path, '-pomdp', pomdp_file],
-                                      stdout=subprocess.PIPE)
+            solver = subprocess.Popen(
+                [self._solver_path, '-pomdp', pomdp_file],
+                stdout=subprocess.PIPE)
             if solver.wait() != 0:
                 print(solver.stdout.read().decode())  # TODO improve
                 raise RuntimeError('Solver failed.')

@@ -1,7 +1,7 @@
 import sys
 import tempfile
 
-if sys.version_info >= (3,0):
+if sys.version_info >= (3, 0):
     TemporaryDirectory = tempfile.TemporaryDirectory
 
 else:
