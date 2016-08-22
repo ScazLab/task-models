@@ -14,7 +14,7 @@ ORIENTATION_NAMES = ["north", "east", "south", "west"]
 # Locations are always given as (row, column)
 
 
-class SnapCircuitPart:
+class SnapCircuitPart(object):
 
     def __init__(self, _id, label):
         self.id = _id
@@ -100,7 +100,8 @@ class PartPresenceCondition(Condition):
         value = np.zeros(dim)
         if is_there:
             value[part.id, location[0], location[1], location[2]] = 1
-        super().__init__(mask.flatten(), value.flatten())
+        super(PartPresenceCondition, self).__init__(mask.flatten(),
+                                                    value.flatten())
 
 
 class PlaceAction(PrePostConditionAction):
@@ -110,8 +111,10 @@ class PlaceAction(PrePostConditionAction):
         self.board = board
         pre = PartPresenceCondition(board, part, location, is_there=False)
         post = PartPresenceCondition(board, part, location, is_there=True)
-        super().__init__(pre, post, "Place {} at {} oriented {}".format(
-            part.label, (x, y), ORIENTATION_NAMES[o]))
+        super(PlaceAction, self).__init__(
+            pre, post,
+            "Place {} at {} oriented {}".format(
+                part.label, (x, y), ORIENTATION_NAMES[o]))
         self.part = part
         self.location = location
 

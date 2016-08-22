@@ -38,7 +38,7 @@ def split_path(path):
             for i in range(0, len(path) - 2, 2)]
 
 
-class BaseGraph:
+class BaseGraph(object):
     """Transitions (s, l, d) are stored as {s: {(l, d), ...}, ...}, that is
     a dictionary of sets of pairs.
     """
@@ -89,7 +89,7 @@ class TaskGraph(BaseGraph):
     """
 
     def __init__(self):
-        super().__init__()
+        super(TaskGraph, self).__init__()
         self.initial = set()
         self.terminal = set()
 

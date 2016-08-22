@@ -10,7 +10,7 @@ from pkg_resources import resource_string
 
 import numpy as np
 
-from py23 import TemporaryDirectory
+from .py23 import TemporaryDirectory
 
 
 # This is the content of the binary

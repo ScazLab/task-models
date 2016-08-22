@@ -13,7 +13,7 @@ class DummyState(NDimensionalState):
 
     def __init__(self, id_):
         self.id_ = id_
-        super().__init__(DummyState.to_array(id_))
+        super(DummyState, self).__init__(DummyState.to_array(id_))
 
     def __hash__(self):
         return self.id_

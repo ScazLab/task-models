@@ -1,7 +1,7 @@
 """Environment state models."""
 
 
-class State:
+class State(object):
     """Any kind of state. Must be hashable and are immutable.
 
     Any state implementation must implement an identifier for  states.

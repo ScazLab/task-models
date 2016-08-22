@@ -1,7 +1,7 @@
 import numpy as np
 
 
-class Condition:
+class Condition(object):
     """Pre or post condition on an environment state.
 
     Defined by a mask and feature values.
@@ -42,7 +42,7 @@ class MatchAllCondition(Condition):
         return True
 
 
-class Action:
+class Action(object):
 
     def __init__(self, name="unnamed-action"):
         self.name = name
@@ -60,7 +60,7 @@ class Action:
 class PrePostConditionAction(Action):
 
     def __init__(self, pre_condition, post_condition, name="unnamed-action"):
-        super().__init__(name=name)
+        super(PrePostConditionAction, self).__init__(name=name)
         self.pre = pre_condition
         self.post = post_condition
 
