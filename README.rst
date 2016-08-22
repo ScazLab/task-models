@@ -8,6 +8,22 @@ Started as a re-implementation of work from Bradley Hayes:
 
     [Hayes2014] Hayes, Barry and Scassellati, Brian **Discovering task constraints through observation and active learning** *Intelligent Robots and Systems (IROS 2014)*, 2014 IEEE/RSJ International Conference on (2014)
 
-Credit
+Prerequisites
 ------
-This package includes a binary from Anthony Cassandra's POMDP solver (as `htm/lib/bundle/pomdp-solve`). Please visit `<http://www.pomdp.org/>`_ for any matter related to the POMDP solver.
+
+This package requires a binary from Anthony Cassandra's POMDP solver. Please visit `<http://www.pomdp.org/>`_ for any matter related to the POMDP solver.
+
+Here are some instructions on how to compile and install the solver properly (assuming that :code:`~/src` is the directory in which you usually place your code):
+
+code:: bash
+    cd ~/src
+    wget www.pomdp.org/code/pomdp-solve-5.4.tar.gz
+    tar -xvzf pomdp-solve-5.4.tar.gz
+    cd pomdp-solve-5.4/
+    mkdir build
+    cd build/
+    ../configure --prefix=$HOME/.local
+    make
+    make install
+
+Now you should have :code:`pomdp-solve` installed in your local path, and it should be available for the python package to be used.
