@@ -15,15 +15,15 @@ This package requires a binary from Anthony Cassandra's POMDP solver. Please vis
 
 Here are some instructions on how to compile and install the solver properly (assuming that :code:`~/src` is the directory in which you usually place your code):
 
-:: bash
-    cd ~/src
-    wget www.pomdp.org/code/pomdp-solve-5.4.tar.gz
-    tar -xvzf pomdp-solve-5.4.tar.gz
-    cd pomdp-solve-5.4/
-    mkdir build
-    cd build/
-    ../configure --prefix=$HOME/.local
-    make
-    make install
+::
+     cd ~/src
+     wget www.pomdp.org/code/pomdp-solve-5.4.tar.gz
+     tar -xvzf pomdp-solve-5.4.tar.gz
+     cd pomdp-solve-5.4/
+     mkdir build
+     cd build/
+     ../configure --prefix=$HOME/.local
+     make
+     make install
 
 Now you should have :code:`pomdp-solve` installed in your local path, and it should be available for the python package to be used.
