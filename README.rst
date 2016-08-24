@@ -6,7 +6,7 @@ Tools to manipulate and use hierarchical task models for human robot collaborati
 
 Started as a re-implementation of work from Bradley Hayes:
 
-    [Hayes2014] Hayes, Barry and Scassellati, Brian **Discovering task constraints through observation and active learning** *Intelligent Robots and Systems (IROS 2014)*, 2014 IEEE/RSJ International Conference on (2014)
+    [Hayes2014] Hayes, Bradley and Scassellati, Brian **Discovering task constraints through observation and active learning** *Intelligent Robots and Systems (IROS 2014)*, 2014 IEEE/RSJ International Conference on (2014)
 
 Prerequisites
 ------
