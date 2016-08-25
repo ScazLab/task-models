@@ -103,7 +103,7 @@ def _dump_4d_array(a, name, xs, ys):
 
 class POMDP:
 
-    """Partially observabla Markov model.
+    """Partially observable Markov model.
 
     :param T: array of shape (n_actions, n_states, n_states)
         Transition probabilities (must sum to 1 on last dimension)

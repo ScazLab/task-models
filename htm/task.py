@@ -262,6 +262,6 @@ class HierarchicalTask:
     def as_dictionary(self, name=None):
         return {
             'name': 'Hierarchical task tree' if name is None else name,
-            'nodes': None if self.is_empty()
-                else self.root.as_dictionary(None, int_generator()),
+            'nodes': None if self.is_empty() else self.root.as_dictionary(
+                None, int_generator()),
             }
