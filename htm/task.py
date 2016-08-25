@@ -190,7 +190,7 @@ def int_generator():
         yield i
 
 
-class Combination:
+class Combination(object):
 
     kind = 'Undefined'
 
@@ -243,6 +243,10 @@ class SequentialCombination(Combination):
 class AlternativeCombination(Combination):
 
     kind = 'Alternative'
+
+    def __init__(self, children, human_probabilities=None, **xargs):
+        super(AlternativeCombination, self).__init__(children, **xargs)
+        self.h_proba = human_probabilities
 
 
 class ParallelCombination(Combination):
