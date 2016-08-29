@@ -231,6 +231,10 @@ class LeafCombination(Combination):
     def name(self):
         return self.action.name
 
+    @property
+    def children(self):
+        raise ValueError('A leaf does not have children.')
+
     def as_dictionary(self, parent, id_generator):
         return self._meta_dictionary(parent, id_generator)
 
