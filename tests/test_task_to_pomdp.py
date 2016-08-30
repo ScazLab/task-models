@@ -206,8 +206,8 @@ class TestHTM2POMDP(TestCase):
                        [1., 0., 0.]]])  # convention: nothing observed in end
         np.testing.assert_array_equal(O, p.O)
         R = -np.broadcast_to(np.array([[1, 1, 0],
-                                       [5, 2, 0],
-                                       [2, 2, 0]]
+                                       [5, 2, 1],
+                                       [2, 2, 1]]
                                       )[:, :, None, None], (3, 3, 3, 3))
         np.testing.assert_array_equal(R, p.R)
 
@@ -281,10 +281,10 @@ class TestHTM2POMDP(TestCase):
                        [1., 0., 0.]]])  # convention: nothing observed in end
         np.testing.assert_array_equal(O, p.O)
         R = -np.broadcast_to(np.array([[1] * 4 + [0],
-                                       [5, 2, 5, 5, 0],
-                                       [2] * 4 + [0],
-                                       [4, 4, 4, 3, 0],
-                                       [2] * 4 + [0]]
+                                       [5, 2, 5, 5, 1],
+                                       [2] * 4 + [1],
+                                       [4, 4, 4, 3, 1],
+                                       [2] * 4 + [1]]
                                       )[:, :, None, None],
                              (5, 5, 5, 3))
         np.testing.assert_array_equal(R, p.R)

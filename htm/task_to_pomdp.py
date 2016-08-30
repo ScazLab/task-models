@@ -325,7 +325,8 @@ class HTMToPOMDP:
         # nothing is observed in end state
 
     def update_R_end(self, R):
-        R[:, -1, ...] = 0.  # end state has no cost
+        R[:, -1, ...] = 1.          # end state has cost 1
+        R[self.wait, -1, ...] = 0.  # except on wait
 
     def task_to_pomdp(self, task):
         n2p = _NodeToPOMDP.from_node(task.root, self.t_com)
