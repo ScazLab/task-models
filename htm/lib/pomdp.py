@@ -208,7 +208,6 @@ class POMDP:
         return full_path
 
     def solve(self):
-        out_fmt = '{name}-{pid}.{ext}'
         name = 'tosolve'
         with TemporaryDirectory() as tmpdir:
             pomdp_file = self.dump_to('/tmp', name)
@@ -219,20 +218,23 @@ class POMDP:
             if solver.wait() != 0:
                 print(solver.stdout.read().decode())  # TODO improve
                 raise RuntimeError('Solver failed.')
-            pid = solver.pid
-            value_function_file = os.path.join(
-                tmpdir, out_fmt.format(name=name, pid=pid, ext='alpha'))
-            policy_graph_file = os.path.join(
-                tmpdir, out_fmt.format(name=name, pid=pid, ext='pg'))
-            with open(value_function_file, 'r') as vf:
-                actions, vf = parse_value_function(vf)
-            with open(policy_graph_file, 'r') as pf:
-                actions2, pg = parse_policy_graph(pf)
-            assert(actions == actions2)
-            assert(max(actions) < len(self.actions))
-            action_names = [self.actions[a] for a in actions]
-            init = vf.dot(self.start[:, np.newaxis]).argmax()
-            return GraphPolicy(action_names, self.observations, pg, init)
+            return self._load_policy_from(tmpdir, name, solver.pid)
+
+    def load_policy_from(self, path, name, pid):
+        out_fmt = '{name}-{pid}.{ext}'
+        value_function_file = os.path.join(
+            path, out_fmt.format(name=name, pid=pid, ext='alpha'))
+        policy_graph_file = os.path.join(
+            path, out_fmt.format(name=name, pid=pid, ext='pg'))
+        with open(value_function_file, 'r') as vf:
+            actions, vf = parse_value_function(vf)
+        with open(policy_graph_file, 'r') as pf:
+            actions2, pg = parse_policy_graph(pf)
+        assert(actions == actions2)
+        assert(max(actions) < len(self.actions))
+        action_names = [self.actions[a] for a in actions]
+        init = vf.dot(self.start[:, np.newaxis]).argmax()
+        return GraphPolicy(action_names, self.observations, pg, init)
 
 
 class GraphPolicy:
