@@ -233,22 +233,25 @@ class POMDP:
         assert(actions == actions2)
         assert(max(actions) < len(self.actions))
         action_names = [self.actions[a] for a in actions]
-        init = vf.dot(self.start[:, np.newaxis]).argmax()
-        return GraphPolicy(action_names, self.observations, pg, init)
+        return GraphPolicy(action_names, self.observations, pg, vf, self.start)
 
 
 class GraphPolicy:
 
-    def __init__(self, actions, observations, transitions, init):
+    def __init__(self, actions, observations, transitions, values, start):
         self.actions = actions
         self.observations = observations
         self.transitions = np.asarray(transitions)
         assert(self.transitions.shape == (self.n_nodes, len(observations)))
-        self.init = init
+        self.values = values
+        self.init = self.get_node_from_belief(start)
 
     @property
     def n_nodes(self):
         return len(self.actions)
+
+    def get_node_from_belief(self, b):
+        return self.values.dot(b[:, np.newaxis]).argmax()
 
     def get_action(self, current):
         return self.actions[current]
@@ -269,8 +272,11 @@ class GraphPolicyRunner:
         self.gp = graph_policy
         self.reset()
 
-    def reset(self):
-        self.current = self.gp.init
+    def reset(self, belief=None):
+        if belief:
+            self.current = self.gp.get_node_from_belief(belief)
+        else:
+            self.current = self.gp.init
 
     def get_action(self):
         return self.gp.get_action(self.current)
