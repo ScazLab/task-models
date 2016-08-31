@@ -213,3 +213,7 @@ class TestPOMDP(TestCase):
         with open(TEST_POMDP, 'r') as f:
             correct = f.read().rstrip('\n')  # Remove ending newline
         self.assertEqual(s, correct)
+
+    def test_solver_runs(self):
+        p = POMDP(self.T, self.O, self.R, self.start, .8, values='reward')
+        p.solve()

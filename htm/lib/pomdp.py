@@ -59,14 +59,34 @@ states: {states}
 actions: {actions}
 observations: {observations}
 """
+DECIMALS = 5
+NUMBER_FORMAT = '{:0.' + str(DECIMALS) + 'f}'
+
+
+def _as_list(lst_or_int):
+    if isinstance(lst_or_int, int):
+        return list(range(lst_or_int))
+    else:
+        return lst_or_int
 
 
 def _dump_list(lst):
     return ' '.join([str(x) for x in lst])
 
 
+def _dump_list_or_count(lst_or_int):
+    if isinstance(lst_or_int, int):
+        return str(lst_or_int)
+    else:
+        return _dump_list(lst_or_int)
+
+
 def _dump_1d_array(a):
-    return ' '.join(['{:0.5f}'.format(x) for x in a])
+    # Make sure that sum stays the same even after trunc
+    trunc_sum = np.around(a.sum(), decimals=DECIMALS)
+    trunc = np.around(a, decimals=DECIMALS)
+    trunc[-1] = trunc_sum - trunc[:-1].sum()
+    return ' '.join([NUMBER_FORMAT.format(x) for x in trunc])
 
 
 def _dump_2d_array(a):
@@ -131,12 +151,9 @@ class POMDP:
                  observations=None, values='reward', solver_path=None):
         # Defaults for actions, states and observations
         a, s, o = O.shape
-        if states is None:
-            states = range(s)
-        if actions is None:
-            actions = range(a)
-        if observations is None:
-            observations = range(o)
+        self._init_states(states, s)
+        self._init_actions(actions, a)
+        self._init_observations(observations, o)
         self.T = T
         self.O = O
         if values == 'reward':
@@ -147,9 +164,6 @@ class POMDP:
             raise ValueError(
                 "Values must be 'reward' of 'cost. Got '{}'.".format(values))
         self.start = start
-        self.states = list(states)
-        self.actions = list(actions)
-        self.observations = list(observations)
         self._assert_shapes()
         self._assert_normal()
         if discount > 1 or discount < 0:
@@ -159,6 +173,36 @@ class POMDP:
                                                   path=solver_path)
         if self._solver_path is None:
             raise ImportError('Could not find executable for pomdp-solve.')
+
+    def _init_states(self, states, s):
+        if states is not None:
+            self._s = list(states)
+        else:
+            self._s = s
+
+    def _init_actions(self, actions, a):
+        if actions is not None:
+            self._a = list(actions)
+        else:
+            self._a = a
+
+    def _init_observations(self, observations, o):
+        if observations is not None:
+            self._o = list(observations)
+        else:
+            self._o = o
+
+    @property
+    def states(self):
+        return _as_list(self._s)
+
+    @property
+    def actions(self):
+        return _as_list(self._a)
+
+    @property
+    def observations(self):
+        return _as_list(self._o)
 
     def _assert_shapes(self):
         s = len(self.states)
@@ -192,10 +236,10 @@ class POMDP:
         """
         preamble = PREAMBLE_FMT.format(
             discount=self.discount,
-            states=_dump_list(self.states),
-            actions=_dump_list(self.actions),
-            observations=_dump_list(self.observations))
-        start = "start: {}".format(_dump_1d_array(list(self.start)))
+            states=_dump_list_or_count(self._s),
+            actions=_dump_list_or_count(self._a),
+            observations=_dump_list_or_count(self._o))
+        start = "start: {}".format(_dump_1d_array(np.asarray(self.start)))
         T = _dump_3d_array(self.T, 'T', self.actions)
         O = _dump_3d_array(self.O, 'O', self.actions)
         R = _dump_4d_array(self.R, 'R', self.actions, self.states)
