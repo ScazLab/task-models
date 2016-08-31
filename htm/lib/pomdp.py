@@ -210,22 +210,16 @@ class POMDP:
     def solve(self):
         name = 'tosolve'
         with TemporaryDirectory() as tmpdir:
-            pomdp_file = self.dump_to('/tmp', name)
             pomdp_file = self.dump_to(tmpdir, name)
-            solver = subprocess.Popen(
-                [self._solver_path, '-pomdp', pomdp_file],
+            prefix = os.path.join(tmpdir, name)
+            subprocess.check_call(
+                [self._solver_path, '-o', prefix, '-pomdp', pomdp_file],
                 stdout=subprocess.PIPE)
-            if solver.wait() != 0:
-                print(solver.stdout.read().decode())  # TODO improve
-                raise RuntimeError('Solver failed.')
-            return self._load_policy_from(tmpdir, name, solver.pid)
+            return self.load_policy_from(tmpdir, name)
 
-    def load_policy_from(self, path, name, pid):
-        out_fmt = '{name}-{pid}.{ext}'
-        value_function_file = os.path.join(
-            path, out_fmt.format(name=name, pid=pid, ext='alpha'))
-        policy_graph_file = os.path.join(
-            path, out_fmt.format(name=name, pid=pid, ext='pg'))
+    def load_policy_from(self, path, name):
+        value_function_file = os.path.join(path, name + '.alpha')
+        policy_graph_file = os.path.join(path, name + '.pg')
         with open(value_function_file, 'r') as vf:
             actions, vf = parse_value_function(vf)
         with open(policy_graph_file, 'r') as pf:
