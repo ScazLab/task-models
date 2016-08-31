@@ -255,9 +255,9 @@ class POMDP:
         name = 'tosolve'
         with TemporaryDirectory() as tmpdir:
             pomdp_file = self.dump_to(tmpdir, name)
-            prefix = os.path.join(tmpdir, name)
             subprocess.check_call(
-                [self._solver_path, '-o', prefix, '-pomdp', pomdp_file],
+                [self._solver_path, '-o', name, '-pomdp', pomdp_file],
+                cwd=tmpdir,
                 stdout=subprocess.PIPE)
             return self.load_policy_from(tmpdir, name)
 
