@@ -251,14 +251,25 @@ class POMDP:
             f.write(self.dump())
         return full_path
 
-    def solve(self):
+    def solve(self, timeout=None, method='incprune'):
+        """
+        :param method: incprune | grid (incprune)
+        """
         name = 'tosolve'
+        args = []
+        if timeout is not None:
+            args.extend(['-time_limit', str(timeout)])
+        if method == 'grid':
+            args.extend(['-method', method, '-fg_type', 'pairwise'])
         with TemporaryDirectory() as tmpdir:
             pomdp_file = self.dump_to(tmpdir, name)
+            args.extend(['-o', name, '-pomdp', pomdp_file])
             subprocess.check_call(
-                [self._solver_path, '-o', name, '-pomdp', pomdp_file],
-                cwd=tmpdir,
+                [self._solver_path] + args, cwd=tmpdir,
                 stdout=subprocess.PIPE)
+            # TODO: add timeout=timeout for python 3
+            # Note: actually timeout + 1 should be used to give a margin for
+            # pomdp-solve for parsing and cleaning.
             return self.load_policy_from(tmpdir, name)
 
     def load_policy_from(self, path, name):

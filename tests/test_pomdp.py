@@ -216,4 +216,8 @@ class TestPOMDP(TestCase):
 
     def test_solver_runs(self):
         p = POMDP(self.T, self.O, self.R, self.start, .8, values='reward')
-        p.solve()
+        p.solve(timeout=1)
+
+    def test_solver_runs_grid(self):
+        p = POMDP(self.T, self.O, self.R, self.start, .8, values='reward')
+        p.solve(timeout=1, method='grid')
