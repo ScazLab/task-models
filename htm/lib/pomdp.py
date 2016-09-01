@@ -253,7 +253,7 @@ class POMDP:
             f.write(self.dump())
         return full_path
 
-    def solve(self, timeout=None, method='incprune'):
+    def solve(self, timeout=None, n_iterations=None, method='incprune', grid_type=None):
         """
         :param method: incprune | grid (incprune)
         """
@@ -261,8 +261,12 @@ class POMDP:
         args = []
         if timeout is not None:
             args.extend(['-time_limit', str(timeout)])
+        if n_iterations is not None:
+            args.extend(['-horizon', str(n_iterations)])
         if method == 'grid':
-            args.extend(['-method', method, '-fg_type', 'pairwise'])
+            if grid_type is None:
+                grid_type = 'simplex'
+            args.extend(['-method', method, '-fg_type', grid_type])
         with TemporaryDirectory() as tmpdir:
             pomdp_file = self.dump_to(tmpdir, name)
             args.extend(['-o', name, '-pomdp', pomdp_file])
@@ -283,6 +287,7 @@ class POMDP:
             actions2, pg = parse_policy_graph(pf)
         assert(actions == actions2)
         assert(max(actions) < len(self.actions))
+        assert(np.max(pg) <= len(pg))
         action_names = [self.actions[a] for a in actions]
         return GraphPolicy(action_names, self.observations, pg, vf, self.start)
 
@@ -334,3 +339,6 @@ class GraphPolicyRunner:
 
     def step(self, observation):
         self.current = self.gp.next(self.current, observation)
+        if self.current is None:
+            raise ValueError('Got unexpected observation')
+    
