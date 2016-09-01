@@ -215,9 +215,40 @@ class TestPOMDP(TestCase):
         self.assertEqual(s, correct)
 
     def test_solver_runs(self):
-        p = POMDP(self.T, self.O, self.R, self.start, .8, values='reward')
-        p.solve(timeout=1)
+        p = POMDP(self.T, self.O, self.R, self.start, .8)
+        p.solve(n_iterations=5, timeout=1)
 
     def test_solver_runs_grid(self):
-        p = POMDP(self.T, self.O, self.R, self.start, .8, values='reward')
-        p.solve(timeout=1, method='grid')
+        p = POMDP(self.T, self.O, self.R, self.start, .8)
+        p.solve(n_iterations=5, timeout=1, method='grid')
+
+    def test_belief_update_is_proba(self):
+        p = POMDP(self.T, self.O, self.R, self.start, .8)
+        b = np.random.dirichlet([1, 1, 1])
+        c = p.belief_update(np.random.randint(4), np.random.randint(2), b)
+        self.assertTrue((c >= 0).all())
+        self.assertAlmostEqual(c.sum(), 1.)
+
+    def test_belief_update_from_full_obs(self):
+        O = np.zeros((4, 3, 3))
+        O[...] = np.eye(3)
+        R = np.zeros((4, 3, 3, 3))
+        p = POMDP(self.T, O, R, self.start, .8)
+        a = np.random.randint(4)
+        o = np.random.randint(3)
+        b = np.array([.3, .3, .4])
+        c = p.belief_update(a, o, b)
+        cc = np.zeros((3,))
+        cc[o] = 1.
+        np.testing.assert_array_equal(c, cc)
+
+    def test_belief_update_from_uniform_obs_is_T(self):
+        O = np.ones((4, 3, 2)) * .5
+        p = POMDP(self.T, O, self.R, self.start, .8)
+        a = np.random.randint(4)
+        o = np.random.randint(2)
+        s = np.random.randint(3)
+        b = np.zeros((3,))
+        b[s] = 1.
+        c = p.belief_update(a, o, b)
+        np.testing.assert_allclose(c, self.T[a, s, :])

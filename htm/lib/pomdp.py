@@ -232,6 +232,10 @@ class POMDP:
         assert_normal(self.T, 'T')
         assert_normal(self.O, 'O')
 
+    def belief_update(self, a, o, b):
+        new_b = b.dot(self.T[a, ...]) * self.O[a, :, o]
+        return new_b / new_b.sum()
+
     def dump(self):
         """Write POMDP description following:
         `<http://www.pomdp.org/code/pomdp-file-spec.html>`_
@@ -253,9 +257,11 @@ class POMDP:
             f.write(self.dump())
         return full_path
 
-    def solve(self, timeout=None, n_iterations=None, method='incprune', grid_type=None):
+    def solve(self, timeout=None, n_iterations=None, method='incprune',
+              grid_type=None):
         """
         :param method: incprune | grid (incprune)
+        :param grid_type: simplex | pairwise (simplex)
         """
         name = 'tosolve'
         args = []
@@ -341,4 +347,19 @@ class GraphPolicyRunner:
         self.current = self.gp.next(self.current, observation)
         if self.current is None:
             raise ValueError('Got unexpected observation')
-    
+
+
+class GraphPolicyBeliefRunner(GraphPolicyRunner):
+
+    def __init__(self, graph_policy, pomdp):
+        self.gp = graph_policy
+        self.pomdp = pomdp
+        self.reset()
+
+    def get_action(self):
+        return self.gp.get_action(self.current)
+
+    def step(self, observation):
+        action = self.get_action()
+        b = self.pomdp.belief_update(action, observation, self.current)
+        self.reset(belief=b)
