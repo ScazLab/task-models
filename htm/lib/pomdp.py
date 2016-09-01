@@ -85,7 +85,9 @@ def _dump_1d_array(a):
     # Make sure that sum stays the same even after trunc
     trunc_sum = np.around(a.sum(), decimals=DECIMALS)
     trunc = np.around(a, decimals=DECIMALS)
-    trunc[-1] = trunc_sum - trunc[:-1].sum()
+    imax = np.argmax(trunc)
+    # Compensate on max to avoid negative values
+    trunc[imax] += trunc_sum - trunc.sum()
     return ' '.join([NUMBER_FORMAT.format(x) for x in trunc])
 
 
