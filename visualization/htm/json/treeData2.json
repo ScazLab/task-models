@@ -1,0 +1,145 @@
+{
+  "name": "Hierarchical task tree",
+  "nodes": {
+    "name": "Mount chair",
+    "attributes": [],
+    "children": [
+      {
+        "name": "Take base",
+        "attributes": [],
+        "parent": 0,
+        "id": 1,
+        "combination": null
+      },
+      {
+        "name": "Mount legs",
+        "attributes": [],
+        "children": [
+          {
+            "name": "Mount leg 0",
+            "attributes": [],
+            "children": [
+              {
+                "name": "Take leg 0",
+                "attributes": [],
+                "parent": 3,
+                "id": 4,
+                "combination": null
+              },
+              {
+                "name": "Attach leg 0",
+                "attributes": [],
+                "parent": 3,
+                "id": 5,
+                "combination": null
+              }
+            ],
+            "combination": "Sequence",
+            "parent": 2,
+            "id": 3
+          },
+          {
+            "name": "Mount leg 1",
+            "attributes": [],
+            "children": [
+              {
+                "name": "Take leg 1",
+                "attributes": [],
+                "parent": 6,
+                "id": 7,
+                "combination": null
+              },
+              {
+                "name": "Attach leg 1",
+                "attributes": [],
+                "parent": 6,
+                "id": 8,
+                "combination": null
+              }
+            ],
+            "combination": "Sequence",
+            "parent": 2,
+            "id": 6
+          },
+          {
+            "name": "Mount leg 2",
+            "attributes": [],
+            "children": [
+              {
+                "name": "Take leg 2",
+                "attributes": [],
+                "parent": 9,
+                "id": 10,
+                "combination": null
+              },
+              {
+                "name": "Attach leg 2",
+                "attributes": [],
+                "parent": 9,
+                "id": 11,
+                "combination": null
+              }
+            ],
+            "combination": "Sequence",
+            "parent": 2,
+            "id": 9
+          },
+          {
+            "name": "Mount leg 3",
+            "attributes": [],
+            "children": [
+              {
+                "name": "Take leg 3",
+                "attributes": [],
+                "parent": 12,
+                "id": 13,
+                "combination": null
+              },
+              {
+                "name": "Attach leg 3",
+                "attributes": [],
+                "parent": 12,
+                "id": 14,
+                "combination": null
+              }
+            ],
+            "combination": "Sequence",
+            "parent": 2,
+            "id": 12
+          }
+        ],
+        "combination": "Parallel",
+        "parent": 0,
+        "id": 2
+      },
+      {
+        "name": "Mount frame",
+        "attributes": [],
+        "children": [
+          {
+            "name": "Take frame",
+            "attributes": [
+              "highlighted"
+            ],
+            "parent": 15,
+            "id": 16,
+            "combination": null
+          },
+          {
+            "name": "Attach frame",
+            "attributes": [],
+            "parent": 15,
+            "id": 17,
+            "combination": null
+          }
+        ],
+        "combination": "Sequence",
+        "parent": 0,
+        "id": 15
+      }
+    ],
+    "combination": "Sequence",
+    "parent": null,
+    "id": 0
+  }
+}

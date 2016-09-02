@@ -1,0 +1,79 @@
+body {
+  background-color: #edeeef;
+  font-size: 16px;
+}
+
+section>div>div {
+  padding-top: 20px;
+}
+
+#tree-container svg {
+  display: block;
+  margin: auto;
+  background-color: #fff;
+}
+
+.mouse-down {
+  cursor: move;
+}
+
+.node {
+  cursor: pointer;
+}
+
+.node rect {
+  stroke-width: 2px;
+  stroke: black;
+  fill: #fff;
+}
+
+.node text {
+  font: sans-serif;
+}
+
+.node .combination rect {
+  stroke-width: 0px;
+}
+
+.node .combination text {
+  fill: red;
+}
+
+.link {
+  fill: none;
+  stroke: #ccc;
+  stroke-width: 2px;
+}
+
+.highlighted text {
+  font-weight: bold;
+}
+
+.highlighted rect.label {
+  fill: #77dddd;
+  stroke-width: 0px;
+}
+
+.collapsed rect.label {
+  stroke: steelblue;
+}
+
+#status .alert,
+#status .btn-group,
+#status button {
+    width: 100%;
+}
+
+#status button {
+    font-size: 1.2rem;
+    min-height: 60px;
+}
+
+#status .dropdown-item {
+    white-space: normal;
+}
+
+#status .dropdown-menu,
+#status .dropdown-item {
+    max-width: 100%;
+}

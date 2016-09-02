@@ -1,0 +1,67 @@
+{
+  "name": "Hierarchical task tree",
+  "nodes": {
+    "name": "Top Level",
+    "parent": "null",
+    "id": 0,
+    "attributes": ["highlighted"],
+    "children": [
+      {
+        "name": "A",
+        "parent": 0,
+        "id": 1,
+        "combination": "sequential",
+        "attr": ["highlighted","test"],
+        "children": [
+          {
+            "name": "Son of A",
+            "id": 2,
+            "parent": 1,
+            "combination": "parallel"
+          },
+          {
+            "name": "Daughter of A",
+            "id": 3,
+            "parent": 1,
+            "combination": "alternative"
+          }
+        ]
+      },
+      {
+        "name": "B",
+        "parent": 0,
+        "id": 4,
+        "combination": "parallel"
+      },
+      {
+        "name": "ADFAD",
+        "parent": 0,
+        "id": 5,
+        "combination": "highlighted"
+      },
+      {
+        "name": "C",
+        "parent": 0,
+        "id": 6,
+        "combination": "parallel",
+        "children": [
+          {
+            "name": "AA",
+            "parent": 6,
+            "id": 7,
+            "children": [
+              {
+                "name": "CC",
+                "parent": 7,
+                "id": 8
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "links": [
+    {"source": 0, "target": 1, "name": "test"}
+  ]
+}
