@@ -343,14 +343,14 @@ class GraphPolicy:
         print(self.transitions)
 
 
-class GraphPolicyRunner:
+class GraphPolicyRunner(object):
 
     def __init__(self, graph_policy):
         self.gp = graph_policy
         self.reset()
 
     def reset(self, belief=None):
-        if belief:
+        if belief is not None:
             self.current = self.gp.get_node_from_belief(belief)
         else:
             self.current = self.gp.init
@@ -371,10 +371,14 @@ class GraphPolicyBeliefRunner(GraphPolicyRunner):
         self.pomdp = pomdp
         self.reset()
 
-    def get_action(self):
-        return self.gp.get_action(self.current)
+    def reset(self, belief=None):
+        if belief is None:
+            belief = self.pomdp.start
+        self.current_belief = belief
+        super(GraphPolicyBeliefRunner, self).reset(belief=belief)
 
     def step(self, observation):
-        action = self.get_action()
-        b = self.pomdp.belief_update(action, observation, self.current)
+        a = self.pomdp.actions.index(self.get_action())
+        o = self.pomdp.observations.index(observation)
+        b = self.pomdp.belief_update(a, o, self.current_belief)
         self.reset(belief=b)
