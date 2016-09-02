@@ -1,8 +1,7 @@
 # encoding: utf-8
 
-from __future__ import print_function
-
 import os
+import json
 import subprocess
 from distutils import spawn
 
@@ -336,11 +335,12 @@ class GraphPolicy:
     def next(self, current, observation):
         return self.transitions[current, self.observations.index(observation)]
 
-    def print(self):
-        print('Actions:', self.actions)
-        print('Init:', self.init)
-        print('Policy graph:')
-        print(self.transitions)
+    def to_json(self):
+        return json.dumps({'actions': self.actions,
+                           'observations': self.observations,
+                           'transitions': self.transitions.tolist(),
+                           'values': self.values.tolist(),
+                           })
 
 
 class GraphPolicyRunner(object):
