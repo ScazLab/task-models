@@ -52,31 +52,35 @@ class TestLeafToPOMDP(TestCase):
     def test_update_O_stays_in_range(self):
         O0 = np.random.random((7, 8, 3))
         O = O0.copy()
-        self.l2p.update_O(O, 0, 2, 4, [1, 5], [6], [4])
-        O0[:, 4:6, :] = O[:, 4:6, :]
+        self.l2p.update_O(O, 0, 2, 4, [6, 7], [1, 5], [6], [4])
+        O0[:, 6:8, :] = O[:, 6:8, :]
         np.testing.assert_allclose(O, O0)
 
     def test_updated_O_is_proba(self):
         O = np.zeros((7, 8, 3))
-        self.l2p.update_O(O, 0, 2, 4, [1, 5], [6], [4])
-        np.testing.assert_allclose(O[:, 4:6, :].sum(-1), np.ones((7, 2)))
+        O[:, :, 2] = 1  # O is assumed initialized with o_NO
+        O[0, :, :] = [1, 0, 0]  # except for wait, initialized with o_NONE
+        self.l2p.update_O(O, 0, 2, 4, [6, 7], [1, 5], [6], [4])
+        np.testing.assert_allclose(O[:, 6:8, :].sum(-1), np.ones((7, 2)))
 
     def test_updated_O_on_com(self):
         O = np.zeros((7, 8, 3))
-        self.l2p.update_O(O, 0, 2, 4, [1, 5], [6], [4])
+        O[:, :, 2] = 1  # O is assumed initialized with o_NO
+        self.l2p.update_O(O, 0, 2, 4, [6, 7], [1, 5], [6], [4])
         yes = [0., 1., 0.]
         no = [0., 0., 1.]
         np.testing.assert_allclose(
-            O[[1, 5, 6, 3], ...][:, 4:6, :],
-            [[yes, yes], [yes, yes], [no, no], [no, no]])
+            O[[1, 5, 6, 3], ...][:, 6:8, :],
+            [[yes, yes], [yes, yes], [no, no], [yes, yes]])
 
     def test_updated_O_on_act(self):
         O = np.zeros((7, 8, 3))
-        self.l2p.update_O(O, 0, 2, 4, [1, 5], [6], [4])
+        O[:, :, 2] = 1  # O is assumed initialized with o_NO
+        self.l2p.update_O(O, 0, 2, 4, [6, 7], [1, 5], [6], [4])
         no = [0., 0., 1.]
         none = [1., 0., 0.]
-        np.testing.assert_allclose(O[[4, 2], ...][:, 4:6, :],
-                                   [[no, no], [no, none]])
+        np.testing.assert_allclose(O[[4, 2], ...][:, 6:8, :],
+                                   [[no, no], [none, none]])
 
     def test_update_R_stays_in_range(self):
         R0 = np.random.random((7, 8, 8, 3))
@@ -128,32 +132,35 @@ class TestSequenceToPOMDP(TestCase):
     def test_update_O_stays_in_range(self):
         O0 = np.random.random((7, 8, 3))
         O = O0.copy()
-        self.s2p.update_O(O, 0, 2, 3, [], [6], [1, 2, 4])
-        O0[:, 3:7, :] = O[:, 3:7, :]
+        self.s2p.update_O(O, 0, 2, 3, [7], [], [6], [1, 2, 4])
+        O0[:, 5:8, :] = O[:, 5:8, :]
         np.testing.assert_allclose(O, O0)
 
     def test_updated_O_is_proba(self):
         O = np.zeros((7, 8, 3))
-        self.s2p.update_O(O, 0, 2, 3, [1], [6], [2, 4])
-        np.testing.assert_allclose(O[:, 3:7, :].sum(-1), np.ones((7, 4)))
+        O[:, :, 2] = 1.  # O is initialized with NO
+        self.s2p.update_O(O, 0, 2, 3, [7], [1], [6], [2, 4])
+        np.testing.assert_allclose(O[:, 5:8, :].sum(-1), np.ones((7, 3)))
 
     def test_updated_O_on_com(self):
         O = np.zeros((7, 8, 3))
-        self.s2p.update_O(O, 0, 2, 3, [6], [1], [2, 4])
+        O[:, :, 2] = 1.  # O is initialized with NO
+        self.s2p.update_O(O, 0, 2, 3, [7], [6], [1], [2, 4])
         yes = [0., 1., 0.]
         no = [0., 0., 1.]
         np.testing.assert_allclose(
-            O[[1, 3, 5, 6], ...][:, 3:7, :],
-            [[no] * 4, [no, no, yes, yes], [no] * 4, [yes] * 4])
+            O[[1, 3, 5, 6], ...][:, 5:8, :],
+            [[no] * 3, [yes] * 3, [no, no, yes], [yes] * 3])
 
     def test_updated_O_on_act(self):
         O = np.zeros((7, 8, 3))
-        self.s2p.update_O(O, 0, 2, 3, [6], [], [1, 2, 4])
+        O[:, :, 2] = 1.  # O is initialized with NO
+        self.s2p.update_O(O, 0, 2, 3, [7], [6], [], [1, 2, 4])
         no = [0., 0., 1.]
         none = [1., 0., 0.]
         np.testing.assert_allclose(
-            O[[1, 2, 4], ...][:, 3:7, :],
-            [[no] * 4, [no, none, no, no], [no, no, no, none]])
+            O[[1, 2, 4], ...][:, 5:8, :],
+            [[no] * 3, [none, none, no], [no, no, none]])
 
     def test_update_R_stays_in_range(self):
         R0 = np.random.random((7, 8, 8, 3))
@@ -199,7 +206,7 @@ class TestHTM2POMDP(TestCase):
                        [1., 0., 0.],
                        [1., 0., 0.]],
                       [[0., 0., 1.],
-                       [1., 0., 0.],
+                       [0., 0., 1.],
                        [1., 0., 0.]],
                       [[0., 0., 1.],
                        [0., 0., 1.],
@@ -260,9 +267,9 @@ class TestHTM2POMDP(TestCase):
                        [1., 0., 0.],
                        [1., 0., 0.]],
                       [[0., 0., 1.],
+                       [0., 0., 1.],
                        [1., 0., 0.],
-                       [0., 0., 1.],
-                       [0., 0., 1.],
+                       [1., 0., 0.],
                        [1., 0., 0.]],
                       [[0., 0., 1.],
                        [0., 0., 1.],
@@ -272,7 +279,7 @@ class TestHTM2POMDP(TestCase):
                       [[0., 0., 1.],
                        [0., 0., 1.],
                        [0., 0., 1.],
-                       [1., 0., 0.],
+                       [0., 0., 1.],
                        [1., 0., 0.]],
                       [[0., 0., 1.],
                        [0., 0., 1.],
