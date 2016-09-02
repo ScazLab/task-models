@@ -307,7 +307,7 @@ class POMDP:
             actions2, pg = parse_policy_graph(pf)
         assert(actions == actions2)
         assert(max(actions) < len(self.actions))
-        assert(np.max(pg) <= len(pg))
+        assert(max([t for ts in pg for t in ts if t is not None]) <= len(pg))
         action_names = [self.actions[a] for a in actions]
         return GraphPolicy(action_names, self.observations, pg, vf, self.start)
 
