@@ -158,6 +158,17 @@ class TestPOMDP(TestCase):
             POMDP(self.T, self.O, self.R, start, 1.,
                   states=range(3), actions=range(4), observations=range(2))
 
+    def test_ValueError_on_duplicates(self):
+        with self.assertRaises(ValueError):
+            POMDP(self.T, self.O, self.R, self.start, 1.,
+                  states=['a', 'b', 'a'])
+        with self.assertRaises(ValueError):
+            POMDP(self.T, self.O, self.R, self.start, 1.,
+                  actions=['a', 'b', 'a', 'c'])
+        with self.assertRaises(ValueError):
+            POMDP(self.T, self.O, self.R, self.start, 1.,
+                  observations=['a', 'a'])
+
     def test_default_states(self):
         p = POMDP(self.T, self.O, self.R, self.start, 1.,
                   actions=range(4), observations=range(2))

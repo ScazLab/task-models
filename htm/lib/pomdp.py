@@ -168,6 +168,7 @@ class POMDP:
         self.start = start
         self._assert_shapes()
         self._assert_normal()
+        self._assert_unique()
         if discount > 1 or discount < 0:
             raise ValueError('Discount factor must be ≤ 1 and ≥ 0.')
         self.discount = discount
@@ -231,6 +232,20 @@ class POMDP:
         assert_normal(self.start, 'start')
         assert_normal(self.T, 'T')
         assert_normal(self.O, 'O')
+
+    def _assert_unique(self):
+        message = "Found duplicate {}: {}"
+
+        def assert_no_dup(lst, name):
+            if not len(set(lst)) == len(lst):
+                dup = list(lst)
+                for a in set(lst):
+                    dup.remove(a)
+                raise ValueError(message.format(name, dup))
+
+        assert_no_dup(self.states, 'states(s)')
+        assert_no_dup(self.actions, 'action(s)')
+        assert_no_dup(self.observations, 'observation(s)')
 
     def belief_update(self, a, o, b):
         new_b = b.dot(self.T[a, ...]) * self.O[a, :, o]
