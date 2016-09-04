@@ -61,9 +61,9 @@ d3.json(jsonfile, function(error, json)
       .charge(-1000);
 
   var drag = d3.behavior.drag()
-               .on("dragstart", dragstarted)
-               .on("drag", dragged)
-               .on("dragend", dragended);
+               .on("dragstart", dragstart)
+               .on("drag", dragging)
+               .on("dragend", dragend);
 
   // Links are just SVG lines, and we'll let the force layout
   // take care of their coordinates.
@@ -94,7 +94,9 @@ d3.json(jsonfile, function(error, json)
        .links(links)
        .start();
 
-  force.on('tick', function()
+  force.on('tick', tick);
+
+  function tick()
   {
     link.attr('d', function(d) {
         return "M" + d.point[0].x + "," + d.point[0].y
@@ -107,28 +109,28 @@ d3.json(jsonfile, function(error, json)
     {
       return 'translate(' + [d.x, d.y] + ')';
     });
-  });
+  }
+
+  function dragstart(d) {
+    // if (!d3.event.active) force.alphaTarget(0.3).restart();
+    // d.fx = d.x, d.fy = d.y;
+    force.stop();
+  }
+
+  function dragging(d) {
+    d.x += d3.event.dx;
+    d.y += d3.event.dy;
+    d3.select(this).attr("transform", "translate(" + d.x + "," + d.y + ")");
+    tick();
+  }
+
+  function dragend(d) {
+    d.fixed = true;
+    tick();
+    force.resume;
+  }
 
 });
-
-function dragstarted(d) {
-  console.log('drag started');
-  if (!d3.event.active) force.alphaTarget(0.3).restart();
-  d.fx = d.x, d.fy = d.y;
-}
-
-function dragged(d) {
-  console.log('dragging');
-  d.x += d3.event.dx;
-  d.y += d3.event.dy;
-  d3.select(this).attr("transform", "translate(" + d.x + "," + d.y + ")");
-}
-
-function dragended(d) {
-  console.log('drag ended');
-  if (!d3.event.active) force.alphaTarget(0);
-  d.fx = null, d.fy = null;
-}
 
 function appendmarkers()
 {
