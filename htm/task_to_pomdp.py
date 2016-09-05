@@ -30,18 +30,17 @@ def _name_radix(action):
 
 class _NodeToPOMDP(object):
 
-    observations = ['none', 'yes', 'no']
+    observations = ['none', 'yes', 'no', 'error']
 
-    o_none = [1., 0., 0.]
-    o_yes = [0., 1., 0.]
-    o_no = [0., 0., 1.]
+    o_none = [1., 0., 0., 0.]
+    o_yes = [0., 1., 0., 0.]
+    o_no = [0., 0., 1., 0.]
+    o_err = [0., 0., 0., 1.]
 
     init = None     # index of init states
     start = None    # start probabilities
     states = None   # state names
     actions = None  # action names
-    a_act = None    # list of physical actions
-    a_com = None    # list of communication actions
 
     @property
     def durations(self):
@@ -59,21 +58,16 @@ class _NodeToPOMDP(object):
         """
         raise NotImplementedError
 
-    def update_O(self, O, a_wait, a_start, s_start, s_next, a_comm_before,
-                 a_comm_after, a_act):
+    def update_O(self, O, a_start, s_start, s_next, s_before, s_after):
         """Fills relevant parts of O.
         Every node is responsible for filling
-            O[:, [one own's non init states and next states], :]
-            Initialized with deterministic NO except for wait (det. NONE)
-        O is assumed to be initialized with deterministic observation of none.
-        :param a_comm_before: list of indices
-            indices of communication act about actions that are a prerequisite
-            of current node (does not include current nodes actions).
-            i.e. questions to which answer 'yes'
-        :param a_comm_after: list of indices
-            indices other all other actions except those of current node
-        :param a_act: list of indices
-            indices of physical actions, includes current node's actions
+            O[[own's actions], :, :]
+            Initialized with deterministic NONE.
+        :param s_before: list of indices
+            indices of states that are a prerequisite of current node (does
+            not include current nodes actions).
+        :param s_after: list of indices
+            indices of states that are guaranteed to occur after current's
         """
         raise NotImplementedError
 
@@ -98,12 +92,15 @@ class _NodeToPOMDP(object):
 
 class _LeafToPOMDP(_NodeToPOMDP):
 
-    init = [0, 1]  # initial states
-    end = 2  # ending state (unique, will be removed)
-    _act = 0
-    a_act = [_act]
-    _com = 1
-    a_com = [_com]
+    _init = 0  # Initial state
+    _h = 1     # "Human has declared intent to act" state
+    _r = 2     # "Robot has declared intent to act" state
+    init = [_init]  # initial states
+    start = [1.]
+    _phy = 0
+    _ask_intention = 1
+    _tell_intention = 2
+    _ask_finished = 3
 
     act = 'phy'
     com = 'com'
@@ -114,9 +111,12 @@ class _LeafToPOMDP(_NodeToPOMDP):
         # states: before (H: human intend act), before (R: robot, human do not
         # intend to act), after
         radix = _name_radix(leaf.action)
-        self.states = [n + radix for n in ["before-H-", "before-R-"]]
+        self.states = [n + radix for n in ["init-", "H-", "R-"]]
         # actions: wait (shared), physical, communicate
-        self.actions = [n + '-' + radix for n in [self.act, self.com]]
+        self.actions = [n + '-' + radix
+                        for n in [self.act, self.com + '-ask-intention',
+                                  self.com + '-tell-intention',
+                                  self.com + '-ask-finished']]
 
     @property
     def t_hum(self):
@@ -132,16 +132,7 @@ class _LeafToPOMDP(_NodeToPOMDP):
 
     @property
     def durations(self):
-        return [self.t_err, self.t_com]  # does not include wait
-
-    @property
-    def p_h(self):
-        return .5 if self.leaf.action.h_proba is None\
-            else self.leaf.action.h_proba
-
-    @property
-    def start(self):
-        return [self.p_h, 1-self.p_h]
+        return [self.t_err] + [self.t_com] * 3  # does not include wait
 
     def _h_probas_not_finished_from_d(self, durations):
         return np.exp(-durations / self.t_hum)
@@ -149,33 +140,51 @@ class _LeafToPOMDP(_NodeToPOMDP):
     def update_T(self, T, a_wait, a_start, s_start, s_next, s_next_probas,
                  durations):
         assert(T.shape[0] == len(durations))
-        p_h_not_finish = self._h_probas_not_finished_from_d(
-                np.asarray(durations))
+        a_phy = a_start + self._phy
+        a_ai = a_start + self._ask_intention
+        a_ti = a_start + self._tell_intention
+        s_i = s_start + self._init
+        s_h = s_start + self._h
+        s_r = s_start + self._r
         # Note: if error the model assumes that human waits that robot is done
         # recovering or communicating before moving to next action.
-        T[:, s_start, s_start] = p_h_not_finish
-        T[:, s_start, :][:, s_next] = \
+        T[:, s_i, s_i] = 1.
+        T[a_ai, s_i, s_i] = 0.
+        T[a_ai, s_i, s_h] = 1.
+        T[a_ti, s_i, s_i] = 0.
+        T[a_ti, s_i, s_r] = 1.
+        p_h_not_finish = self._h_probas_not_finished_from_d(
+                np.asarray(durations))
+        T[:, s_h, s_h] = p_h_not_finish
+        T[:, s_h, :][:, s_next] = \
             np.outer(1 - p_h_not_finish, s_next_probas)
-        T[:, s_start + 1, s_start + 1] = 1.
-        T[a_start + self._act, s_start + 1, s_start + 1] = 0
-        T[a_start + self._act, s_start + 1, :][s_next] = s_next_probas
+        T[:, s_r, s_r] = 1.
+        T[a_phy, s_r, s_r] = 0.
+        T[a_phy, s_r, s_next] = s_next_probas
 
-    def update_O(self, O, a_wait, a_start, s_start, s_next, a_comm_before,
-                 a_comm_after, a_act):
-        O[a_start + self._act, s_next, :] = self.o_none  # good action
-        # or non-observable bad action (covered by human success)
-        for a in a_comm_before + [a_start + self._com]:
-            O[a, s_next, :] = self.o_yes
-        # (human always answer, even when it's the robot who completed
-        #  the action)
+    def update_O(self, O, a_start, s_start, s_next, s_before, s_after):
+        a_phy = a_start + self._phy
+        a_ai = a_start + self._ask_intention
+        a_ti = a_start + self._tell_intention
+        a_af = a_start + self._ask_finished
+        s_h = s_start + self._h
+        s_r = s_start + self._r
+        O[a_phy, :, :] = self.o_err
+        O[a_phy, s_next, :] = self.o_none
+        O[a_ai, :, :] = self.o_none
+        O[a_ai, s_h, :] = self.o_yes
+        O[a_ai, s_r, :] = self.o_no
+        O[a_ti, :, :] = self.o_none
+        O[a_af, :, :] = self.o_no
+        O[a_af, s_after, :] = self.o_yes
 
     def update_R(self, R, a_wait, a_start, s_start, durations):
         # Note: every node is responsible for filling
         # R[:, [one own's states], :, :]
         # R is initialized with zeros.
-        R[:, s_start:s_start+2, :, :] = np.asarray(durations)[
+        R[:, s_start:s_start+3, :, :] = np.asarray(durations)[
             :, np.newaxis, np.newaxis, np.newaxis]
-        R[a_start + self._act, s_start+1, :, :] = self.t_rob
+        R[a_start + self._phy, s_start + self._r, :, :] = self.t_rob
 
 
 def _start_indices_from(l):
@@ -208,22 +217,6 @@ class _SequenceToPOMDP(_NodeToPOMDP):
     def start(self):
         return self.children[0].start
 
-    def _shift_children_actions(self, action_lists, node_a_start=0):
-        return [[node_a_start + a_start + a for a in l]
-                for a_start, l in zip(self.a_indices, action_lists)]
-
-    @property
-    def a_act(self):
-        return sum(self._shift_children_actions(
-            [c.a_act for c in self.children]),
-            [])
-
-    @property
-    def a_com(self):
-        return sum(self._shift_children_actions(
-            [c.a_com for c in self.children]),
-            [])
-
     def _next_init_children(self, s_start, s_next):
         next_inits = [
             [s_start + c_s_start + s for s in c.init]
@@ -240,18 +233,16 @@ class _SequenceToPOMDP(_NodeToPOMDP):
                        s_start + self.s_indices[i], next_inits[i],
                        next_probas[i], durations)
 
-    def update_O(self, O, a_wait, a_start, s_start, s_next, a_comm_before,
-                 a_comm_after, a_act):
+    def update_O(self, O, a_start, s_start, s_next, s_before, s_after):
         next_inits = self._next_init_children(s_start, s_next)
-        a_coms = self._shift_children_actions([c.a_com for c in self.children],
-                                              node_a_start=a_start)
+        states = [[self.s_indices[i] + j for j in range(len(c.states))]
+                  for i, c in enumerate(self.children)]
         for i, c in enumerate(self.children):
-            ac_before = sum(a_coms[:i], [])
-            ac_after = sum(a_coms[i+1:], [])
-            c.update_O(O, a_wait, a_start + self.a_indices[i],
+            cs_before = sum(states[:i], [])
+            cs_after = sum(states[i+1:], [])
+            c.update_O(O, a_start + self.a_indices[i],
                        s_start + self.s_indices[i], next_inits[i],
-                       a_comm_before + ac_before, a_comm_after + ac_after,
-                       a_act)
+                       s_before + cs_before, s_after + cs_after)
 
     def update_R(self, R, a_wait, a_start, s_start, durations):
         for i, c in enumerate(self.children):
@@ -265,8 +256,6 @@ class _AlternativesToPOMDP(_NodeToPOMDP):
     start = None    # start probabilities
     states = None   # state names
     actions = None  # action names
-    a_act = None    # list of physical actions
-    a_com = None    # list of communication actions
 
     @property
     def durations(self):
@@ -284,8 +273,7 @@ class _AlternativesToPOMDP(_NodeToPOMDP):
         """
         raise NotImplementedError
 
-    def update_O(self, O, a_wait, a_start, s_start, s_next, a_comm_before,
-                 a_comm_after, a_act):
+    def update_O(self, O, a_start, s_start, s_next, s_before, s_after):
         """Fills relevant parts of O.
         Every node is responsible for filling O[:, [one own's states], :].
         O is assumed to be initialized with zeros.
@@ -295,8 +283,6 @@ class _AlternativesToPOMDP(_NodeToPOMDP):
             i.e. questions to which answer 'yes'
         :param a_comm_after: list of indices
             indices other all other actions except those of current node
-        :param a_act: list of indices
-            indices of physical actions, includes current node's actions
         """
         raise NotImplementedError
 
@@ -320,12 +306,8 @@ class HTMToPOMDP:
     def update_T_end(self, T):
         T[:, self.end, self.end] = 1.  # end stats is stable
 
-    def update_O_init_and_wait_and_end(self, O, init):
-        O[:, init, :] = _NodeToPOMDP.o_no  # should not happen for act,
-        # no for init
+    def update_O_wait(self, O):
         O[self.wait, :, :] = _NodeToPOMDP.o_none
-        O[:, self.end, :] = _NodeToPOMDP.o_none  # Convention: nothing observed
-        # on end
 
     def update_R_end(self, R):
         R[:, -1, ...] = 1.          # end state has cost 1
@@ -346,10 +328,8 @@ class HTMToPOMDP:
         n2p.update_T(T, self.wait, 1, 0, [end], [1.], durations)
         self.update_T_end(T)
         O = np.zeros((n_a, n_s, n_o))
-        O[...] = n2p.o_no
-        n2p.update_O(O, self.wait, 1, 0, [end], [], [],
-                     [a + 1 for a in n2p.a_act])
-        self.update_O_init_and_wait_and_end(O, n2p.init)
+        n2p.update_O(O, 1, 0, [end], [], [end])
+        self.update_O_wait(O)
         R = np.zeros((n_a, n_s, n_s, n_o))
         n2p.update_R(R, self.wait, 1, 0, durations)
         self.update_R_end(R)
