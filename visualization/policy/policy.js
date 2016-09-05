@@ -1,5 +1,5 @@
 
-var jsonfile = "policy.json";
+var jsonfile = "policy2.json";
 
 loadpolicy(jsonfile);
 
@@ -9,6 +9,8 @@ function loadpolicy(file)
       width  = svg.attr("width"),
       height = svg.attr("height");
 
+  svg.call(d3.behavior.zoom().on("zoom", redraw));
+
   svg.append('text')
      .attr("dx", width/2)
      .attr("dy", height/15)
@@ -16,7 +18,16 @@ function loadpolicy(file)
      .attr('text-anchor','middle')
      .text(file);
 
+  var vis = svg.append('svg:g');
+
   appendmarkers();
+
+  function redraw()
+  {
+    vis.attr("transform",
+             "translate(" + d3.event.translate + ")"
+              + " scale(" + d3.event.scale + ")");
+  }
 
   d3.json('json/'+file, function(error, json)
   {
@@ -71,20 +82,21 @@ function loadpolicy(file)
         .friction(0.85)
         .charge(-1000);
 
-    var drag = d3.behavior.drag()
-                 .on("drag", dragging)
-                 .on("dragend", dragend);
+    var drag = force.drag()
+                    .on("dragstart", dragstart)
+                    .on("drag", dragging)
+                    .on("dragend", dragend);
 
     // Links are just SVG lines, and we'll let the force layout
     // take care of their coordinates.
-    var link = svg.selectAll('.link')
+    var link = vis.selectAll('.link')
                   .data(bilinks)
                   .enter().append('path')
                   .attr('class', function(d) { return 'link ' + d.obs; })
                   .attr('marker-end', function(d) {return 'url(#arrowhead_'+d.obs+')';});
 
     // Now it's the nodes turn. Each node is drawn as a circle, with a label
-    var gnode = svg.selectAll('g.gnode')
+    var gnode = vis.selectAll('g.gnode')
                    .data(nodes.filter(function(d) { return d.name; }))
                    .enter()
                    .append('g')
@@ -141,6 +153,10 @@ function loadpolicy(file)
       force.links(links);
     }
 
+    function dragstart(d) {
+      d3.event.sourceEvent.stopPropagation();
+    }
+
     function dragging(d) {
       d.x += d3.event.dx;
       d.y += d3.event.dy;
@@ -189,7 +205,7 @@ function loadpolicy(file)
   function appendmarkers()
   {
     // Arrowhead markers for the links (one for each color)
-    svg.append("defs").append("marker")
+    vis.append("defs").append("marker")
         .attr("id", "arrowhead_none")
         .attr("refX", 6 + 1) /*must be smarter way to calculate shift*/
         .attr("refY", 2)
@@ -200,7 +216,7 @@ function loadpolicy(file)
         .append("path")
         .attr("d", "M 0,0 V 4 L6,2 Z"); //this is actual shape for arrowhead
 
-    svg.append("defs").append("marker")
+    vis.append("defs").append("marker")
         .attr("id", "arrowhead_yes")
         .attr("refX", 6 + 1) /*must be smarter way to calculate shift*/
         .attr("refY", 2)
@@ -211,7 +227,7 @@ function loadpolicy(file)
         .append("path")
         .attr("d", "M 0,0 V 4 L6,2 Z"); //this is actual shape for arrowhead
 
-    svg.append("defs").append("marker")
+    vis.append("defs").append("marker")
         .attr("id", "arrowhead_no")
         .attr("refX", 6 + 1) /*must be smarter way to calculate shift*/
         .attr("refY", 2)
@@ -222,7 +238,7 @@ function loadpolicy(file)
         .append("path")
         .attr("d", "M 0,0 V 4 L6,2 Z"); //this is actual shape for arrowhead
 
-    svg.append("defs").append("marker")
+    vis.append("defs").append("marker")
         .attr("id", "arrowhead_error")
         .attr("refX", 6 + 1) /*must be smarter way to calculate shift*/
         .attr("refY", 2)
