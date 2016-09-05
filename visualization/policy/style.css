@@ -31,7 +31,8 @@ h3,
 h4,
 h5,
 h6,
-#get_file {
+#get_file,
+.title.filename {
   text-transform: uppercase;
   font-family: Montserrat,"Helvetica Neue",Helvetica,Arial,sans-serif;
   font-weight: 100;
@@ -51,6 +52,11 @@ section>div>div {
   cursor: move;
 }
 
+.title.filename {
+  font-size: 1.5rem;
+  font-weight: 300;
+}
+
 .gnode text {
   fill: #3c3c3c;
 }
@@ -62,6 +68,11 @@ section>div>div {
 
 .node.initial {
   fill: #5CB85C;
+}
+
+.nodetext.initial {
+  font-size: 1.1rem;
+  font-weight: bold;
 }
 
 .link {

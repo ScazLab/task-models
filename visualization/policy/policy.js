@@ -9,6 +9,13 @@ function loadpolicy(file)
       width  = svg.attr("width"),
       height = svg.attr("height");
 
+  svg.append('text')
+     .attr("dx", width/2)
+     .attr("dy", height/15)
+     .attr('class', 'title filename')
+     .attr('text-anchor','middle')
+     .text(file);
+
   appendmarkers();
 
   d3.json('json/'+file, function(error, json)
@@ -89,8 +96,10 @@ function loadpolicy(file)
                     .attr('r', function(d) { if (d.initial) { return 8; } return 4;});
 
     var label = gnode.append('text')
-                      .attr("dx", function(d) { if (d.initial) { return -width/10+10; } return 12;})
-                      .attr("dy", function(d) { if (d.initial) { return "-1em"; } return ".35em";})
+                      .attr("dx", function(d) { return 0;})
+                      .attr("dy", function(d) { return "-0.9em";})
+                      .attr('class', function(d) { if (d.initial) { return 'nodetext initial'; } return 'nodetext ';})
+                      .attr('text-anchor','middle')
                       .text(function(d) { return '['+d.id+'] '+d.name;});
 
     force.nodes(nodes)
