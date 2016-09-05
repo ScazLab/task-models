@@ -23,12 +23,12 @@
             <!-- <input type="button" id="get_file" value="Select custom file" class="btn btn-info"> -->
 
             <!-- <div id="customfileupload">Select a file</div> -->
-            <div class="input-group" style="max-width: 600px; margin: auto;">
+            <div class="input-group" style="max-width: 800px; margin: auto;">
                 <span class="input-group-btn">
-                    <input class="btn btn-info" type="button" value="Select custom file" id="get_file">
+                    <input class="btn btn-info" type="button" value="Select custom file*" id="get_file">
                     <input type="file" id="my_file">
                 </span>
-                <div class="form-control" id="customfileupload">...</div>
+                <div class="form-control" id="customfileupload">[*] the target file should be in the same folder of the original</div>
             </div>
         </div>
     </div>
@@ -61,6 +61,9 @@
 
     $('input[type=file]').change(function (e) {
         $('#customfileupload').html($(this).val());
+        var svg = d3.select("svg");
+        svg.selectAll("*").remove();
+        loadpolicy($(this).val());
     });
 </script>
 
