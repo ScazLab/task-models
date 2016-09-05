@@ -11,7 +11,7 @@ C_COMMUNICATION = 2.
 
 p = hold_and_release_pomdp(C_WAIT, C_FAILURE, C_COMMUNICATION)
 pgr = GraphPolicyRunner(p.solve())
-pgr.gp.print()
+print(pgr.gp.to_json(indent=2))
 for i in range(10):
     print("|{: 3}. current state: {}, action: {}".format(
         i, pgr.current, pgr.get_action()))
