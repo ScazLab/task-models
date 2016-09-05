@@ -335,12 +335,13 @@ class GraphPolicy:
     def next(self, current, observation):
         return self.transitions[current, self.observations.index(observation)]
 
-    def to_json(self):
+    def to_json(self, indent=None):
         return json.dumps({'actions': self.actions,
                            'observations': self.observations,
                            'transitions': self.transitions.tolist(),
                            'values': self.values.tolist(),
-                           })
+                           'initial': str(self.init),
+                           }, indent=indent)
 
 
 class GraphPolicyRunner(object):
