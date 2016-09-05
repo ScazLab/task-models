@@ -10,9 +10,12 @@
   font-weight: 100;
 }
 
+html {
+  font-size: 18px;
+}
+
 body {
   background-color: #edeeef;
-  font-size: 16px;
   font-family: 'Lato', sans-serif;
 }
 
@@ -54,7 +57,7 @@ section>div>div {
 }
 
 .title.filename {
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   font-weight: 300;
 }
 
@@ -69,6 +72,10 @@ section>div>div {
 
 .node.initial {
   fill: #5CB85C;
+}
+
+.nodetext {
+  font-size: 1rem;
 }
 
 .nodetext.initial {

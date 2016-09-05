@@ -39,7 +39,7 @@ function loadpolicy(file)
     // Assign the nodes from the json file
     for (var i = 0; i < json.actions.length; i++)
     {
-      nodes[i] = {name: json.actions[i], id: i};
+      nodes[i] = {name: '['+i+'] '+ json.actions[i], id: i};
 
       if (i == json.initial) {
         nodes[i].initial = true;
@@ -112,7 +112,7 @@ function loadpolicy(file)
                       .attr("dy", function(d) { return "-0.9em";})
                       .attr('class', function(d) { if (d.initial) { return 'nodetext initial'; } return 'nodetext ';})
                       .attr('text-anchor','middle')
-                      .text(function(d) { return '['+d.id+'] '+d.name;});
+                      .text(function(d) { return d.name;});
 
     force.nodes(nodes)
          .links(links)
