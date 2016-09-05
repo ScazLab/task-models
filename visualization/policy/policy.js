@@ -1,5 +1,5 @@
 
-var jsonfile = "policy.json";
+var jsonfile = "legs.json";
 
 loadpolicy(jsonfile);
 
@@ -39,7 +39,9 @@ function loadpolicy(file)
     // Assign the nodes from the json file
     for (var i = 0; i < json.actions.length; i++)
     {
-      nodes[i] = {name: '['+i+'] '+ json.actions[i], id: i};
+      nodes[i] = {name: '['+i+'] '+ json.actions[i].replace('intention','int')
+                                                   .replace('phy-','P ')
+                                                   .replace('com-','C '), id: i};
 
       if (i == json.initial) {
         nodes[i].initial = true;
