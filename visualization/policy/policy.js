@@ -61,7 +61,6 @@ d3.json(jsonfile, function(error, json)
       .charge(-1000);
 
   var drag = d3.behavior.drag()
-               .on("dragstart", dragstart)
                .on("drag", dragging)
                .on("dragend", dragend);
 
@@ -98,7 +97,15 @@ d3.json(jsonfile, function(error, json)
 
   function tick()
   {
-    link.attr('d', function(d) {
+    link.attr('d', function(d)
+      {
+        if (d.point[0].x==d.point[2].x && d.point[0].y==d.point[2].y){
+          return "M" + d.point[0].x + "," + d.point[0].y
+               + "C" + d.point[1].x + "," + d.point[0].y
+               + " " + d.point[0].x + "," + d.point[1].y
+               + " " + d.point[2].x + "," + d.point[2].y;
+        }
+
         return "M" + d.point[0].x + "," + d.point[0].y
              + "S" + d.point[1].x + "," + d.point[1].y
              + " " + d.point[2].x + "," + d.point[2].y;
@@ -111,23 +118,15 @@ d3.json(jsonfile, function(error, json)
     });
   }
 
-  function dragstart(d) {
-    // if (!d3.event.active) force.alphaTarget(0.3).restart();
-    // d.fx = d.x, d.fy = d.y;
-    force.stop();
-  }
-
   function dragging(d) {
     d.x += d3.event.dx;
     d.y += d3.event.dy;
-    d3.select(this).attr("transform", "translate(" + d.x + "," + d.y + ")");
     tick();
   }
 
   function dragend(d) {
     d.fixed = true;
     tick();
-    force.resume;
   }
 
 });
