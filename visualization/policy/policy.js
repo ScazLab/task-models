@@ -108,6 +108,8 @@ function loadpolicy(file)
 
     force.on('tick', tick);
 
+    add_legend();
+
     function tick()
     {
       link.attr('d', function(d)
@@ -149,6 +151,38 @@ function loadpolicy(file)
       d.fixed = true;
       tick();
     }
+
+    function add_legend() {
+      var rectSize = 18;
+      var spacing  = 10;
+
+      var legend = svg.selectAll('.legend')
+                      .data(json.observations)
+                      .enter()
+                      .append('g')
+                      .attr('class', 'legend')
+                      .attr('transform', function(d, i) {
+                        var horz = width * 14 /15;
+                        var vert = height/10 + i * rectSize + i * spacing;
+                        return 'translate(' + horz + ',' + vert + ')';
+                      });
+
+      legend.append('rect')
+            .attr('width', rectSize)
+            .attr('height', rectSize)
+            .style('fill', function(d) {
+              if (d == 'none')  { return '#3c3c3c';}
+              if (d == 'yes')   { return '#5CB85C';}
+              if (d == 'no')    { return '#3894F0';}
+              if (d == 'error') { return '#D9534F';}
+              return '#bbb';
+            });
+
+      legend.append('text')
+            .attr('x', rectSize + spacing/2)
+            .attr('y', rectSize - spacing/2)
+            .text(function(d) { return d.toUpperCase(); });
+      }
 
   });
 

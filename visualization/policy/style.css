@@ -97,6 +97,10 @@ section>div>div {
   stroke: #D9534F;
 }
 
+.legend {
+  font-size: 12px;
+}
+
 #status .alert,
 #status .btn-group,
 #status button {
