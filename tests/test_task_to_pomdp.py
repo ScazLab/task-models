@@ -60,13 +60,13 @@ class TestLeafToPOMDP(TestCase):
     def test_update_R_stays_in_range(self):
         R0 = np.random.random((7, 8, 8, 4))
         R = R0.copy()
-        self.l2p.update_R(R, 0, 2, 4, list(range(7)))
+        self.l2p.update_R(R, 0, 2, 4, list(range(7)), 0)
         R0[:, 4:7, :, :] = R[:, 4:7, :, :]
         np.testing.assert_allclose(R, R0)
 
     def test_updated_R_values(self):
         R = np.zeros((7, 8, 8, 4))
-        self.l2p.update_R(R, 0, 2, 4, list(range(2, 9)))
+        self.l2p.update_R(R, 0, 2, 4, list(range(2, 9)), 0)
         np.testing.assert_allclose(R[:, 4:7, :, :], np.broadcast_to(
             np.array([[2, 2, 2], [3, 3, 3], [4, 4, 2], [5, 5, 5], [6, 6, 6],
                       [7, 7, 7], [8, 8, 8]]
@@ -121,13 +121,13 @@ class TestSequenceToPOMDP(TestCase):
     def test_update_R_stays_in_range(self):
         R0 = np.random.random((11, 10, 10, 4))
         R = R0.copy()
-        self.s2p.update_R(R, 0, 2, 3, list(range(1, 12)))
+        self.s2p.update_R(R, 0, 2, 3, list(range(1, 12)), 0)
         R0[:, 3:9, :, :] = R[:, 3:9, :, :]
         np.testing.assert_allclose(R, R0)
 
     def test_updated_R_values(self):
         R = np.zeros((11, 10, 10, 4))
-        self.s2p.update_R(R, 0, 2, 3, [1, 2, 5, 2, 2, 2, 4, 2, 2, 2, 7])
+        self.s2p.update_R(R, 0, 2, 3, [1, 2, 5, 2, 2, 2, 4, 2, 2, 2, 7], 0)
         correct = np.broadcast_to(
             np.array([[1] * 6, [2] * 6, [5, 5, 2, 5, 5, 5], [2] * 6,
                       [2] * 6, [2] * 6, [4, 4, 4, 4, 4, 3], [2] * 6,
@@ -138,7 +138,7 @@ class TestSequenceToPOMDP(TestCase):
 
 class TestHTM2POMDP(TestCase):
     def setUp(self):
-        self.h2p = HTMToPOMDP(1., 2.)
+        self.h2p = HTMToPOMDP(1., 2., 1.)
 
     def test_leaf_to_pomdp(self):
         task = HierarchicalTask(root=LeafCombination(
@@ -204,10 +204,10 @@ class TestHTM2POMDP(TestCase):
                       ])
         np.testing.assert_array_equal(O, p.O)
         R = -np.broadcast_to(np.array([[1, 1, 1, 0],
-                                       [5, 5, 2, 1],
-                                       [2, 2, 2, 1],
-                                       [2, 2, 2, 1],
-                                       [2, 2, 2, 1],
+                                       [6, 6, 3, 1],
+                                       [3, 3, 3, 1],
+                                       [3, 3, 3, 1],
+                                       [3, 3, 3, 1],
                                        ]
                                       )[:, :, None, None],
                              (5, 4, 4, 4))
@@ -381,14 +381,14 @@ class TestHTM2POMDP(TestCase):
             ])
         np.testing.assert_array_equal(O, p.O)
         R = -np.broadcast_to(np.array([[1] * 6 + [0],
-                                       [5, 5, 2, 5, 5, 5, 1],
-                                       [2] * 6 + [1],
-                                       [2] * 6 + [1],
-                                       [2] * 6 + [1],
-                                       [4, 4, 4, 4, 4, 3, 1],
-                                       [2] * 6 + [1],
-                                       [2] * 6 + [1],
-                                       [2] * 6 + [1]]
+                                       [6, 6, 3, 6, 6, 6, 1],
+                                       [3] * 6 + [1],
+                                       [3] * 6 + [1],
+                                       [3] * 6 + [1],
+                                       [5, 5, 5, 5, 5, 4, 1],
+                                       [3] * 6 + [1],
+                                       [3] * 6 + [1],
+                                       [3] * 6 + [1]]
                                       )[:, :, None, None],
                              (9, 7, 7, 4))
         np.testing.assert_array_equal(R, p.R)

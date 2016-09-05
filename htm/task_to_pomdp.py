@@ -71,7 +71,7 @@ class _NodeToPOMDP(object):
         """
         raise NotImplementedError
 
-    def update_R(self, R, a_wait, a_start, s_start, durations):
+    def update_R(self, R, a_wait, a_start, s_start, durations, intr_cost):
         """Fills relevant parts of R.
         Every node is responsible for filling R[:, [one own's states], :, :].
         R is assumed to be initialized with zeros.
@@ -178,13 +178,15 @@ class _LeafToPOMDP(_NodeToPOMDP):
         O[a_af, :, :] = self.o_no
         O[a_af, s_after, :] = self.o_yes
 
-    def update_R(self, R, a_wait, a_start, s_start, durations):
+    def update_R(self, R, a_wait, a_start, s_start, durations, intr_cost):
         # Note: every node is responsible for filling
         # R[:, [one own's states], :, :]
         # R is initialized with zeros.
         R[:, s_start:s_start+3, :, :] = np.asarray(durations)[
             :, np.newaxis, np.newaxis, np.newaxis]
-        R[a_start + self._phy, s_start + self._r, :, :] = self.t_rob
+        R[1:, s_start:s_start+3, :, :] += intr_cost
+        R[a_start + self._phy, s_start + self._r, :, :] = \
+            self.t_rob + intr_cost
 
 
 def _start_indices_from(l):
@@ -244,10 +246,10 @@ class _SequenceToPOMDP(_NodeToPOMDP):
                        s_start + self.s_indices[i], next_inits[i],
                        s_before + cs_before, s_after + cs_after)
 
-    def update_R(self, R, a_wait, a_start, s_start, durations):
+    def update_R(self, R, a_wait, a_start, s_start, durations, intr_cost):
         for i, c in enumerate(self.children):
             c.update_R(R, a_wait, a_start + self.a_indices[i],
-                       s_start + self.s_indices[i], durations)
+                       s_start + self.s_indices[i], durations, intr_cost)
 
 
 class _AlternativesToPOMDP(_NodeToPOMDP):
@@ -299,9 +301,11 @@ class HTMToPOMDP:
     wait = 0
     end = -1
 
-    def __init__(self, t_wait, t_com):
+    def __init__(self, t_wait, t_com, intr_cost=0):
         self.t_wait = t_wait
         self.t_com = t_com
+        # Intrinsic costs of communication or action (in addition to duration)
+        self.c_intr = intr_cost
 
     def update_T_end(self, T):
         T[:, self.end, self.end] = 1.  # end stats is stable
@@ -310,8 +314,8 @@ class HTMToPOMDP:
         O[self.wait, :, :] = _NodeToPOMDP.o_none
 
     def update_R_end(self, R):
-        R[:, -1, ...] = 1.          # end state has cost 1
-        R[self.wait, -1, ...] = 0.  # except on wait
+        R[:, -1, ...] = self.c_intr  # end state has cost 1
+        R[self.wait, -1, ...] = 0.   # except on wait
 
     def task_to_pomdp(self, task):
         n2p = _NodeToPOMDP.from_node(task.root, self.t_com)
@@ -331,7 +335,7 @@ class HTMToPOMDP:
         n2p.update_O(O, 1, 0, [end], [], [end])
         self.update_O_wait(O)
         R = np.zeros((n_a, n_s, n_s, n_o))
-        n2p.update_R(R, self.wait, 1, 0, durations)
+        n2p.update_R(R, self.wait, 1, 0, durations, self.c_intr)
         self.update_R_end(R)
         return POMDP(T, O, R, start, discount=1., states=states,
                      actions=actions, observations=n2p.observations,
