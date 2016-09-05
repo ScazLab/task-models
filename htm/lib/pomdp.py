@@ -292,7 +292,7 @@ class POMDP:
             args.extend(['-o', name, '-pomdp', pomdp_file])
             subprocess.check_call(
                 [self._solver_path] + args, cwd=tmpdir,
-                stdout=subprocess.PIPE)
+                stdout=subprocess.DEVNULL)
             # TODO: add timeout=timeout for python 3
             # Note: actually timeout + 1 should be used to give a margin for
             # pomdp-solve for parsing and cleaning.
