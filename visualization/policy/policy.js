@@ -1,5 +1,5 @@
 
-var jsonfile = "policy2.json";
+var jsonfile = "policy.json";
 
 loadpolicy(jsonfile);
 
@@ -197,7 +197,7 @@ function loadpolicy(file)
       legend.append('text')
             .attr('x', rectSize + spacing/2)
             .attr('y', rectSize - spacing/2)
-            .text(function(d) { return d.toUpperCase(); });
+            .text(function(d) { return d; });
       }
 
   });

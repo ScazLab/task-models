@@ -32,7 +32,8 @@ h4,
 h5,
 h6,
 #get_file,
-.title.filename {
+.title.filename,
+.legend {
   text-transform: uppercase;
   font-family: Montserrat,"Helvetica Neue",Helvetica,Arial,sans-serif;
   font-weight: 100;
@@ -98,7 +99,8 @@ section>div>div {
 }
 
 .legend {
-  font-size: 12px;
+  font-size: .8rem;
+  font-weight: 300;
 }
 
 #status .alert,
