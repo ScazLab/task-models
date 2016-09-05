@@ -81,11 +81,19 @@ section>div>div {
   stroke-width: 2px;
 }
 
+.link.none {
+  stroke: #3c3c3c;
+}
+
 .link.yes {
   stroke: #5CB85C;
 }
 
 .link.no {
+  stroke: #3894F0;
+}
+
+.link.error {
   stroke: #D9534F;
 }
 

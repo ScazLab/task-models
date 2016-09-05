@@ -157,18 +157,18 @@ function loadpolicy(file)
     // Arrowhead markers for the links (one for each color)
     svg.append("defs").append("marker")
         .attr("id", "arrowhead_none")
-        .attr("refX", 6 + 3) /*must be smarter way to calculate shift*/
+        .attr("refX", 6 + 1) /*must be smarter way to calculate shift*/
         .attr("refY", 2)
         .attr("markerWidth", 8)
         .attr("markerHeight", 4)
         .attr("orient", "auto")
-        .style("fill", "#ccc")
+        .style("fill", "#3c3c3c")
         .append("path")
         .attr("d", "M 0,0 V 4 L6,2 Z"); //this is actual shape for arrowhead
 
     svg.append("defs").append("marker")
         .attr("id", "arrowhead_yes")
-        .attr("refX", 6 + 3) /*must be smarter way to calculate shift*/
+        .attr("refX", 6 + 1) /*must be smarter way to calculate shift*/
         .attr("refY", 2)
         .attr("markerWidth", 8)
         .attr("markerHeight", 4)
@@ -179,7 +179,18 @@ function loadpolicy(file)
 
     svg.append("defs").append("marker")
         .attr("id", "arrowhead_no")
-        .attr("refX", 6 + 3) /*must be smarter way to calculate shift*/
+        .attr("refX", 6 + 1) /*must be smarter way to calculate shift*/
+        .attr("refY", 2)
+        .attr("markerWidth", 8)
+        .attr("markerHeight", 4)
+        .attr("orient", "auto")
+        .style("fill", "#3894F0")
+        .append("path")
+        .attr("d", "M 0,0 V 4 L6,2 Z"); //this is actual shape for arrowhead
+
+    svg.append("defs").append("marker")
+        .attr("id", "arrowhead_error")
+        .attr("refX", 6 + 1) /*must be smarter way to calculate shift*/
         .attr("refY", 2)
         .attr("markerWidth", 8)
         .attr("markerHeight", 4)
