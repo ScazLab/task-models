@@ -184,7 +184,8 @@ class _LeafToPOMDP(_NodeToPOMDP):
         # R is initialized with zeros.
         R[:, s_start:s_start+3, :, :] = np.asarray(durations)[
             :, np.newaxis, np.newaxis, np.newaxis]
-        R[1:, s_start:s_start+3, :, :] += intr_cost
+        R[:a_wait, s_start:s_start+3, :, :] += intr_cost
+        R[(a_wait + 1):, s_start:s_start+3, :, :] += intr_cost
         R[a_start + self._phy, s_start + self._r, :, :] = \
             self.t_rob + intr_cost
 
