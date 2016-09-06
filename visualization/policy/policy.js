@@ -1,10 +1,12 @@
 
-var jsonfile = "legs.json";
-
-loadpolicy(jsonfile);
+var defaultjsonfile = "legs.json";
+loadpolicy("");
 
 function loadpolicy(file)
 {
+  if (file == "") { file = defaultjsonfile;}
+  else            { defaultjsonfile = file;};
+
   var svg = d3.select("svg"),
       width  = svg.attr("width"),
       height = svg.attr("height");

@@ -20,15 +20,15 @@
 <section>
     <div class="container">
         <div class="row" style="text-align: center;">
-            <!-- <input type="button" id="get_file" value="Select custom file" class="btn btn-info"> -->
-
-            <!-- <div id="customfileupload">Select a file</div> -->
-            <div class="input-group" style="max-width: 1000px; margin: auto;">
+            <div class="col-md-10 input-group" style="max-width: 1000px; margin: auto;">
                 <span class="input-group-btn">
                     <input class="btn btn-info" type="button" value="Select custom file*" id="get_file">
                     <input type="file" id="my_file">
                 </span>
                 <div class="form-control" id="customfileupload">[*] the target file should be in the same folder of the original</div>
+            </div>
+            <div class="col-md-1 text center">
+                <a id="policy-refresh" href="#" class="btn btn-secondary"><i class="fa fa-fw fa-refresh"></i></a>
             </div>
         </div>
     </div>
@@ -61,10 +61,18 @@
 
     $('input[type=file]').change(function (e) {
         $('#customfileupload').html($(this).val());
+        loadnewpolicy($(this).val());
+    });
+
+    document.getElementById('policy-refresh').onclick = function(e) {
+        loadnewpolicy("");
+    }
+
+    function loadnewpolicy(file) {
         var svg = d3.select("svg");
         svg.selectAll("*").remove();
-        loadpolicy($(this).val());
-    });
+        loadpolicy(file);
+    };
 </script>
 
 <script type="text/javascript">
