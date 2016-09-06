@@ -38,8 +38,9 @@ chair_task = HierarchicalTask(root=SequentialCombination(
 
 T_WAIT = 1.
 T_COMM = 2.
+C_INTR = 1.
 
-h2p = HTMToPOMDP(T_WAIT, T_COMM)
+h2p = HTMToPOMDP(T_WAIT, T_COMM, C_INTR)
 
 p = h2p.task_to_pomdp(HierarchicalTask(root=mount_legs))
 p.dump_to('/tmp/', 'legs')
@@ -47,7 +48,7 @@ p.dump_to('/tmp/', 'legs')
 #p = h2p.task_to_pomdp(chair_task)
 #p.dump_to('/tmp/', 'chair')
 #
-gp = p.solve(method='grid', n_iterations=1100)
+gp = p.solve(method='grid', n_iterations=1000)
 print(gp.to_json())
 
 from htm.plot import plot_beliefs
