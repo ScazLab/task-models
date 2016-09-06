@@ -290,12 +290,10 @@ class POMDP:
         with TemporaryDirectory() as tmpdir:
             pomdp_file = self.dump_to(tmpdir, name)
             args.extend(['-o', name, '-pomdp', pomdp_file])
-            subprocess.check_call(
-                [self._solver_path] + args, cwd=tmpdir,
-                stdout=subprocess.DEVNULL)
-            # TODO: add timeout=timeout for python 3
-            # Note: actually timeout + 1 should be used to give a margin for
-            # pomdp-solve for parsing and cleaning.
+            with open(os.devnull, 'w') as DEVNULL:
+                subprocess.check_call(
+                    [self._solver_path] + args, cwd=tmpdir,
+                    stdout=DEVNULL)
             return self.load_policy_from(tmpdir, name)
 
     def load_policy_from(self, path, name):
