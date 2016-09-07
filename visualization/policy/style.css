@@ -46,6 +46,10 @@ section>div>div {
   padding-top: 20px;
 }
 
+.btn-group .btn {
+  margin-bottom: 0;
+}
+
 #svg-container svg {
   display: block;
   margin: auto;
@@ -61,12 +65,19 @@ section>div>div {
   font-weight: 300;
 }
 
+.gnode {
+  cursor: pointer;
+}
+
+.gnode:active {
+  cursor: move;
+}
+
 .gnode text {
   fill: #3c3c3c;
 }
 
 .node {
-  cursor: pointer;
   fill: #3c3c3c;
 }
 

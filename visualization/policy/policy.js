@@ -1,13 +1,16 @@
 
 var defaultjsonfile = "test.json";
+var show_errors = true;
 loadpolicy("");
 
-function loadpolicy(file)
+function loadpolicy(file, errors)
 {
+  if (typeof(errors)==='undefined') { errors = show_errors; }
+  else                              { show_errors = errors; }
   if (file == "") { file = defaultjsonfile;}
   else            { defaultjsonfile = file;};
 
-  console.log('Loading file: '+file);
+  console.log('Loading file: '+file+' Show Errors: '+errors);
 
   var svg = d3.select("svg"),
       width  = svg.attr("width"),
@@ -67,9 +70,19 @@ function loadpolicy(file)
       {
         if (json.transitions[i][j] != null)
         {
-          links.push({source: nodes[i].name,
-                      target: nodes[json.transitions[i][j]].name,
-                      obs:    json.observations[j]})
+          if (show_errors == false) {
+            if (json.observations[j] != "error") {
+              links.push({source: nodes[i].name,
+                          target: nodes[json.transitions[i][j]].name,
+                          obs:    json.observations[j]})
+            }
+          }
+          else
+          {
+            links.push({source: nodes[i].name,
+                        target: nodes[json.transitions[i][j]].name,
+                        obs:    json.observations[j]})
+          }
         }
       }
     }
