@@ -1,11 +1,13 @@
 
-var defaultjsonfile = "legs.json";
+var defaultjsonfile = "test.json";
 loadpolicy("");
 
 function loadpolicy(file)
 {
   if (file == "") { file = defaultjsonfile;}
   else            { defaultjsonfile = file;};
+
+  console.log('Loading file: '+file);
 
   var svg = d3.select("svg"),
       width  = svg.attr("width"),
@@ -42,8 +44,13 @@ function loadpolicy(file)
     for (var i = 0; i < json.actions.length; i++)
     {
       nodes[i] = {name: '['+i+'] '+ json.actions[i].replace('intention','int')
-                                                   .replace('phy-','P ')
-                                                   .replace('com-','C '), id: i};
+                                                   .replace('phy','P ')
+                                                   .replace('com-','C ')
+                                                   .replace('-get',' Get')
+                                                   .replace('-snap',' Snap')
+                                                   .replace('-left-leg','LL')
+                                                   .replace('-right-leg','RL')
+                                                   .replace('-central-frame','CF'), id: i};
 
       if (i == json.initial) {
         nodes[i].initial = true;
@@ -81,7 +88,6 @@ function loadpolicy(file)
 
     var force = d3.layout.force()
         .size([width, height])
-        .linkDistance(height/3)
         .linkStrength(0.2)
         .friction(0.85)
         .charge(-1000);
@@ -120,9 +126,12 @@ function loadpolicy(file)
 
     force.nodes(nodes)
          .links(links)
-         .start();
+         .linkDistance(function(d) {
+              return d.obs == 'error' ? height*2/3 : height/3;
+            });
 
-    force.on('tick', tick);
+    force.on('tick', tick)
+         .start();
 
     add_legend();
 
