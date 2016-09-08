@@ -9,6 +9,10 @@ def concatenate(lists):
     return sum(lists, [])
 
 
+def uniform(n):
+    return np.ones((n)) * 1. / n
+
+
 class CollaborativeAction(AbstractAction):
     """Collaborative action that can be achieved either by robot or human.
 
@@ -162,7 +166,7 @@ class _LeafToPOMDP(_NodeToPOMDP):
         if self.deterministic:
             T[:, s_h, s_h] = 1.
             T[a_af, s_h, s_h] = 0.
-            T[a_af, s_h, s_next] = 1.
+            T[a_af, s_h, s_next] = uniform(len(s_next))
         else:
             p_h_not_finish = self._h_probas_not_finished_from_d(
                     np.asarray(durations))
@@ -282,7 +286,7 @@ class _AlternativesToPOMDP(_ParentNodeToPOMDP):
     @property
     def start(self):
         nc = len(self.children)
-        ps = np.ones((nc)) * 1. / nc  # Use uniform probability by default
+        ps = uniform(nc)  # Use uniform probability by default
         # TODO: add argument to AlternativeCombination for other probabilities
         return concatenate([[x * p for x in c.start]
                             for c, p in zip(self.children, ps)])
