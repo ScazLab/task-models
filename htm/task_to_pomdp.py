@@ -182,21 +182,46 @@ class _LeafToPOMDP(_NodeToPOMDP):
         a_ai = a_start + self._ask_intention
         a_ti = a_start + self._tell_intention
         a_af = a_start + self._ask_finished
+        s_i = s_start + self._init
         s_h = s_start + self._h
         s_r = s_start + self._r
+        # Physical is in error everywhere a part when
+        # ending up in the final state, where there is no observation
         O[a_phy, :, :] = self.o_err
         O[a_phy, s_next, :] = self.o_none
-        O[a_ai, :, :] = self.o_none
+        if 'structured' in self.flags:
+            # You get an error by asking for intention everywhere but
+            # when ending up in the human state or the robot state (yes/no)
+            O[a_ai, :, :] = self.o_err
+        else:
+            O[a_ai, :, :] = self.o_none
         O[a_ai, s_h, :] = self.o_yes
         O[a_ai, s_r, :] = self.o_no
-        O[a_ti, :, :] = self.o_none
-        O[a_af, :, :] = self.o_no
+        if 'structured' in self.flags:
+            # Tell intentions does not observe anything if it ends
+            # in the correct state, otherwise an error is observed
+            O[a_ti, :, :] = self.o_err
+            O[a_ti, s_r, :] = self.o_none
+        else:
+            O[a_ti, :, :] = self.o_none
         if 'deterministic' in self.flags:
+            # Ask finished returns a NO observation if we end up
+            # in the human state, otherwise an error is observed
+            O[a_af, :, :] = self.o_err
+            O[a_af, s_h, :] = self.o_no
             O[a_af, s_next, :] = self.o_yes
         else:
+            O[a_af, :, :] = self.o_no
             O[a_af, s_after, :] = self.o_yes
 
     def update_R(self, R, a_wait, a_start, s_start, durations, intr_cost):
+        a_phy = a_start + self._phy
+        a_ai = a_start + self._ask_intention
+        a_ti = a_start + self._tell_intention
+        a_af = a_start + self._ask_finished
+        s_i = s_start + self._init
+        s_h = s_start + self._h
+        s_r = s_start + self._r
         # Note: every node is responsible for filling
         # R[:, [one own's states], :, :]
         # R is initialized with zeros.
@@ -206,8 +231,11 @@ class _LeafToPOMDP(_NodeToPOMDP):
         R[:a_wait, s_start:s_start+3, :, :] += intr_cost
         R[(a_wait + 1):, s_start:s_start+3, :, :] += intr_cost
         # Fix the duration cost for the non-failed physical action
-        R[a_start + self._phy, s_start + self._r, :, :] = \
-            self.t_rob + intr_cost
+        R[a_phy, s_r, :, :] = self.t_rob + intr_cost
+        if 'structured' in self.flags:
+            R[a_ti, :, :, :] = 100
+            R[a_ti, s_i, s_h, :] = self.t_com
+            R[a_ti, s_i, s_r, :] = self.t_com
 
 
 def _start_indices_from(l):
@@ -310,14 +338,16 @@ class HTMToPOMDP:
     wait = 0
     end = -1
 
-    def __init__(self, t_wait, t_com, intr_cost=0, deterministic=False):
+    def __init__(self, t_wait, t_com, intr_cost=0, deterministic=False, structured=False):
         self.t_wait = t_wait
         self.t_com = t_com
         # Intrinsic costs of communication or action (in addition to duration)
         self.c_intr = intr_cost
         self.flags = set()
         if deterministic:
-            self.flags.append(deterministic)
+            self.flags.add('deterministic')
+        if structured:
+            self.flags.add('structured')
 
     def update_T_end(self, T):
         T[:, self.end, self.end] = 1.  # end stats is stable
