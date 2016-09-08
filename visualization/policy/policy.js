@@ -1,26 +1,26 @@
 
-var defaultjsonfile = "test.json";
+var defaultjsonfile = 'test.json';
 var show_errors = true;
-loadpolicy("");
+loadpolicy('');
 
 function loadpolicy(file, errors)
 {
   if (typeof(errors)==='undefined') { errors = show_errors; }
   else                              { show_errors = errors; }
-  if (file == "") { file = defaultjsonfile;}
+  if (file == '') { file = defaultjsonfile;}
   else            { defaultjsonfile = file;};
 
   console.log('Loading file: '+file+' Show Errors: '+errors);
 
-  var svg = d3.select("svg"),
-      width  = svg.attr("width"),
-      height = svg.attr("height");
+  var svg = d3.select('svg'),
+      width  = svg.attr('width'),
+      height = svg.attr('height');
 
-  svg.call(d3.behavior.zoom().on("zoom", redraw));
+  svg.call(d3.behavior.zoom().on('zoom', redraw));
 
   svg.append('text')
-     .attr("dx", width/2)
-     .attr("dy", height/15)
+     .attr('dx', width/2)
+     .attr('dy', height/15)
      .attr('class', 'title filename')
      .attr('text-anchor','middle')
      .text(file);
@@ -31,9 +31,9 @@ function loadpolicy(file, errors)
 
   function redraw()
   {
-    vis.attr("transform",
-             "translate(" + d3.event.translate + ")"
-              + " scale(" + d3.event.scale + ")");
+    vis.attr('transform',
+             'translate(' + d3.event.translate + ')'
+              + ' scale(' + d3.event.scale + ')');
   }
 
   d3.json('json/'+file, function(error, json)
@@ -79,7 +79,7 @@ function loadpolicy(file, errors)
         if (json.transitions[i][j] != null)
         {
           if (show_errors == false) {
-            if (json.observations[j] != "error") {
+            if (json.observations[j] != 'error') {
               links.push({source: nodes[i].name,
                           target: nodes[json.transitions[i][j]].name,
                           obs:    json.observations[j]})
@@ -114,9 +114,9 @@ function loadpolicy(file, errors)
         .charge(-1000);
 
     var drag = force.drag()
-                    .on("dragstart", dragstart)
-                    .on("drag", dragging)
-                    .on("dragend", dragend);
+                    .on('dragstart', dragstart)
+                    .on('drag', dragging)
+                    .on('dragend', dragend);
 
     // Links are just SVG lines, and we'll let the force layout
     // take care of their coordinates.
@@ -139,8 +139,8 @@ function loadpolicy(file, errors)
                     .attr('r', function(d) { if (d.initial) { return 8; } return 4;});
 
     var label = gnode.append('text')
-                      .attr("dx", function(d) { return 0;})
-                      .attr("dy", function(d) { return "-0.9em";})
+                      .attr('dx', function(d) { return 0;})
+                      .attr('dy', function(d) { return '-0.9em';})
                       .attr('class', function(d) { if (d.initial) { return 'nodetext initial'; } return 'nodetext ';})
                       .attr('text-anchor','middle')
                       .text(function(d) { return d.name;});
@@ -161,19 +161,19 @@ function loadpolicy(file, errors)
       link.attr('d', function(d)
         {
           if (d.point[0].x==d.point[2].x && d.point[0].y==d.point[2].y){
-            return "M" + d.point[0].x + "," + d.point[0].y
-                 + "C" + d.point[1].x + "," + d.point[0].y
-                 + " " + d.point[0].x + "," + d.point[1].y
-                 + " " + d.point[2].x + "," + d.point[2].y;
+            return 'M' + d.point[0].x + ',' + d.point[0].y
+                 + 'C' + d.point[1].x + ',' + d.point[0].y
+                 + ' ' + d.point[0].x + ',' + d.point[1].y
+                 + ' ' + d.point[2].x + ',' + d.point[2].y;
           }
 
-          return "M" + d.point[0].x + "," + d.point[0].y
-               + "S" + d.point[1].x + "," + d.point[1].y
-               + " " + d.point[2].x + "," + d.point[2].y;
+          return 'M' + d.point[0].x + ',' + d.point[0].y
+               + 'S' + d.point[1].x + ',' + d.point[1].y
+               + ' ' + d.point[2].x + ',' + d.point[2].y;
         }
       )
 
-      gnode.attr("transform", function(d)
+      gnode.attr('transform', function(d)
       {
         return 'translate(' + [d.x, d.y] + ')';
       });
@@ -239,15 +239,15 @@ function loadpolicy(file, errors)
   function print_error(text) {
       console.error(text);
       svg.append('text')
-         .attr("dx", width/2)
-         .attr("dy", height/2)
+         .attr('dx', width/2)
+         .attr('dy', height/2)
          .attr('class', 'message error')
          .attr('text-anchor','middle')
          .html('ERROR!');
 
       svg.append('text')
-         .attr("dx", width/2)
-         .attr("dy", height/2+60)
+         .attr('dx', width/2)
+         .attr('dy', height/2+60)
          .attr('class', 'message info')
          .attr('text-anchor','middle')
          .html(text);
@@ -256,49 +256,49 @@ function loadpolicy(file, errors)
   function appendmarkers()
   {
     // Arrowhead markers for the links (one for each color)
-    vis.append("defs").append("marker")
-        .attr("id", "arrowhead_none")
-        .attr("refX", 6 + 1) /*must be smarter way to calculate shift*/
-        .attr("refY", 2)
-        .attr("markerWidth", 8)
-        .attr("markerHeight", 4)
-        .attr("orient", "auto")
-        .style("fill", "#3c3c3c")
-        .append("path")
-        .attr("d", "M 0,0 V 4 L6,2 Z"); //this is actual shape for arrowhead
+    vis.append('defs').append('marker')
+        .attr('id', 'arrowhead_none')
+        .attr('refX', 6 + 1) /*must be smarter way to calculate shift*/
+        .attr('refY', 2)
+        .attr('markerWidth', 8)
+        .attr('markerHeight', 4)
+        .attr('orient', 'auto')
+        .style('fill', '#3c3c3c')
+        .append('path')
+        .attr('d', 'M 0,0 V 4 L6,2 Z'); //this is actual shape for arrowhead
 
-    vis.append("defs").append("marker")
-        .attr("id", "arrowhead_yes")
-        .attr("refX", 6 + 1) /*must be smarter way to calculate shift*/
-        .attr("refY", 2)
-        .attr("markerWidth", 8)
-        .attr("markerHeight", 4)
-        .attr("orient", "auto")
-        .style("fill", "#5CB85C")
-        .append("path")
-        .attr("d", "M 0,0 V 4 L6,2 Z"); //this is actual shape for arrowhead
+    vis.append('defs').append('marker')
+        .attr('id', 'arrowhead_yes')
+        .attr('refX', 6 + 1) /*must be smarter way to calculate shift*/
+        .attr('refY', 2)
+        .attr('markerWidth', 8)
+        .attr('markerHeight', 4)
+        .attr('orient', 'auto')
+        .style('fill', '#5CB85C')
+        .append('path')
+        .attr('d', 'M 0,0 V 4 L6,2 Z'); //this is actual shape for arrowhead
 
-    vis.append("defs").append("marker")
-        .attr("id", "arrowhead_no")
-        .attr("refX", 6 + 1) /*must be smarter way to calculate shift*/
-        .attr("refY", 2)
-        .attr("markerWidth", 8)
-        .attr("markerHeight", 4)
-        .attr("orient", "auto")
-        .style("fill", "#3894F0")
-        .append("path")
-        .attr("d", "M 0,0 V 4 L6,2 Z"); //this is actual shape for arrowhead
+    vis.append('defs').append('marker')
+        .attr('id', 'arrowhead_no')
+        .attr('refX', 6 + 1) /*must be smarter way to calculate shift*/
+        .attr('refY', 2)
+        .attr('markerWidth', 8)
+        .attr('markerHeight', 4)
+        .attr('orient', 'auto')
+        .style('fill', '#3894F0')
+        .append('path')
+        .attr('d', 'M 0,0 V 4 L6,2 Z'); //this is actual shape for arrowhead
 
-    vis.append("defs").append("marker")
-        .attr("id", "arrowhead_error")
-        .attr("refX", 6 + 1) /*must be smarter way to calculate shift*/
-        .attr("refY", 2)
-        .attr("markerWidth", 8)
-        .attr("markerHeight", 4)
-        .attr("orient", "auto")
-        .style("fill", "#D9534F")
-        .append("path")
-        .attr("d", "M 0,0 V 4 L6,2 Z"); //this is actual shape for arrowhead
+    vis.append('defs').append('marker')
+        .attr('id', 'arrowhead_error')
+        .attr('refX', 6 + 1) /*must be smarter way to calculate shift*/
+        .attr('refY', 2)
+        .attr('markerWidth', 8)
+        .attr('markerHeight', 4)
+        .attr('orient', 'auto')
+        .style('fill', '#D9534F')
+        .append('path')
+        .attr('d', 'M 0,0 V 4 L6,2 Z'); //this is actual shape for arrowhead
   };
 
 };
