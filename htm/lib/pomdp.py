@@ -333,13 +333,20 @@ class GraphPolicy:
     def next(self, current, observation):
         return self.transitions[current, self.observations.index(observation)]
 
+    def to_dict(self):
+        return {'actions': self.actions,
+                'observations': self.observations,
+                'transitions': self.transitions.tolist(),
+                'values': self.values.tolist(),
+                'initial': str(self.init),
+                }
+
     def to_json(self, indent=None):
-        return json.dumps({'actions': self.actions,
-                           'observations': self.observations,
-                           'transitions': self.transitions.tolist(),
-                           'values': self.values.tolist(),
-                           'initial': str(self.init),
-                           }, indent=indent)
+        return json.dumps(self.to_dict(), indent=indent)
+
+    def dump_to(self, path, indent=None):
+        with open(path, 'w') as fp:
+            json.dump(self.to_dict(), fp, indent=indent)
 
 
 class GraphPolicyRunner(object):
