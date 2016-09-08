@@ -20,7 +20,7 @@ class TestLeafToPOMDP(TestCase):
     def setUp(self):
         leaf = LeafCombination(
             CollaborativeAction('Do it', (3., 2., 5.), human_probability=.3))
-        self.l2p = _NodeToPOMDP.from_node(leaf, 2., False)
+        self.l2p = _NodeToPOMDP.from_node(leaf, 2.)
 
     def test_times(self):
         self.assertEqual(self.l2p.t_hum, 3.)
@@ -131,7 +131,7 @@ class TestSequenceToPOMDP(TestParentToPOMDP, TestCase):
         l2 = LeafCombination(CollaborativeAction('Do b', (2., 3., 4.),
                                                  human_probability=.7))
         seq = SequentialCombination([l1, l2], name='Do all')
-        self.n2p = _NodeToPOMDP.from_node(seq, 2., False)
+        self.n2p = _NodeToPOMDP.from_node(seq, 2.)
 
     def test_init(self):
         self.assertEqual(self.n2p.init, [0])
@@ -148,7 +148,7 @@ class TestAlternativeToPOMDP(TestParentToPOMDP, TestCase):
         l2 = LeafCombination(CollaborativeAction('Do b', (2., 3., 4.),
                                                  human_probability=.7))
         alt = AlternativeCombination([l1, l2], name='Do all')
-        self.n2p = _NodeToPOMDP.from_node(alt, 2., False)
+        self.n2p = _NodeToPOMDP.from_node(alt, 2.)
 
     def test_init(self):
         self.assertEqual(self.n2p.init, [0, 3])

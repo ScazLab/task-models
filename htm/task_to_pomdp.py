@@ -87,13 +87,13 @@ class _NodeToPOMDP(object):
         raise NotImplementedError
 
     @staticmethod
-    def from_node(node, t_com, deterministic):
+    def from_node(node, t_com, flags=[]):
         if isinstance(node, LeafCombination):
-            return _LeafToPOMDP(node, t_com, deterministic)
+            return _LeafToPOMDP(node, t_com, flags)
         elif isinstance(node, SequentialCombination):
-            return _SequenceToPOMDP(node, t_com, deterministic)
+            return _SequenceToPOMDP(node, t_com, flags)
         elif isinstance(node, AlternativeCombination):
-            return _AlternativesToPOMDP(node, t_com, deterministic)
+            return _AlternativesToPOMDP(node, t_com, flags)
         else:
             raise ValueError('Unkown combination: ' + type(node))
 
@@ -113,7 +113,7 @@ class _LeafToPOMDP(_NodeToPOMDP):
     act = 'phy'
     com = 'com'
 
-    def __init__(self, leaf, t_com, deterministic):
+    def __init__(self, leaf, t_com, flags):
         self.t_com = t_com
         self.leaf = leaf
         # states: before (H: human intend act), before (R: robot, human do not
@@ -125,7 +125,7 @@ class _LeafToPOMDP(_NodeToPOMDP):
                         for n in [self.act, self.com + '-ask-intention',
                                   self.com + '-tell-intention',
                                   self.com + '-ask-finished']]
-        self.deterministic = deterministic
+        self.flags = flags
 
     @property
     def t_hum(self):
@@ -163,7 +163,7 @@ class _LeafToPOMDP(_NodeToPOMDP):
         T[a_ai, s_i, s_h] = 1.
         T[a_ti, s_i, s_i] = 0.
         T[a_ti, s_i, s_r] = 1.
-        if self.deterministic:
+        if 'deterministic' in self.flags:
             T[:, s_h, s_h] = 1.
             T[a_af, s_h, s_h] = 0.
             T[a_af, s_h, s_next] = uniform(len(s_next))
@@ -191,7 +191,7 @@ class _LeafToPOMDP(_NodeToPOMDP):
         O[a_ai, s_r, :] = self.o_no
         O[a_ti, :, :] = self.o_none
         O[a_af, :, :] = self.o_no
-        if self.deterministic:
+        if 'deterministic' in self.flags:
             O[a_af, s_next, :] = self.o_yes
         else:
             O[a_af, s_after, :] = self.o_yes
@@ -219,8 +219,9 @@ def _start_indices_from(l):
 
 class _ParentNodeToPOMDP(_NodeToPOMDP):
 
-    def __init__(self, node, t_com, deterministic):
-        self.children = [self.from_node(n, t_com, deterministic) for n in node.children]
+    def __init__(self, node, t_com, flags=[]):
+        self.children = [self.from_node(n, t_com, flags=flags)
+                         for n in node.children]
         child_states = [c.states for c in self.children]
         self.s_indices = _start_indices_from(child_states)
         self.states = concatenate(child_states)
@@ -314,7 +315,9 @@ class HTMToPOMDP:
         self.t_com = t_com
         # Intrinsic costs of communication or action (in addition to duration)
         self.c_intr = intr_cost
-        self.deterministic = deterministic
+        self.flags = set()
+        if deterministic:
+            self.flags.append(deterministic)
 
     def update_T_end(self, T):
         T[:, self.end, self.end] = 1.  # end stats is stable
@@ -327,7 +330,7 @@ class HTMToPOMDP:
         R[self.wait, -1, ...] = 0.   # except on wait
 
     def task_to_pomdp(self, task):
-        n2p = _NodeToPOMDP.from_node(task.root, self.t_com, self.deterministic)
+        n2p = _NodeToPOMDP.from_node(task.root, self.t_com, flags=self.flags)
         states = n2p.states + ['end']
         actions = ['wait'] + n2p.actions
         start = np.zeros(len(states))
