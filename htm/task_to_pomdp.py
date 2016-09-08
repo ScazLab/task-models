@@ -5,6 +5,10 @@ from htm.task import (AbstractAction, SequentialCombination,
                       AlternativeCombination, LeafCombination)
 
 
+def concatenate(lists):
+    return sum(lists, [])
+
+
 class CollaborativeAction(AbstractAction):
     """Collaborative action that can be achieved either by robot or human.
 
@@ -209,24 +213,32 @@ def _start_indices_from(l):
     return np.cumsum([0] + [len(x) for x in l[:-1]])
 
 
-class _SequenceToPOMDP(_NodeToPOMDP):
+class _ParentNodeToPOMDP(_NodeToPOMDP):
 
     def __init__(self, node, t_com, deterministic):
         self.children = [self.from_node(n, t_com, deterministic) for n in node.children]
         child_states = [c.states for c in self.children]
         self.s_indices = _start_indices_from(child_states)
-        self.states = sum(child_states, [])
+        self.states = concatenate(child_states)
         child_actions = [c.actions for c in self.children]
         self.a_indices = _start_indices_from(child_actions)
-        self.actions = sum(child_actions, [])
+        self.actions = concatenate(child_actions)
+
+    @property
+    def durations(self):
+        return concatenate([c.durations for c in self.children])
+
+    def update_R(self, R, a_wait, a_start, s_start, durations, intr_cost):
+        for i, c in enumerate(self.children):
+            c.update_R(R, a_wait, a_start + self.a_indices[i],
+                       s_start + self.s_indices[i], durations, intr_cost)
+
+
+class _SequenceToPOMDP(_ParentNodeToPOMDP):
 
     @property
     def init(self):
         return self.children[0].init
-
-    @property
-    def durations(self):
-        return sum([c.durations for c in self.children], [])
 
     @property
     def start(self):
@@ -253,60 +265,39 @@ class _SequenceToPOMDP(_NodeToPOMDP):
         states = [[self.s_indices[i] + j for j in range(len(c.states))]
                   for i, c in enumerate(self.children)]
         for i, c in enumerate(self.children):
-            cs_before = sum(states[:i], [])
-            cs_after = sum(states[i+1:], [])
+            cs_before = concatenate(states[:i])
+            cs_after = concatenate(states[i+1:])
             c.update_O(O, a_start + self.a_indices[i],
                        s_start + self.s_indices[i], next_inits[i],
                        s_before + cs_before, s_after + cs_after)
 
-    def update_R(self, R, a_wait, a_start, s_start, durations, intr_cost):
-        for i, c in enumerate(self.children):
-            c.update_R(R, a_wait, a_start + self.a_indices[i],
-                       s_start + self.s_indices[i], durations, intr_cost)
 
-
-class _AlternativesToPOMDP(_NodeToPOMDP):
-
-    init = None     # index of init states
-    start = None    # start probabilities
-    states = None   # state names
-    actions = None  # action names
+class _AlternativesToPOMDP(_ParentNodeToPOMDP):
 
     @property
-    def durations(self):
-        """List of durations for node actions.
+    def init(self):
+        return concatenate([[s + i for i in c.init]
+                            for c, s in zip(self.children, self.s_indices)])
 
-        Must include recovery time for erroneous physical actions.
-        """
-        raise NotImplementedError
+    @property
+    def start(self):
+        nc = len(self.children)
+        ps = np.ones((nc)) * 1. / nc  # Use uniform probability by default
+        # TODO: add argument to AlternativeCombination for other probabilities
+        return concatenate([[x * p for x in c.start]
+                            for c, p in zip(self.children, ps)])
 
     def update_T(self, T, a_wait, a_start, s_start, s_next, s_next_probas,
                  durations):
-        """Fills relevant parts of T.
-        Every node is responsible for filling T[:, [one own's states], :].
-        T is assumed to be initialized with zeros.
-        """
-        raise NotImplementedError
+        for i, c in enumerate(self.children):
+            c.update_T(T, a_wait, a_start + self.a_indices[i],
+                       s_start + self.s_indices[i], s_next, s_next_probas,
+                       durations)
 
     def update_O(self, O, a_start, s_start, s_next, s_before, s_after):
-        """Fills relevant parts of O.
-        Every node is responsible for filling O[:, [one own's states], :].
-        O is assumed to be initialized with zeros.
-        :param a_comm_before: list of indices
-            indices of communication act about actions that are a prerequisite
-            of current node (does not include current nodes actions).
-            i.e. questions to which answer 'yes'
-        :param a_comm_after: list of indices
-            indices other all other actions except those of current node
-        """
-        raise NotImplementedError
-
-    def update_R(self, R, a_wait, a_start, s_start, durations):
-        """Fills relevant parts of R.
-        Every node is responsible for filling R[:, [one own's states], :, :].
-        R is assumed to be initialized with zeros.
-        """
-        raise NotImplementedError
+        for i, c in enumerate(self.children):
+            c.update_O(O, a_start + self.a_indices[i],
+                       s_start + self.s_indices[i], s_next, s_before, s_after)
 
 
 class HTMToPOMDP:
