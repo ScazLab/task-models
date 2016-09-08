@@ -43,6 +43,14 @@ function loadpolicy(file, errors)
     var nodes = Array();
     var links = Array();
 
+    var max = d3.max(json.transitions, function(array) {
+      return d3.max(array);
+    });
+
+    if (max > json.actions.length-1) {
+      print_error('Max number of nodes does not match the transition matrix.');
+      return;
+    };
     // Assign the nodes from the json file
     for (var i = 0; i < json.actions.length; i++)
     {
@@ -227,6 +235,23 @@ function loadpolicy(file, errors)
       }
 
   });
+
+  function print_error(text) {
+      console.error(text);
+      svg.append('text')
+         .attr("dx", width/2)
+         .attr("dy", height/2)
+         .attr('class', 'message error')
+         .attr('text-anchor','middle')
+         .html('ERROR!');
+
+      svg.append('text')
+         .attr("dx", width/2)
+         .attr("dy", height/2+60)
+         .attr('class', 'message info')
+         .attr('text-anchor','middle')
+         .html(text);
+  }
 
   function appendmarkers()
   {

@@ -16,6 +16,7 @@ html {
 
 body {
   background-color: #edeeef;
+  color: #505050;
   font-family: 'Lato', sans-serif;
 }
 
@@ -36,6 +37,7 @@ h5,
 h6,
 #get_file,
 .title.filename,
+.message.error,
 .legend {
   text-transform: uppercase;
   font-family: Montserrat,"Helvetica Neue",Helvetica,Arial,sans-serif;
@@ -60,9 +62,20 @@ section>div>div {
   cursor: move;
 }
 
+.message.error,
 .title.filename {
   font-size: 1.6rem;
   font-weight: 300;
+}
+
+.message.error {
+  font-size: 4rem;
+  fill: #D9534F;
+}
+
+.message.info {
+  font-size: 1.4rem;
+  text-transform: none;
 }
 
 .gnode {
