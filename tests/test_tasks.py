@@ -5,7 +5,7 @@ import numpy as np
 from htm.action import Condition, PrePostConditionAction
 from htm.state import NDimensionalState
 from htm.task import (check_path, split_path, TaskGraph, ConjugateTaskGraph,
-                      AbstractAction, ParallelCombination,
+                      AbstractAction, ParallelCombination, LeafCombination,
                       AlternativeCombination, SequentialCombination)
 
 
@@ -386,11 +386,11 @@ class TestConjugateTaskGraph(TestCase):
 class TestParallelToAlternatives(TestCase):
 
     def test_is_correct(self):
-        a = AbstractAction('a')
-        b = AbstractAction('b')
-        c = AbstractAction('c')
+        a = LeafCombination(AbstractAction('a'))
+        b = LeafCombination(AbstractAction('b'))
+        c = LeafCombination(AbstractAction('c'))
         p = ParallelCombination([a, b, c])
-        alt = p.to_alternatives()
+        alt = p.to_alternative()
         self.assertIsInstance(alt, AlternativeCombination)
         self.assertEqual(len(alt.children), 6)
         self.assertIsInstance(alt.children[0], SequentialCombination)

@@ -40,6 +40,12 @@ class CollaborativeAction(AbstractAction):
         self.no_proba = no_probability
         self.fail_proba = fail_probability
 
+    def copy(self, rename_format):
+        return CollaborativeAction(
+            rename_format.format(self.name), self.durations,
+            human_probability=self.h_proba, fail_probability=self.fail_proba,
+            no_probability=self.no_proba)
+
 
 def _name_radix(action):
     return action.name.lower().replace(' ', '-')
@@ -104,7 +110,7 @@ class _NodeToPOMDP(object):
         elif isinstance(node, AlternativeCombination):
             return _AlternativesToPOMDP(node, t_com, flags)
         elif isinstance(node, ParallelCombination):
-            return _AlternativesToPOMDP(node.to_alternatives(), t_com, flags)
+            return _AlternativesToPOMDP(node.to_alternative(), t_com, flags)
         else:
             raise ValueError('Unkown combination: ' + type(node))
 

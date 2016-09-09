@@ -156,6 +156,9 @@ class AbstractAction(Action):
     def check(self, pre, post):
         return True
 
+    def copy(self, rename_format='{}'):
+        return AbstractAction(rename_format.format(self.name))
+
 
 class ConjugateTaskGraph(BaseGraph):
 
@@ -220,6 +223,10 @@ class Combination(object):
             ]
         return d
 
+    def _deep_copy_children(self, rename_format='{}'):
+        return [c.deep_copy(rename_format=rename_format)
+                for c in self.children]
+
 
 class LeafCombination(Combination):
 
@@ -240,19 +247,36 @@ class LeafCombination(Combination):
     def as_dictionary(self, parent, id_generator):
         return self._meta_dictionary(parent, id_generator)
 
+    def deep_copy(self, rename_format='{}'):
+        return LeafCombination(self.action.copy(rename_format=rename_format),
+                               highlighted=self.highlighted)
+
 
 class SequentialCombination(Combination):
 
     kind = 'Sequence'
+
+    def deep_copy(self, rename_format='{}'):
+        return SequentialCombination(
+                self._deep_copy_children(rename_format=rename_format),
+                name=rename_format.format(self.name),
+                highlighted=self.highlighted)
 
 
 class AlternativeCombination(Combination):
 
     kind = 'Alternative'
 
-    def __init__(self, children, human_probabilities=None, **xargs):
+    def __init__(self, children, probabilities=None, **xargs):
         super(AlternativeCombination, self).__init__(children, **xargs)
-        self.h_proba = human_probabilities
+        self.proba = probabilities
+
+    def deep_copy(self, rename_format='{}'):
+        return AlternativeCombination(
+                self._deep_copy_children(rename_format=rename_format),
+                probabilities=self.proba,
+                name=rename_format.format(self.name),
+                highlighted=self.highlighted)
 
 
 class ParallelCombination(Combination):
@@ -262,9 +286,17 @@ class ParallelCombination(Combination):
     def __init__(self, children, **xargs):
         super(ParallelCombination, self).__init__(children, **xargs)
 
-    def to_alternatives(self):
+    def deep_copy(self, rename_format='{}'):
+        return ParallelCombination(
+                self._deep_copy_children(rename_format=rename_format),
+                probabilities=self.proba,
+                name=rename_format.format(self.name),
+                highlighted=self.highlighted)
+
+    def to_alternative(self):
         sequences = [SequentialCombination(
-                        p, name='{} order-{}'.format(self.name, i))
+                        [c.deep_copy('{{}} order-{}'.format(i)) for c in p],
+                        name='{} order-{}'.format(self.name, i))
                      for i, p in enumerate(permutations(self.children))
                      ]
         return AlternativeCombination(sequences, name=self.name,
