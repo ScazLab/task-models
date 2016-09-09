@@ -272,7 +272,7 @@ class POMDP:
         return full_path
 
     def solve(self, timeout=None, n_iterations=None, method='incprune',
-              grid_type=None):
+              grid_type=None, seed=None):
         """
         :param method: incprune | grid (incprune)
         :param grid_type: simplex | pairwise (simplex)
@@ -283,6 +283,9 @@ class POMDP:
             args.extend(['-time_limit', str(timeout)])
         if n_iterations is not None:
             args.extend(['-horizon', str(n_iterations)])
+        if seed is None:
+            seed = np.random.randint(1.e10)
+        args.extend(['-rand_seed', str(seed)])
         if method == 'grid':
             if grid_type is None:
                 grid_type = 'simplex'
