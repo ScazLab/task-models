@@ -74,6 +74,29 @@ class TestLeafToPOMDP(TestCase):
                      )[:, :, None, None],
             (7, 3, 8, 4)))
 
+    def test_with_failure_probability(self):
+        leaf = LeafCombination(
+            CollaborativeAction('Do it', (3., 2., 5.), fail_probability=.2))
+        l2p = _NodeToPOMDP.from_node(leaf, 2.)
+        T = np.zeros((7, 8, 8))
+        l2p.update_T(T, 0, 2, 3, [6, 7], [.2, .8], list(range(7)))
+        p_phy_robot = np.zeros((8))
+        p_phy_robot[5] = .2
+        p_phy_robot[6] = .8 * .2
+        p_phy_robot[7] = .8 * .8
+        np.testing.assert_allclose(T[2, 5, :], p_phy_robot)
+
+    def test_with_no_probability(self):
+        leaf = LeafCombination(
+            CollaborativeAction('Do it', (3., 2., 5.), no_probability=.2))
+        l2p = _NodeToPOMDP.from_node(leaf, 2.)
+        T = np.zeros((7, 8, 8))
+        l2p.update_T(T, 0, 2, 3, [6, 7], [.2, .8], list(range(7)))
+        p_ask_int = np.zeros((8))
+        p_ask_int[4] = .8
+        p_ask_int[5] = .2
+        np.testing.assert_allclose(T[3, 3, :], p_ask_int)
+
 
 class TestParentToPOMDP(object):
 
@@ -158,12 +181,14 @@ class TestAlternativeToPOMDP(TestParentToPOMDP, TestCase):
 
 
 class TestHTM2POMDP(TestCase):
+
     def setUp(self):
-        self.h2p = HTMToPOMDP(1., 2., 1.)
+        self.h2p = HTMToPOMDP(1., 2., 1., end_reward=0.)
 
     def test_leaf_to_pomdp(self):
-        task = HierarchicalTask(root=LeafCombination(
-            CollaborativeAction('Do it', (3., 2., 5.), human_probability=.3)))
+        # No probability of failure or human saying no here
+        task = HierarchicalTask(root=LeafCombination(CollaborativeAction(
+            'Do it', (3., 2., 5.), fail_probability=0., no_probability=0.)))
         p = self.h2p.task_to_pomdp(task)
         self.assertEqual(p.states,
                          ['init-do-it', 'H-do-it', 'R-do-it', 'end'])
@@ -235,9 +260,12 @@ class TestHTM2POMDP(TestCase):
         np.testing.assert_array_equal(R, p.R)
 
     def test_seq_to_pomdp(self):
+        # No probability of failure or human saying no here
         task = HierarchicalTask(root=SequentialCombination([
-            LeafCombination(CollaborativeAction('Do a', (3., 2., 5.))),
-            LeafCombination(CollaborativeAction('Do b', (2., 3., 4.))),
+            LeafCombination(CollaborativeAction(
+                'Do a', (3., 2., 5.), fail_probability=0., no_probability=0.)),
+            LeafCombination(CollaborativeAction(
+                'Do b', (2., 3., 4.), fail_probability=0., no_probability=0.)),
             ], name='Do all'))
         p = self.h2p.task_to_pomdp(task)
         self.assertEqual(p.states, ['init-do-a', 'H-do-a', 'R-do-a',
@@ -415,9 +443,12 @@ class TestHTM2POMDP(TestCase):
         np.testing.assert_array_equal(R, p.R)
 
     def test_alt_to_pomdp(self):
+        # No probability of failure or human saying no here
         task = HierarchicalTask(root=AlternativeCombination([
-            LeafCombination(CollaborativeAction('Do a', (3., 2., 5.))),
-            LeafCombination(CollaborativeAction('Do b', (2., 3., 4.))),
+            LeafCombination(CollaborativeAction(
+                'Do a', (3., 2., 5.), fail_probability=0., no_probability=0.)),
+            LeafCombination(CollaborativeAction(
+                'Do b', (2., 3., 4.), fail_probability=0., no_probability=0.)),
             ], name='Do either'))
         p = self.h2p.task_to_pomdp(task)
         self.assertEqual(p.states, ['init-do-a', 'H-do-a', 'R-do-a',
@@ -594,3 +625,21 @@ class TestHTM2POMDP(TestCase):
                                       )[:, :, None, None],
                              (9, 7, 7, 4))
         np.testing.assert_array_equal(R, p.R)
+
+    def test_end_reward(self):
+        h2p = HTMToPOMDP(1., 2., 1., end_reward=13.)
+        task = HierarchicalTask(root=LeafCombination(
+            CollaborativeAction('Do it', (3., 2., 5.))))
+        p = h2p.task_to_pomdp(task)
+        self.assertTrue((p.R[h2p.wait, h2p.end, h2p.end, :] == 13.).all())
+
+    def test_end_reward_on_seq(self):
+        h2p = HTMToPOMDP(1., 2., 1., end_reward=13.)
+        task = HierarchicalTask(root=SequentialCombination([
+            LeafCombination(CollaborativeAction(
+                'Do a', (3., 2., 5.), fail_probability=0., no_probability=0.)),
+            LeafCombination(CollaborativeAction(
+                'Do b', (2., 3., 4.), fail_probability=0., no_probability=0.)),
+            ], name='Do all'))
+        p = h2p.task_to_pomdp(task)
+        self.assertTrue((p.R[h2p.wait, h2p.end, h2p.end, :] == 13.).all())

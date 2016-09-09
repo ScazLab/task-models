@@ -24,12 +24,20 @@ class CollaborativeAction(AbstractAction):
     :param human_probability: float
         Probability that the human would take care of this action. If not
         defined, will have to be estimated.
+    :param fail_probability: float
+        Probability that the robot action fails.
+    :param no_probability: float
+        Probability that the human answers no to the robot asking if he can
+        take the action.
     """
 
-    def __init__(self, name, durations, human_probability=None):
+    def __init__(self, name, durations, human_probability=None,
+                 fail_probability=.1, no_probability=.1):
         super(CollaborativeAction, self).__init__(name=name)
         self.durations = durations
         self.h_proba = human_probability
+        self.no_proba = no_probability
+        self.fail_proba = fail_probability
 
 
 def _name_radix(action):
@@ -143,6 +151,14 @@ class _LeafToPOMDP(_NodeToPOMDP):
     def durations(self):
         return [self.t_err] + [self.t_com] * 3  # does not include wait
 
+    @property
+    def _proba_no(self):
+        return self.leaf.action.no_proba
+
+    @property
+    def _proba_fail(self):
+        return self.leaf.action.fail_proba
+
     def _h_probas_not_finished_from_d(self, durations):
         return np.exp(-durations / self.t_hum)
 
@@ -159,8 +175,9 @@ class _LeafToPOMDP(_NodeToPOMDP):
         # Note: if error the model assumes that human waits that robot is done
         # recovering or communicating before moving to next action.
         T[:, s_i, s_i] = 1.
-        T[a_ai, s_i, s_i] = 0.
-        T[a_ai, s_i, s_h] = 1.
+        T[a_ai, s_i, s_i] = .0
+        T[a_ai, s_i, s_r] = self._proba_no
+        T[a_ai, s_i, s_h] = 1 - self._proba_no
         T[a_ti, s_i, s_i] = 0.
         T[a_ti, s_i, s_r] = 1.
         if 'deterministic' in self.flags:
@@ -174,8 +191,9 @@ class _LeafToPOMDP(_NodeToPOMDP):
             T[:, s_h, :][:, s_next] = \
                 np.outer(1 - p_h_not_finish, s_next_probas)
         T[:, s_r, s_r] = 1.
-        T[a_phy, s_r, s_r] = 0.
-        T[a_phy, s_r, s_next] = s_next_probas
+        T[a_phy, s_r, s_r] = self._proba_fail
+        T[a_phy, s_r, s_next] = [(1 - self._proba_fail) * x
+                                 for x in s_next_probas]
 
     def update_O(self, O, a_start, s_start, s_next, s_before, s_after):
         a_phy = a_start + self._phy
@@ -338,9 +356,11 @@ class HTMToPOMDP:
     wait = 0
     end = -1
 
-    def __init__(self, t_wait, t_com, intr_cost=0, deterministic=False, structured=False):
+    def __init__(self, t_wait, t_com, intr_cost=0, end_reward=10.,
+                 deterministic=False, structured=False):
         self.t_wait = t_wait
         self.t_com = t_com
+        self.end_reward = end_reward
         # Intrinsic costs of communication or action (in addition to duration)
         self.c_intr = intr_cost
         self.flags = set()
@@ -356,8 +376,8 @@ class HTMToPOMDP:
         O[self.wait, :, :] = _NodeToPOMDP.o_none
 
     def update_R_end(self, R):
-        R[:, -1, ...] = self.c_intr  # end state has cost 1
-        R[self.wait, -1, ...] = 0.   # except on wait
+        R[:, self.end, ...] = self.c_intr  # end state has cost 1
+        R[self.wait, self.end, ...] = -self.end_reward   # except on wait
 
     def task_to_pomdp(self, task):
         n2p = _NodeToPOMDP.from_node(task.root, self.t_com, flags=self.flags)
