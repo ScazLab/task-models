@@ -2,7 +2,8 @@ import numpy as np
 
 from htm.lib.pomdp import POMDP
 from htm.task import (AbstractAction, SequentialCombination,
-                      AlternativeCombination, LeafCombination)
+                      AlternativeCombination, LeafCombination,
+                      ParallelCombination)
 
 
 def concatenate(lists):
@@ -102,6 +103,8 @@ class _NodeToPOMDP(object):
             return _SequenceToPOMDP(node, t_com, flags)
         elif isinstance(node, AlternativeCombination):
             return _AlternativesToPOMDP(node, t_com, flags)
+        elif isinstance(node, ParallelCombination):
+            return _AlternativesToPOMDP(node.to_alternatives(), t_com, flags)
         else:
             raise ValueError('Unkown combination: ' + type(node))
 

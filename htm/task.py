@@ -6,6 +6,8 @@ represented as continuous vectors).
 """
 
 
+from itertools import permutations
+
 from .state import State
 from .action import Action
 
@@ -256,6 +258,17 @@ class AlternativeCombination(Combination):
 class ParallelCombination(Combination):
 
     kind = 'Parallel'
+
+    def __init__(self, children, **xargs):
+        super(ParallelCombination, self).__init__(children, **xargs)
+
+    def to_alternatives(self):
+        sequences = [SequentialCombination(
+                        p, name='{} order-{}'.format(self.name, i))
+                     for i, p in enumerate(permutations(self.children))
+                     ]
+        return AlternativeCombination(sequences, name=self.name,
+                                      highlighted=self.highlighted)
 
 
 class HierarchicalTask:

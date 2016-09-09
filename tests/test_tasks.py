@@ -4,7 +4,9 @@ import numpy as np
 
 from htm.action import Condition, PrePostConditionAction
 from htm.state import NDimensionalState
-from htm.task import check_path, split_path, TaskGraph, ConjugateTaskGraph
+from htm.task import (check_path, split_path, TaskGraph, ConjugateTaskGraph,
+                      AbstractAction, ParallelCombination,
+                      AlternativeCombination, SequentialCombination)
 
 
 class DummyState(NDimensionalState):
@@ -379,3 +381,17 @@ class TestConjugateTaskGraph(TestCase):
                               place_frame)
         cgraph.add_transition(place_frame, final, cgraph.terminal)
         self.assertEqual(graph.conjugate(), cgraph)
+
+
+class TestParallelToAlternatives(TestCase):
+
+    def test_is_correct(self):
+        a = AbstractAction('a')
+        b = AbstractAction('b')
+        c = AbstractAction('c')
+        p = ParallelCombination([a, b, c])
+        alt = p.to_alternatives()
+        self.assertIsInstance(alt, AlternativeCombination)
+        self.assertEqual(len(alt.children), 6)
+        self.assertIsInstance(alt.children[0], SequentialCombination)
+        self.assertTrue(all([len(c.children) == 3 for c in alt.children]))
