@@ -29,7 +29,7 @@ function loadpolicy(file, errors)
      .attr('dy', height/15)
      .attr('class', 'title filename')
      .attr('text-anchor','middle')
-     .text(file);
+     .text(file.replace('.json',''));
 
   var vis = svg.append('svg:g');
 
