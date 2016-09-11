@@ -248,6 +248,9 @@ class POMDP:
 
     def belief_update(self, a, o, b):
         new_b = b.dot(self.T[a, ...]) * self.O[a, :, o]
+        s = new_b.sum()
+        if s == 0.:
+            raise ValueError('Impossible observation: ' + str(o))
         return new_b / new_b.sum()
 
     def dump(self):
@@ -391,3 +394,40 @@ class GraphPolicyBeliefRunner(GraphPolicyRunner):
         o = self.pomdp.observations.index(observation)
         b = self.pomdp.belief_update(a, o, self.current_belief)
         self.reset(belief=b)
+
+    def _rec_trajectory_tree(self, obs, horizon):
+        if horizon >= 0:
+            try:
+                b = self.current_belief
+                self.step(obs)
+                return self.trajectory_tree(horizon)
+                self.reset(belief=b)  # Restore state for next obs
+            except ValueError:  # Observation is impossible here
+                pass
+        return None  # either horizon is reached or observation is impossible
+
+    def trajectory_tree(self, horizon):
+        obs = self.pomdp.observations
+        children = [self._rec_trajectory_tree(o, horizon - 1) for o in obs]
+        return {"belief": self.current_belief.tolist(),
+                "action": self.get_action(),
+                "node": int(self.current),
+                "observations": [o for i, o in enumerate(obs)
+                                 if children[i] is not None],
+                "children": [c for c in children if c is not None],
+                }
+
+    def trajectory_trees_from_starts(self, horizon=5):
+        start = self.pomdp.start
+        trees = []
+        for s in start.nonzero():
+            b = np.zeros(start.shape)
+            b[s] = 1.
+            self.reset(belief=b)
+            trees.append(self.trajectory_tree(horizon))
+        return {"graphs": trees}
+
+    def save_trajectories_from_starts(self, dest, horizon=5, indent=None):
+        with open(dest, 'w') as f:
+            json.dump(self.trajectory_trees_from_starts(horizon=horizon),
+                      f, indent=indent)
