@@ -20,7 +20,7 @@
 <section>
     <div class="container">
         <div class="row">
-            <div class="input-wrapper col-sm-8 text-center">
+            <div class="input-wrapper col-xs-10 text-center">
                 <div class="input-group">
                     <span class="input-group-btn">
                         <input class="btn btn-info" type="button" value="Select file*" id="get_file">
@@ -29,18 +29,8 @@
                     <div class="form-control" id="customfileupload">[*] Target file should be in the same folder of the original</div>
                 </div>
             </div>
-            <div class="col-xs-1 text-center">
-                <a id="policy-refresh" href="#" class="btn btn-secondary"><i class="fa fa-fw fa-refresh"></i></a>
-            </div>
-            <div class="col-xs-3 text-center">
-                <div class="btn-group" data-toggle="buttons">
-                  <label class="btn btn-danger active" id="d_op_on">
-                    <input type="radio" name="options" id="q_op_on" autocomplete="off" checked>ERR ON
-                  </label>
-                  <label class="btn btn-danger" id="d_op_off">
-                    <input type="radio" name="options" id="q_op_off" autocomplete="off">ERR OFF
-                  </label>
-                </div>
+            <div class="col-xs-2 text-center">
+                <a id="trajectory-refresh" href="#" class="btn btn-secondary"><i class="fa fa-fw fa-refresh"></i></a>
             </div>
         </div>
     </div>
@@ -65,6 +55,28 @@
 <script src="https://cdn.rawgit.com/twbs/bootstrap/v4.0.0-alpha.2/dist/js/bootstrap.min.js"></script>
 
 <script src="trajectories.js"></script>
+
+<script type="text/javascript">
+    document.getElementById('get_file').onclick = function() {
+        document.getElementById('my_file').click();
+    };
+
+    $('input[type=file]').change(function (e) {
+        $('#customfileupload').html($(this).val());
+        loadnewtrajectory($(this).val(), undefined);
+    });
+
+    document.getElementById('trajectory-refresh').onclick = function(e) {
+        loadnewtrajectory("", undefined);
+    }
+
+    function loadnewtrajectory(file, show_errors) {
+        var svg = d3.select("svg");
+        svg.selectAll("*").remove();
+        loadtrajectory(file, show_errors);
+    };
+</script>
+
 
 <script type="text/javascript">
     $("#svg-container").on("mousedown", function (e)

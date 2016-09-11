@@ -1,8 +1,8 @@
 var defaultjsonfile = 'trajectories.json';
 
-loadpolicy('');
+loadtrajectory('');
 
-function loadpolicy(file)
+function loadtrajectory(file)
 {
   if (file == '') { file = defaultjsonfile;}
   else            { defaultjsonfile = file;};
@@ -49,6 +49,7 @@ function loadpolicy(file)
     root = json.graphs[0];
     root.x0 = height / 2;
     root.y0 = 300;
+    root.initial = true;
 
     function collapse(d) {
         if (d.children) {
@@ -58,7 +59,7 @@ function loadpolicy(file)
         }
       }
 
-    root.children.forEach(collapse);
+    // root.children.forEach(collapse);
     update(root);
   });
 
@@ -82,21 +83,21 @@ function loadpolicy(file)
 
     nodeEnter.append('circle')
         .attr('r', 1e-6)
-        .attr('class', function(d) { return 'nodecircle';});
+        .attr('class', function(d) { if (d.initial) { return 'nodecircle initial'; } return 'node';});
 
     nodeEnter.append('text')
         .attr('dx', function(d) { return 0;})
-        .attr('dy', function(d) { return '-0.9em';})
+        .attr('dy', function(d) { return '-0.8em';})
         .attr('text-anchor','middle')
-        .attr('class', function(d) { return 'nodetext';})
-        .text(function(d) { return d.action.replace('intention','int')
-                                           .replace('phy','P ')
-                                           .replace('com-','C ')
-                                           .replace('-get',' Get')
-                                           .replace('-snap',' Snap')
-                                           .replace('-left-leg','LL')
-                                           .replace('-right-leg','RL')
-                                           .replace('-central-frame','CF'); });
+        .attr('class', function(d) { if (d.initial) { return 'nodetext initial'; } return 'nodetext ';})
+        .text(function(d) { return '['+d.node+'] '+ d.action.replace('intention','int')
+                                                       .replace('phy','P ')
+                                                       .replace('com-','C ')
+                                                       .replace('-get',' Get')
+                                                       .replace('-snap',' Snap')
+                                                       .replace('-left-leg','LL')
+                                                       .replace('-right-leg','RL')
+                                                       .replace('-central-frame','CF'); });
 
     // Transition nodes to their new position.
     var nodeUpdate = node.transition()
@@ -105,7 +106,7 @@ function loadpolicy(file)
 
     nodeUpdate.select('circle')
         .attr('r', 4.5)
-        .attr('class', function(d) { return 'nodecircle';});
+        .attr('class', function(d) { if (d.initial) { return 'nodecircle initial'; } return 'node';});
 
     nodeUpdate.select('text')
         .style('fill-opacity', 1);
@@ -128,13 +129,15 @@ function loadpolicy(file)
 
     // Enter any new links at the parent's previous position.
     link.enter().insert('path', 'g')
-        .attr('class', function(d) { return 'link ' + source.observations; })
+        .attr('class', function(d,i) {
+          console.log(d.source.observations, i, d.source.observations[i]);
+          return 'link ' + d.source.observations[i]; })
         .attr('d', function(d) {
           var o = {x: source.x0, y: source.y0};
 
           return diagonal({source: o, target: o});
         })
-        .attr('marker-end', function(d) {console.log(source.observations); return 'url(#arrowhead_'+source.observations+')';});
+        .attr('marker-end', function(d,i) { return 'url(#arrowhead_'+d.source.observations[i]+')';});
 
     // Transition links to their new position.
     link.transition()
