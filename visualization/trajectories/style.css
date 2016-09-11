@@ -89,23 +89,23 @@ h6,
   text-transform: none;
 }
 
-.gnode {
+.node {
   cursor: pointer;
 }
 
-.gnode:active {
+.node:active {
   cursor: move;
 }
 
-.gnode text {
+.node text {
   fill: #3c3c3c;
 }
 
-.node {
+.nodecircle {
   fill: #3c3c3c;
 }
 
-.node.initial {
+.nodecircle.initial {
   fill: #5CB85C;
 }
 

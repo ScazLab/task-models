@@ -40,13 +40,16 @@ T_COMM = 2.
 C_INTR = 1.
 
 h2p = HTMToPOMDP(T_WAIT, T_COMM, C_INTR, False, False)
-
-p = h2p.task_to_pomdp(HierarchicalTask(root=mount_legs))
-# p.dump_to('/tmp/', 'legs')
+p = h2p.task_to_pomdp(chair_task)
 
 gp = p.solve(method='grid', n_iterations=1000)
 print(gp.to_json())
-# gp.dump_to('../visualization/policy/json/test.json');
+gp.dump_to('../visualization/policy/json/test.json');
+
+from htm.lib.pomdp import GraphPolicyBeliefRunner
+
+pol = GraphPolicyBeliefRunner(gp, p)
+pol.save_trajectories_from_starts('../visualization/belief/json/test.json', indent=2)
 
 from htm.plot import plot_beliefs
 import matplotlib.pyplot as plt

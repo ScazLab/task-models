@@ -68,7 +68,7 @@ function loadpolicy(file)
         links = tree.links(nodes);
 
     // Normalize for fixed-depth.
-    nodes.forEach(function(d) { d.y = d.depth * 180; });
+    nodes.forEach(function(d) { d.y = d.depth * 160; });
 
     // Update the nodes…
     var node = vis.selectAll('g.node')
@@ -82,13 +82,13 @@ function loadpolicy(file)
 
     nodeEnter.append('circle')
         .attr('r', 1e-6)
-        .attr('class', function(d) { if (d.initial) { return 'node initial'; } return 'node';})
+        .attr('class', function(d) { return 'nodecircle';});
 
     nodeEnter.append('text')
         .attr('dx', function(d) { return 0;})
         .attr('dy', function(d) { return '-0.9em';})
         .attr('text-anchor','middle')
-        .attr('class', function(d) { return 'nodetext ';})
+        .attr('class', function(d) { return 'nodetext';})
         .text(function(d) { return d.action.replace('intention','int')
                                            .replace('phy','P ')
                                            .replace('com-','C ')
@@ -105,7 +105,7 @@ function loadpolicy(file)
 
     nodeUpdate.select('circle')
         .attr('r', 4.5)
-        .style('fill', function(d) { return d._children ? 'lightsteelblue' : '#fff'; });
+        .attr('class', function(d) { return 'nodecircle';});
 
     nodeUpdate.select('text')
         .style('fill-opacity', 1);
@@ -128,13 +128,13 @@ function loadpolicy(file)
 
     // Enter any new links at the parent's previous position.
     link.enter().insert('path', 'g')
-        .attr('class', 'link')
+        .attr('class', function(d) { return 'link ' + source.observations; })
         .attr('d', function(d) {
           var o = {x: source.x0, y: source.y0};
 
           return diagonal({source: o, target: o});
         })
-        .attr('marker-end', function(d) {return 'url(#arrowhead_none)';});
+        .attr('marker-end', function(d) {console.log(source.observations); return 'url(#arrowhead_'+source.observations+')';});
 
     // Transition links to their new position.
     link.transition()
