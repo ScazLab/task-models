@@ -2,54 +2,51 @@ from htm.task import (HierarchicalTask, SequentialCombination,
                       AlternativeCombination, LeafCombination)
 from htm.task_to_pomdp import CollaborativeAction, HTMToPOMDP
 
-
+## Define the task
 mount_central = SequentialCombination([
-    LeafCombination(CollaborativeAction('Get central frame', (3., 2., 5.))),
-    LeafCombination(CollaborativeAction('Snap central frame', (3., 2., 5.)))],
+    LeafCombination(CollaborativeAction('Get central frame', (10., 3., 5.))),
+    LeafCombination(CollaborativeAction('Snap central frame', (3., 10., 5.)))],
     name='Mount central frame')
 mount_legs = AlternativeCombination([
     SequentialCombination(
         [LeafCombination(CollaborativeAction(
-            'Take leg {} ({} first)'.format(sides[0], sides[0]),
-            (3., 2., 5.))),
+            'Get leg {} ({} first)'.format(sides[0], sides[0]),
+            (10., 3., 5.))),
          LeafCombination(CollaborativeAction(
-             'Snap leg {}'.format(sides[1], sides[0]), (3., 2., 5.)))
+             'Snap leg {}'.format(sides[1], sides[0]), (10., 3., 5.)))
          ],
         name='Mount legs ({} first)'.format(sides[0]))
     for sides in [('left', 'right'), ('right', 'left')]
     ], name='Mount legs')
 # Use a simpler one until Alternative to POMDP is implemented
 mount_legs = SequentialCombination([
-    LeafCombination(CollaborativeAction('Take left leg', (60., 2., 10.))),
-    LeafCombination(CollaborativeAction('Snap left leg', (3., 60., 100.))),
-    LeafCombination(CollaborativeAction('Take right leg', (60., 2., 5.))),
-    LeafCombination(CollaborativeAction('Snap right leg', (3., 60., 100.))),
+    LeafCombination(CollaborativeAction('Get left leg', (10., 3., 5.))),
+    LeafCombination(CollaborativeAction('Snap left leg', (3., 10., 5.))),
+    LeafCombination(CollaborativeAction('Get right leg', (10., 3., 5.))),
+    LeafCombination(CollaborativeAction('Snap right leg', (3., 10., 5.))),
     ],
     name='Mount legs')
 mount_top = SequentialCombination([
-    LeafCombination(CollaborativeAction('Get top', (3., 2., 5.))),
-    LeafCombination(CollaborativeAction('Snap top', (3., 2., 5.)))],
+    LeafCombination(CollaborativeAction('Get top', (10., 3., 5.))),
+    LeafCombination(CollaborativeAction('Snap top', (3., 10., 5.)))],
     name='Mount top')
-
 
 chair_task = HierarchicalTask(root=SequentialCombination(
     [mount_central, mount_legs, mount_top], name='Mount chair'))
 
-
+## Convert the task into a POMDP
 T_WAIT = 1.
 T_COMM = 2.
 C_INTR = 1.
 
-h2p = HTMToPOMDP(T_WAIT, T_COMM, C_INTR)
+h2p = HTMToPOMDP(T_WAIT, T_COMM, C_INTR, False, False)
 
 p = h2p.task_to_pomdp(HierarchicalTask(root=mount_legs))
-p.dump_to('/tmp/', 'legs')
+# p.dump_to('/tmp/', 'legs')
 
-#p = h2p.task_to_pomdp(chair_task)
-#p.dump_to('/tmp/', 'chair')
-#
 gp = p.solve(method='grid', n_iterations=1000)
 print(gp.to_json())
+# gp.dump_to('../visualization/policy/json/test.json');
 
 from htm.plot import plot_beliefs
 import matplotlib.pyplot as plt
