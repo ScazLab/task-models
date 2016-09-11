@@ -44,7 +44,7 @@ h6,
   font-weight: 100;
 }
 
-section>div>div {
+.row>div {
   padding-top: 20px;
 }
 
@@ -52,9 +52,20 @@ section>div>div {
   margin-bottom: 0;
 }
 
-#svg-container svg {
-  display: block;
-  margin: auto;
+.svg-container {
+  display: inline-block;
+  position: relative;
+  width: 100%;
+  padding-bottom: 50%; /* aspect ratio */
+  vertical-align: top;
+  overflow: hidden;
+}
+
+.svg-content-responsive {
+  display: inline-block;
+  position: absolute;
+  top: 10px;
+  left: 0;
   background-color: #fff;
 }
 
@@ -160,4 +171,26 @@ section>div>div {
 
 #get_file {
   font-weight: 300;
+}
+
+@media (max-width: 1600px) {
+  .input-group {
+    max-width: 750px;
+  }
+}
+
+@media (min-width:2000px) {
+  .container {
+      max-width: 80%;
+  }
+}
+
+@media(max-width:650px) {
+  .input-wrapper {
+    display: none;
+  }
+}
+
+.text-center {
+  text-align: center;
 }

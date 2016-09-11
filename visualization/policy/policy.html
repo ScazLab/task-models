@@ -19,33 +19,34 @@
 <body id="page-top" class="index">
 <section>
     <div class="container">
-        <div class="row" style="text-align: center;">
-            <div class="col-md-8 input-group" style="max-width: 750px;">
-                <span class="input-group-btn">
-                    <input class="btn btn-info" type="button" value="Select file*" id="get_file">
-                    <input type="file" id="my_file">
-                </span>
-                <div class="form-control" id="customfileupload">[*] Target file should be in the same folder of the original</div>
+        <div class="row">
+            <div class="input-wrapper col-sm-8 text-center">
+                <div class="input-group">
+                    <span class="input-group-btn">
+                        <input class="btn btn-info" type="button" value="Select file*" id="get_file">
+                        <input type="file" id="my_file">
+                    </span>
+                    <div class="form-control" id="customfileupload">[*] Target file should be in the same folder of the original</div>
+                </div>
             </div>
-            <div class="col-md-1 text center">
+            <div class="col-xs-1 text-center">
                 <a id="policy-refresh" href="#" class="btn btn-secondary"><i class="fa fa-fw fa-refresh"></i></a>
             </div>
-            <div class="col-md-3 text center">
-                <p style="display: inline;">Errors:</p>
+            <div class="col-xs-3 text-center">
                 <div class="btn-group" data-toggle="buttons">
                   <label class="btn btn-danger active" id="d_op_on">
-                    <input type="radio" name="options" id="q_op_on" autocomplete="off" checked>ON
+                    <input type="radio" name="options" id="q_op_on" autocomplete="off" checked>ERR ON
                   </label>
                   <label class="btn btn-danger" id="d_op_off">
-                    <input type="radio" name="options" id="q_op_off" autocomplete="off">OFF
+                    <input type="radio" name="options" id="q_op_off" autocomplete="off">ERR OFF
                   </label>
                 </div>
             </div>
         </div>
     </div>
-    <div class="container-fluid">
-        <div id="svg-container" class="row-fluid">
-            <svg width="1260" height="560"></svg>
+    <div class="container">
+        <div id="svg-container" class="svg-container row">
+            <svg></svg>
         </div>
     </div>
 </section>

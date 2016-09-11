@@ -12,9 +12,15 @@ function loadpolicy(file, errors)
 
   console.log('Loading file: '+file+' Show Errors: '+errors);
 
-  var svg = d3.select('svg'),
-      width  = svg.attr('width'),
-      height = svg.attr('height');
+  var width  = 1110,
+      height =  555;
+
+  var svg = d3.select('svg')
+              //responsive SVG needs these 2 attributes and no width and height attr
+              .attr("preserveAspectRatio", "xMinYMin meet")
+              .attr("viewBox", '0 0 ' + width + ' ' + height)
+              //class to make it responsive
+              .classed("svg-content-responsive", true);
 
   svg.call(d3.behavior.zoom().on('zoom', redraw));
 
@@ -212,7 +218,7 @@ function loadpolicy(file, errors)
                       .append('g')
                       .attr('class', 'legend')
                       .attr('transform', function(d, i) {
-                        var horz = width * 14 /15;
+                        var horz = width * 13 /14;
                         var vert = height/10 + i * rectSize + i * spacing;
                         return 'translate(' + horz + ',' + vert + ')';
                       });
