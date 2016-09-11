@@ -14,8 +14,8 @@ function loadtrajectory(file)
 
 
   var i = 0,
-    duration = 500,
-    root;
+      duration = 500,
+      root;
 
   var tree = d3.layout.tree()
                .size([height, width]);
@@ -47,8 +47,8 @@ function loadtrajectory(file)
     if (error) {throw error;}
 
     root = json.graphs[0];
-    root.x0 = height / 2;
-    root.y0 = 300;
+    root.x0 = height/2;
+    root.y0 = 0;
     root.initial = true;
 
     function collapse(d) {
@@ -59,13 +59,13 @@ function loadtrajectory(file)
         }
       }
 
-    // root.children.forEach(collapse);
+    root.children.forEach(collapse);
     update(root);
   });
 
   function update(source) {
     // Compute the new tree layout.
-    var nodes = tree.nodes(root).reverse(),
+    var nodes = tree.nodes(root),
         links = tree.links(nodes);
 
     // Normalize for fixed-depth.
@@ -83,12 +83,12 @@ function loadtrajectory(file)
 
     nodeEnter.append('circle')
         .attr('r', 1e-6)
-        .attr('class', function(d) { if (d.initial) { return 'nodecircle initial'; } return 'node';});
+        .attr('class', function(d) { if (d.initial) { return 'nodecircle initial'; } return 'nodecircle';});
 
     nodeEnter.append('text')
         .attr('dx', function(d) { return 0;})
         .attr('dy', function(d) { return '-0.8em';})
-        .attr('text-anchor','middle')
+        .attr('text-anchor', 'middle')
         .attr('class', function(d) { if (d.initial) { return 'nodetext initial'; } return 'nodetext ';})
         .text(function(d) { return '['+d.node+'] '+ d.action.replace('intention','int')
                                                        .replace('phy','P ')
@@ -130,7 +130,8 @@ function loadtrajectory(file)
     // Enter any new links at the parent's previous position.
     link.enter().insert('path', 'g')
         .attr('class', function(d,i) {
-          console.log(d.source.observations, i, d.source.observations[i]);
+          console.log('Source ',d.source.observations, i, d.source.observations[i]);
+          // console.log('target ',d.target.observations, i, d.target.observations[i]);
           return 'link ' + d.source.observations[i]; })
         .attr('d', function(d) {
           var o = {x: source.x0, y: source.y0};
