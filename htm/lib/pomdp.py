@@ -400,8 +400,9 @@ class GraphPolicyBeliefRunner(GraphPolicyRunner):
             try:
                 b = self.current_belief
                 self.step(obs)
-                return self.trajectory_tree(horizon)
+                tree = self.trajectory_tree(horizon)
                 self.reset(belief=b)  # Restore state for next obs
+                return tree
             except ValueError:  # Observation is impossible here
                 pass
         return None  # either horizon is reached or observation is impossible
