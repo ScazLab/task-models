@@ -275,6 +275,7 @@ def _start_indices_from(l):
 class _ParentNodeToPOMDP(_NodeToPOMDP):
 
     def __init__(self, node, t_com, flags=[]):
+        self.node = node
         self.children = [self.from_node(n, t_com, flags=flags)
                          for n in node.children]
         child_states = [c.states for c in self.children]
@@ -320,10 +321,14 @@ class _SequenceToPOMDP(_ParentNodeToPOMDP):
                        s_start + self.s_indices[i], next_inits[i],
                        next_probas[i], durations)
 
+    def _states_indices(self, s_start):
+        return [[s_start + self.s_indices[i] + j
+                 for j in range(len(c.states))]
+                for i, c in enumerate(self.children)]
+
     def update_O(self, O, a_start, s_start, s_next, s_before, s_after):
+        states = self._states_indices(s_start)
         next_inits = self._next_init_children(s_start, s_next)
-        states = [[self.s_indices[i] + j for j in range(len(c.states))]
-                  for i, c in enumerate(self.children)]
         for i, c in enumerate(self.children):
             cs_before = concatenate(states[:i])
             cs_after = concatenate(states[i+1:])

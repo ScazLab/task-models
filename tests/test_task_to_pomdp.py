@@ -162,6 +162,10 @@ class TestSequenceToPOMDP(TestParentToPOMDP, TestCase):
     def test_start(self):
         self.assertEqual(self.n2p.start, [1])
 
+    def test_start_indices(self):
+        correct = [[3, 4, 5], [6, 7, 8]]
+        self.assertEqual(self.n2p._states_indices(3), correct)
+
 
 class TestAlternativeToPOMDP(TestParentToPOMDP, TestCase):
 
