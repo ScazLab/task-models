@@ -279,7 +279,7 @@ class POMDP:
         return full_path
 
     def solve(self, timeout=None, n_iterations=None, method='incprune',
-              grid_type=None, seed=None):
+              grid_type=None, seed=None, verbose=False):
         """
         :param method: incprune | grid (incprune)
         :param grid_type: simplex | pairwise (simplex)
@@ -303,7 +303,7 @@ class POMDP:
             with open(os.devnull, 'w') as DEVNULL:
                 subprocess.check_call(
                     [self._solver_path] + args, cwd=tmpdir,
-                    stdout=DEVNULL)
+                    stdout=None if verbose else DEVNULL)
             return self.load_policy_from(tmpdir, name)
 
     def load_policy_from(self, path, name):
