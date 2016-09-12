@@ -115,7 +115,7 @@ function loadpolicy(file, errors)
 
     var force = d3.layout.force()
         .size([width, height])
-        .linkStrength(0.2)
+        .linkStrength(0.8)
         .friction(0.85)
         .charge(-1000);
 
@@ -130,7 +130,11 @@ function loadpolicy(file, errors)
                   .data(bilinks)
                   .enter().append('path')
                   .attr('class', function(d) { return 'link ' + d.obs; })
-                  .attr('marker-end', function(d) {return 'url(#arrowhead_'+d.obs+')';});
+                  .attr('marker-end', function(d) {
+                    if(d.obs=='yes' || d.obs=='no' || d.obs=='error' || d.obs=='none')
+                      return 'url(#arrowhead_'+d.obs+')';
+                    else
+                      return 'url(#arrowhead)';});
 
     // Now it's the nodes turn. Each node is drawn as a circle, with a label
     var gnode = vis.selectAll('g.gnode')
@@ -262,6 +266,17 @@ function loadpolicy(file, errors)
   function appendmarkers()
   {
     // Arrowhead markers for the links (one for each color)
+    vis.append('defs').append('marker')
+        .attr('id', 'arrowhead')
+        .attr('refX', 6 + 1) /*must be smarter way to calculate shift*/
+        .attr('refY', 2)
+        .attr('markerWidth', 8)
+        .attr('markerHeight', 4)
+        .attr('orient', 'auto')
+        .style('fill', '#bbb')
+        .append('path')
+        .attr('d', 'M 0,0 V 4 L6,2 Z'); //this is actual shape for arrowhead
+
     vis.append('defs').append('marker')
         .attr('id', 'arrowhead_none')
         .attr('refX', 6 + 1) /*must be smarter way to calculate shift*/
