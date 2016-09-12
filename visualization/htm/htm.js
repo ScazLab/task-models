@@ -1,5 +1,5 @@
 // ************** Generate the tree diagram  *****************
-var jsonfile = "https://raw.githubusercontent.com/ScazLab/hrc-papers/master/javascript/htm/json/icra.json?token=AELQJ1B-IJ-logFrv0jRWeK5V7IHjo-9ks5X0sScwA%3D%3D";
+var jsonfile = "json/icra.json";
 // var jsonfile = "flare.json";
 
 var margin = {top: 40, right: 120, bottom: 20, left: 120},
@@ -54,7 +54,7 @@ function update(source) {
       links = tree.links(nodes);
 
   // Normalize for fixed-depth.
-  nodes.forEach(function(d) { d.y = d.depth * 140; });
+  nodes.forEach(function(d) { d.y = d.depth * 100; });
 
   // Declare the nodes...
   var node = svg.selectAll("g.node")
