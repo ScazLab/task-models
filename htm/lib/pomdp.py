@@ -17,6 +17,10 @@ class ValueFunctionParseError(ValueError):
     pass
 
 
+class Impossible(ValueError):
+    pass
+
+
 def parse_value_function(reader):
     has_action = False
     actions = []
@@ -250,7 +254,7 @@ class POMDP:
         new_b = b.dot(self.T[a, ...]) * self.O[a, :, o]
         s = new_b.sum()
         if s == 0.:
-            raise ValueError('Impossible observation: ' + str(o))
+            raise Impossible('Impossible observation: ' + str(o))
         return new_b / new_b.sum()
 
     def dump(self):
@@ -373,7 +377,7 @@ class GraphPolicyRunner(object):
     def step(self, observation):
         self.current = self.gp.next(self.current, observation)
         if self.current is None:
-            raise ValueError('Got unexpected observation')
+            raise Impossible('Got unexpected observation')
 
 
 class GraphPolicyBeliefRunner(GraphPolicyRunner):
@@ -403,7 +407,7 @@ class GraphPolicyBeliefRunner(GraphPolicyRunner):
                 tree = self.trajectory_tree(horizon)
                 self.reset(belief=b)  # Restore state for next obs
                 return tree
-            except ValueError:  # Observation is impossible here
+            except Impossible:  # Observation is impossible here
                 pass
         return None  # either horizon is reached or observation is impossible
 
@@ -432,3 +436,79 @@ class GraphPolicyBeliefRunner(GraphPolicyRunner):
         with open(dest, 'w') as f:
             json.dump(self.trajectory_trees_from_starts(horizon=horizon),
                       f, indent=indent)
+
+    def visit(self, max_states=100):
+        v = _Aux(self)
+        v.visit()
+        return GraphPolicyFromBeliefVisit(v.actions, v.observations,
+                                          np.asarray(v.trans),
+                                          np.vstack(v.nodes), 0)
+
+
+class GraphPolicyFromBeliefVisit(GraphPolicy):
+
+    def __init__(self, actions, observations, transitions, values, init):
+        self.actions = actions
+        self.observations = observations
+        self.transitions = np.asarray(transitions)
+        assert(self.transitions.shape == (self.n_nodes, len(observations)))
+        self.values = values
+        self.init = init
+
+
+from queue import Queue
+
+
+class _Aux:
+
+    max_nodes = 100
+    tol = 1.e-2
+
+    def __init__(self, pgbr):
+        self.pr = pgbr
+        self.nodes = []
+        self.queue = Queue()  # FIFO
+        self.trans = []
+        self.actions = []
+
+    @property
+    def observations(self):
+        return self.pr.pomdp.observations
+
+    @property
+    def beliefs(self):
+        return np.vstack(self.nodes)
+
+    def closest(self, b):
+        if len(self.nodes) < 1:
+            return -1, np.inf
+        else:
+            distances = np.sqrt(((self.beliefs - b) ** 2).sum(-1))
+            i = distances.argmin()
+            return i, distances[i]
+
+    def index(self, b):
+        i, d = self.closest(b)
+        if d < self.tol:
+            return i
+        else:
+            i = len(self.nodes)
+            self.nodes.append(b)
+            self.trans.append([None for _ in self.observations])
+            self.pr.reset(np.array(b))
+            self.actions.append(self.pr.get_action())
+            self.queue.put(i)
+            return i
+
+    def visit(self):
+        self.index(self.pr.pomdp.start)
+        while not (self.queue.empty() or len(self.nodes) > self.max_nodes):
+            ib = self.queue.get()
+            for io, o in enumerate(self.observations):
+                try:
+                    self.pr.reset(belief=np.array(self.nodes[ib]))
+                    self.pr.step(o)
+                    ib_new = self.index(self.pr.current_belief)
+                    self.trans[ib][io] = int(ib_new)
+                except Impossible:
+                    pass
