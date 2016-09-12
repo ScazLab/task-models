@@ -18,8 +18,30 @@
 
 <body id="page-top" class="index">
 <section>
-    <div class="container-fluid">
-        <div id="tree-container" class="row-fluid"/>
+    <div class="container">
+        <div class="row">
+            <div class="input-wrapper col-xs-10 text-center">
+                <div class="input-group">
+                    <span class="input-group-btn">
+                        <input class="btn btn-info" type="button" value="Select file*" id="get_file">
+                        <input type="file" id="my_file">
+                    </span>
+                    <div class="form-control" id="customfileupload">[*] Target file should be in the same folder of the original</div>
+                </div>
+            </div>
+            <div class="col-xs-2 text-center">
+                <a id="htm-refresh" href="#" class="btn btn-secondary"><i class="fa fa-fw fa-refresh"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-10 text-center">
+                <div id="svg-container" class="svg-container">
+                    <svg></svg>
+                </div>
+            </div>
+        </div>
     </div>
     <div id="status" class="container">
         <div class="row">
@@ -73,12 +95,36 @@
 <script src="ros.js"></script>
 
 <script type="text/javascript">
-$("#tree-container").on("mousedown", function (e) {
-e.preventDefault();
-$(this).addClass("mouse-down");
-}).on("mouseup", function () {
-$(this).removeClass("mouse-down");
-});
+    document.getElementById('get_file').onclick = function() {
+        document.getElementById('my_file').click();
+    };
+
+    $('input[type=file]').change(function (e) {
+        $('#customfileupload').html($(this).val());
+        loadnewhtm($(this).val());
+    });
+
+    document.getElementById('htm-refresh').onclick = function(e) {
+        loadnewhtm("");
+    }
+
+    function loadnewhtm(file) {
+        var svg = d3.select("svg");
+        svg.selectAll("*").remove();
+        loadhtm(file);
+    };
+</script>
+
+<script type="text/javascript">
+    $("#svg-container").on("mousedown", function (e)
+                        {
+                            e.preventDefault();
+                            $(this).addClass("mouse-down");
+                        })
+                       .on("mouseup", function ()
+                        {
+                            $(this).removeClass("mouse-down");
+                        });
 </script>
 </body>
 </html>

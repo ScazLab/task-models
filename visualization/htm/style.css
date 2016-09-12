@@ -1,20 +1,82 @@
-body {
-  background-color: #edeeef;
+@font-face {
+  font-family: 'Montserrat';
+  src: url("fonts/Montserrat-Light.otf") format("opentype");
+  font-weight: 300;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url("fonts/Montserrat-UltraLight.otf") format("opentype");
+  font-weight: 100;
+}
+
+html {
   font-size: 16px;
 }
 
-section>div>div {
+body {
+  background-color: #edeeef;
+  color: #505050;
+  font-family: 'Lato', sans-serif;
+}
+
+a,
+a:hover,
+a:focus,
+a:active,
+a.active {
+  outline: 0;
+  color: inherit;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+#get_file,
+.title.filename,
+.message.error,
+.legend {
+  text-transform: uppercase;
+  font-family: Montserrat,"Helvetica Neue",Helvetica,Arial,sans-serif;
+  font-weight: 100;
+}
+
+.row>div {
   padding-top: 20px;
 }
 
-#tree-container svg {
-  display: block;
-  margin: auto;
+.btn-group .btn {
+  margin-bottom: 0;
+}
+
+.svg-container {
+  display: inline-block;
+  position: relative;
+  width: 100%;
+  padding-bottom: 50%; /* aspect ratio */
+  vertical-align: top;
+  overflow: hidden;
+}
+
+.svg-content-responsive {
+  display: inline-block;
+  position: absolute;
+  top: 10px;
+  left: 0;
   background-color: #fff;
 }
 
 .mouse-down {
   cursor: move;
+}
+
+.message.error,
+.title.filename {
+  font-size: 1.6rem;
+  font-weight: 300;
 }
 
 .node {
@@ -76,4 +138,26 @@ section>div>div {
 #status .dropdown-menu,
 #status .dropdown-item {
     max-width: 100%;
+}
+
+@media (max-width: 1600px) {
+  .input-group {
+    max-width: 750px;
+  }
+}
+
+@media (min-width:2000px) {
+  .container {
+      max-width: 80%;
+  }
+}
+
+@media(max-width:650px) {
+  .input-wrapper {
+    display: none;
+  }
+}
+
+.text-center {
+  text-align: center;
 }
