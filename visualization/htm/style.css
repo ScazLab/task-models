@@ -11,10 +11,11 @@
 }
 
 html {
-  font-size: 16px;
+  font-size: 18px;
 }
 
 body {
+  font-size: 16px;
   background-color: #edeeef;
   color: #505050;
   font-family: 'Lato', sans-serif;
@@ -35,6 +36,7 @@ h3,
 h4,
 h5,
 h6,
+.interface .btn,
 #get_file,
 .title.filename,
 .message.error,
@@ -50,6 +52,15 @@ h6,
 
 .btn-group .btn {
   margin-bottom: 0;
+}
+
+.interface .btn {
+  min-height: 74px;
+  min-width: 70px;
+  font-size: 1.4rem;
+  font-weight: 300;
+  margin-top: 10px;
+  margin-bottom: 10px;
 }
 
 .svg-container {
@@ -75,7 +86,7 @@ h6,
 
 .message.error,
 .title.filename {
-  font-size: 1.6rem;
+  font-size: 2rem;
   font-weight: 300;
 }
 
@@ -140,6 +151,14 @@ h6,
     max-width: 100%;
 }
 
+#my_file {
+  display: none;
+}
+
+#get_file {
+  font-weight: 300;
+}
+
 @media (max-width: 1600px) {
   .input-group {
     max-width: 750px;
@@ -150,6 +169,13 @@ h6,
   .container {
       max-width: 80%;
   }
+
+  .interface .btn {
+    min-height: 97px;
+    min-width: 120px;
+    font-size: 1.8rem;
+  }
+
 }
 
 @media(max-width:650px) {

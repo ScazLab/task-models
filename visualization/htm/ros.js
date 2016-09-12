@@ -29,7 +29,6 @@ ros.on('close', function() {
   document.getElementById('error').style.display = 'inline-block';
 });
 
-
 // Create a connection to the rosbridge WebSocket server.
 ros.connect('ws://localhost:9090');
 
@@ -39,6 +38,66 @@ ros.connect('ws://localhost:9090');
 // First, we create a Topic object with details of the topic's name and message type.
 var elemPressed = new ROSLIB.Topic({
   ros : ros,
-  name : '/htm_elem_pressed',
+  name : '/web_interface',
   messageType : 'std_msgs/String'
 });
+
+// Topic for error passing to the left arm
+var errorPressedL = new ROSLIB.Topic({
+  ros : ros,
+  name : '/robot/digital_io/left_lower_button/state',
+  messageType : 'baxter_core_msgs/DigitalIOState'
+});
+
+// Topic for error passing to the right arm
+var errorPressedR = new ROSLIB.Topic({
+  ros : ros,
+  name : '/robot/digital_io/right_lower_button/state',
+  messageType : 'baxter_core_msgs/DigitalIOState'
+});
+
+// Add a callback for any element on the page
+function callback(e) {
+    var e = window.e || e;
+
+    // console.log(e.target.tagName);
+    if (e.target.tagName == 'BUTTON')
+    {
+        console.log('Pressed '+ e.target.tagName +
+                    ' item: ' + e.target.firstChild.nodeValue);
+
+        if (e.target.firstChild.nodeValue == 'error')
+        {
+          var message = new ROSLIB.Message({
+            state: 1,
+            isInputOnly: true
+          });
+
+          errorPressedL.publish(message);
+          errorPressedR.publish(message);
+        }
+        else if (e.target.firstChild.nodeValue == 'get CF'  ||
+                 e.target.firstChild.nodeValue == 'get LL'  ||
+                 e.target.firstChild.nodeValue == 'get RL'  ||
+                 e.target.firstChild.nodeValue == 'get TOP' ||
+                 e.target.firstChild.nodeValue == 'hold'     )
+        {
+          console.log('I m here!');
+        }
+        else
+        {
+          var message = new ROSLIB.Message({
+            data: e.target.firstChild.nodeValue
+          });
+
+          elemPressed.publish(message);
+        }
+    }
+
+    return;
+}
+
+if (document.addEventListener)
+    document.addEventListener('click', callback, false);
+else
+    document.attachEvent('onclick', callback);
