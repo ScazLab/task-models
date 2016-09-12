@@ -64,7 +64,7 @@ function loadhtm(file)
         }
     }
 
-    root.children.forEach(collapse);
+    // root.children.forEach(collapse);
     update(root);
   });
 

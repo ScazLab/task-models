@@ -9,7 +9,14 @@ T_WAIT = 1.
 T_COMM = 2.
 C_INTR = 1.
 C_ERR = 5.
+
+## Tested scenarios:
+# 1. with full sequence of sequential actions
+R_END = 0.1
+LOOP = False
+# 2. with full sequence of sequential actions
 R_END = 100
+LOOP = True
 
 ## Define the task
 mount_central = SequentialCombination([
@@ -44,7 +51,7 @@ chair_task = HierarchicalTask(root=SequentialCombination(
 
 ## Convert the task into a POMDP
 
-h2p = HTMToPOMDP(T_WAIT, T_COMM, C_INTR, end_reward=R_END, loop=True)
+h2p = HTMToPOMDP(T_WAIT, T_COMM, C_INTR, end_reward=R_END, loop=LOOP)
 p = h2p.task_to_pomdp(chair_task)
 #p.discount = .99
 

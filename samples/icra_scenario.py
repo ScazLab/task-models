@@ -39,4 +39,4 @@ workshop_task = HierarchicalTask(
         name='Available Tasks')
     )
 
-print(json.dumps(workshop_task.as_dictionary(), indent=2))
+# print(json.dumps(workshop_task.as_dictionary(), indent=2))
