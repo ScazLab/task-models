@@ -18,10 +18,10 @@ def plot_beliefs(array, states=None, ylabels=None, xlabels_rotation=0,
     p = ax.pcolormesh(array, **kwargs)
     # Set ticks
     ax.set_xticks(np.arange(0.5, n_states + 0.5))
-    ax.set_xticklabels(states, rotation=xlabels_rotation)
+    ax.set_xticklabels(states, rotation=xlabels_rotation, ha='right')
     ax.set_yticks(np.arange(0.5, n_beliefs + 0.5))
     ax.set_yticklabels(ylabels)
     ax.set_xlim([0, n_states])
     ax.set_ylim([0, n_beliefs])
-    ax.grid(axis=['x', 'y'], color='white', linestyle='-', linewidth=0.5)
+    ax.grid()
     return p
