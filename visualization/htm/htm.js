@@ -18,10 +18,9 @@ function loadtrajectory(file)
       rectH = 40;
 
   var tree = d3.layout.tree()
-               .size([height, width])
                .nodeSize([rectW+20, rectH])
                .separation(function separation(a, b) {
-                  return (a.parent == b.parent ? 1 : 2) / 1.08;
+                  return (a.parent == b.parent ? 1 : 1.4);
                 });
 
   var diagonal = d3.svg.diagonal()
