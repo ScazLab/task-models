@@ -63,17 +63,17 @@
 
     $('input[type=file]').change(function (e) {
         $('#customfileupload').html($(this).val());
-        loadnewtrajectory($(this).val(), undefined);
+        loadnewtrajectory($(this).val());
     });
 
     document.getElementById('trajectory-refresh').onclick = function(e) {
-        loadnewtrajectory("", undefined);
+        loadnewtrajectory("");
     }
 
-    function loadnewtrajectory(file, show_errors) {
+    function loadnewtrajectory(file) {
         var svg = d3.select("svg");
         svg.selectAll("*").remove();
-        loadtrajectory(file, show_errors);
+        loadtrajectory(file);
     };
 </script>
 
