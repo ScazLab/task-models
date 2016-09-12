@@ -31,12 +31,21 @@ function loadhtm(file)
               .attr('preserveAspectRatio', 'xMinYMin meet')
               .attr('viewBox', '0 0 ' + width + ' ' + height)
               //class to make it responsive
-              .classed('svg-content-responsive', true)
-              .call(zm = d3.behavior.zoom().scaleExtent([1,3]).on('zoom', redraw)).append('g')
-              .attr('transform', 'translate(' + (width-rectW)/2 + ',' + 20 + ')');
+              .classed('svg-content-responsive', true);
 
-  //necessary so that zoom knows where to zoom and unzoom from
-  zm.translate([(width-rectW)/2, 20]);
+  svg.call(d3.behavior.zoom().scaleExtent([0.4, 3]).on('zoom', redraw));
+
+  svg.append('text')
+     .attr('dx', width/2)
+     .attr('dy', height/15)
+     .attr('class', 'title filename')
+     .attr('text-anchor','middle')
+     .text(file.replace('.json','').replace('_',' '));
+
+  var vis = svg.append('svg:g');
+
+  var draw = vis.append('svg:g')
+                .attr('transform', 'translate(' + (width-rectW)/2 + ',' + 100 + ')');
 
   // load the external data
   d3.json('json/'+file, function(error, json)
@@ -70,7 +79,7 @@ function loadhtm(file)
     nodes.forEach(function(d) { d.y = d.depth * 100; });
 
     // Declare the nodes...
-    var node = svg.selectAll('g.node')
+    var node = draw.selectAll('g.node')
                   .data(nodes, function(d) { return d.id; }); // { return d.id || (d.id = ++i); });
 
     // Enter the nodes.
@@ -140,7 +149,7 @@ function loadhtm(file)
                               .remove();
 
     // Declare the links...
-    var link = svg.selectAll('path.link')
+    var link = draw.selectAll('path.link')
                   .data(links, function(d) { return d.target.id; });
 
     // console.log(link);
@@ -184,10 +193,9 @@ function loadhtm(file)
 
   //Redraw for zoom
   function redraw() {
-    //console.log('here', d3.event.translate, d3.event.scale);
-    svg.attr('transform',
-        'translate(' + d3.event.translate + ')'
-        + ' scale(' + d3.event.scale + ')');
+    vis.attr('transform',
+             'translate(' + d3.event.translate + ')'
+              + ' scale(' + d3.event.scale + ')');
   };
 
 
