@@ -1,12 +1,8 @@
 // ************** Generate the tree diagram  *****************
 var jsonfile = "json/icra.json";
-// var jsonfile = "flare.json";
 
-var margin = {top: 40, right: 120, bottom: 20, left: 120},
-    outerwidth = 1560,
-    outerheight = 700,
-    width  = outerwidth - margin.right - margin.left,
-    height = outerheight - margin.top - margin.bottom;
+var width  = 1560,
+    height = 700;
 
 var i = 0,
     duration = 500,
@@ -15,19 +11,22 @@ var i = 0,
 
 var tree = d3.layout.tree()
              .size([height, width])
-             .nodeSize([rectW+20, rectH+20]);
+             .nodeSize([rectW+20, rectH])
+             .separation(function separation(a, b) {
+                return (a.parent == b.parent ? 1 : 2) / 1.08;
+              });
 
 var diagonal = d3.svg.diagonal()
                  .projection(function(d) { return [d.x+rectW/2, d.y+rectH/2]; });
 
 var svg = d3.select("#tree-container").append("svg")
-            .attr("width", width + margin.right + margin.left)
-            .attr("height", height + margin.top + margin.bottom)
+            .attr("width", width)
+            .attr("height", height)
             .call(zm = d3.behavior.zoom().scaleExtent([1,3]).on("zoom", redraw)).append("g")
-            .attr("transform", "translate(" + outerwidth/2 + "," + 20 + ")");
+            .attr("transform", "translate(" + (width-rectW)/2 + "," + 20 + ")");
 
 //necessary so that zoom knows where to zoom and unzoom from
-zm.translate([outerwidth/2, 20]);
+zm.translate([(width-rectW)/2, 20]);
 
 function collapse(d) {
     if (d.children) {
@@ -67,8 +66,7 @@ function update(source) {
                         var res="node";
                         if (d.attributes) {res=res+" "+d.attributes.join(" ");}
                         if (d._children)  {res=res+" collapsed";}
-                        return res;
-                      })
+                        return res; })
                       .attr("transform", function(d) { return "translate(" + source.x0 + "," + source.y0 + ")"; })
                       .on("click", click);
 
