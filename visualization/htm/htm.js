@@ -1,16 +1,16 @@
 var defaultjsonfile = 'icra.json';
 
-loadtrajectory('');
+loadhtm('');
 
-function loadtrajectory(file)
+function loadhtm(file)
 {
   if (file == '') { file = defaultjsonfile;}
   else            { defaultjsonfile = file;};
 
   console.log('Loading file: '+file);
 
-  var width  = 1560,
-      height = 700;
+  var width  = 1590,
+      height =  825;
 
   var i = 0,
       duration = 500,
@@ -26,9 +26,12 @@ function loadtrajectory(file)
   var diagonal = d3.svg.diagonal()
                    .projection(function(d) { return [d.x+rectW/2, d.y+rectH/2]; });
 
-  var svg = d3.select('#tree-container').append('svg')
-              .attr('width', width)
-              .attr('height', height)
+  var svg = d3.select('svg')
+              //responsive SVG needs these 2 attributes and no width and height attr
+              .attr('preserveAspectRatio', 'xMinYMin meet')
+              .attr('viewBox', '0 0 ' + width + ' ' + height)
+              //class to make it responsive
+              .classed('svg-content-responsive', true)
               .call(zm = d3.behavior.zoom().scaleExtent([1,3]).on('zoom', redraw)).append('g')
               .attr('transform', 'translate(' + (width-rectW)/2 + ',' + 20 + ')');
 
@@ -41,8 +44,8 @@ function loadtrajectory(file)
     if (error) {throw error;}
 
     root = json.nodes;
-    root.x0 = width/2;
-    root.y0 = height/2;
+    root.x0 = 0;
+    root.y0 = 0;
 
     function collapse(d) {
         if (d.children) {
