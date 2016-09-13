@@ -411,7 +411,7 @@ class HTMToPOMDP:
 
     def task_to_pomdp(self, task):
         n2p = _NodeToPOMDP.from_node(task.root, self.t_com, flags=self.flags)
-        states = n2p.states.copy()
+        states = [s for s in n2p.states]
         if 'reward_state' in self.flags:
             states.append('end-reward')
         states.append('end')

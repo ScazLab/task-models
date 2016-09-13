@@ -7,7 +7,7 @@ from distutils import spawn
 
 import numpy as np
 
-from .py23 import TemporaryDirectory
+from .py23 import TemporaryDirectory, Queue
 
 
 SOLVER_NAME = 'pomdp-solve'
@@ -454,9 +454,6 @@ class GraphPolicyFromBeliefVisit(GraphPolicy):
         assert(self.transitions.shape == (self.n_nodes, len(observations)))
         self.values = values
         self.init = init
-
-
-from queue import Queue
 
 
 class _Aux:

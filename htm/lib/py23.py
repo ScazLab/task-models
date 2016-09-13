@@ -3,6 +3,7 @@ import tempfile
 
 if sys.version_info >= (3, 0):
     TemporaryDirectory = tempfile.TemporaryDirectory
+    from queue import Queue
 
 else:
     import shutil
@@ -17,3 +18,5 @@ else:
 
         def __exit__(self, type, value, traceback):
             shutil.rmtree(self.name)
+
+    from Queue import Queue
