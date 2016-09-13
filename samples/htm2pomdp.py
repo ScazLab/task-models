@@ -53,7 +53,8 @@ chair_task = HierarchicalTask(root=SequentialCombination(
 
 ## Convert the task into a POMDP
 
-h2p = HTMToPOMDP(T_WAIT, T_COMM, C_INTR, end_reward=R_END, loop=LOOP)
+h2p = HTMToPOMDP(T_WAIT, T_COMM, C_INTR, end_reward=R_END, loop=LOOP,
+                 reward_state=False)
 p = h2p.task_to_pomdp(chair_task)
 #p.discount = .99
 

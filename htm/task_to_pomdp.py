@@ -369,9 +369,11 @@ class HTMToPOMDP:
 
     wait = 0
     end = -1
+    endr = -2  # End reward
 
     def __init__(self, t_wait, t_com, intr_cost=0, end_reward=10.,
-                 deterministic=False, structured=False, loop=False):
+                 deterministic=False, structured=False, loop=False,
+                 reward_state=False):
         self.t_wait = t_wait
         self.t_com = t_com
         self.end_reward = end_reward
@@ -384,11 +386,15 @@ class HTMToPOMDP:
             self.flags.add('structured')
         if loop:
             self.flags.add('loop')
+        if reward_state:
+            self.flags.add('reward_state')
 
     def update_T_end(self, T, init):
         if 'loop' in self.flags:
             T[:, self.end, init] = 1.  # go back to start
         else:
+            if 'reward_state' in self.flags:
+                T[:, self.endr, self.end] = 1.  # go to end after reward
             T[:, self.end, self.end] = 1.  # end stats is stable
 
     def update_O_wait(self, O):
@@ -396,18 +402,29 @@ class HTMToPOMDP:
 
     def update_R_end(self, R):
         R[:, self.end, ...] = self.c_intr  # end state has cost 1
-        R[self.wait, self.end, ...] = -self.end_reward   # except on wait
+        if 'reward_state' in self.flags:
+            R[:, self.endr, ...] = self.c_intr  # only wait gives reward
+            R[self.wait, self.endr, ...] = -self.end_reward  # get reward
+            R[self.wait, self.end, ...] = 0   # except on wait
+        else:
+            R[self.wait, self.end, ...] = -self.end_reward   # except on wait
 
     def task_to_pomdp(self, task):
         n2p = _NodeToPOMDP.from_node(task.root, self.t_com, flags=self.flags)
-        states = n2p.states + ['end']
+        states = n2p.states.copy()
+        if 'reward_state' in self.flags:
+            states.append('end-reward')
+        states.append('end')
         actions = ['wait'] + n2p.actions
         start = np.zeros(len(states))
         start[n2p.init] = n2p.start
         n_s = len(states)
         n_a = len(actions)
         n_o = len(n2p.observations)
-        end = n_s - 1
+        if 'reward_state' in self.flags:
+            end = n_s - 2
+        else:
+            end = n_s - 1
         durations = [self.t_wait] + n2p.durations
         T = np.zeros((n_a, n_s, n_s))
         n2p.update_T(T, self.wait, 1, 0, [end], [1.], durations)
@@ -415,11 +432,16 @@ class HTMToPOMDP:
         O = np.zeros((n_a, n_s, n_o))
         n2p.update_O(O, 1, 0, [end], [], [end])
         self.update_O_wait(O)
-        if 'loop' in self.flags:
+        if 'loop' in self.flags or 'reward_state' in self.flags:
             n_o += 1
             O_done = np.zeros((n_a, n_s, 1))
             O = np.concatenate([O, O_done], axis=-1)
-            O[:, self.end, :] = [0, 0, 0, 0, 1]  # Always observe done
+            if 'reward_state' in self.flags:
+                end = self.endr
+                O[:, self.end, :] = [1, 0, 0, 0, 0]  # Always observe nothing
+            else:
+                end = self.end
+            O[:, end, :] = [0, 0, 0, 0, 1]  # Always observe done
             # at the end even if other question asked
             n2p.observations = n2p.observations + ['done']
         R = np.zeros((n_a, n_s, n_s, n_o))
