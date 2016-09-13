@@ -14,7 +14,7 @@ mount_central = SequentialCombination([
     LeafCombination(CollaborativeAction(
         'Get central frame', (INF, 20., 30.))),
     LeafCombination(CollaborativeAction(
-        'Start Hold central frame', (3., 10., INF)))],
+        'Hold central frame', (3., 15., INF)))],
     name='Mount central frame')
 
 mount_legs = SequentialCombination([
@@ -42,6 +42,6 @@ mount_top = SequentialCombination([
                                         fail_probability=.1))],
     name='Mount top')
 
-chair_task_sequential = HierarchicalTask(root=SequentialCombination(
+stool_task_sequential = HierarchicalTask(root=SequentialCombination(
     [mount_central, mount_legs, release_central, mount_top],
-    name='Mount chair'))
+    name='Mount stool'))
