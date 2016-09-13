@@ -1,15 +1,8 @@
 import os
 
-from htm.task import (HierarchicalTask, SequentialCombination,
-                      AlternativeCombination, LeafCombination,
-                      ParallelCombination)
-from htm.task_to_pomdp import CollaborativeAction, HTMToPOMDP
-# Costs
-T_WAIT = 1.
-T_COMM = 2.
-C_INTR = 1.
-C_ERR = 5.
-INF = 100.
+from htm.task_to_pomdp import chair_task, T_WAIT, T_COMM, C_INTR
+from htm.stool_scenarios import HTMToPOMDP
+
 
 ## Tested scenarios:
 # 1. with full sequence of sequential actions
@@ -18,38 +11,6 @@ LOOP = False
 # 2. with full sequence of sequential actions
 # R_END = 100
 # LOOP = True
-
-## Define the task
-mount_central = SequentialCombination([
-    LeafCombination(CollaborativeAction(
-        'Get central frame', (INF, 20., 30.))),
-    LeafCombination(CollaborativeAction(
-        'Start Hold central frame', (3., 10., INF)))],
-    name='Mount central frame')
-#mount_legs = ParallelCombination([
-mount_legs = SequentialCombination([
-    SequentialCombination([
-        LeafCombination(CollaborativeAction(
-            'Get left leg', (INF, 20., 30.))),
-        LeafCombination(CollaborativeAction(
-            'Snap left leg', (5., INF, INF), fail_probability=.1)),
-        ], name='Mount left leg'),
-    SequentialCombination([
-        LeafCombination(CollaborativeAction(
-            'Get right leg', (INF, 20., 30.))),
-        LeafCombination(CollaborativeAction(
-            'Snap right leg', (5., INF, INF), fail_probability=.1)),
-        ], name='Mount right leg'),
-    ],
-    name='Mount legs')
-release_central = LeafCombination(CollaborativeAction('Release central frame', (INF, 1., 1.), no_probability=.1))
-mount_top = SequentialCombination([
-    LeafCombination(CollaborativeAction('Get top', (INF, 20., 30.))),
-    LeafCombination(CollaborativeAction('Snap top', (5., INF, INF), fail_probability=.1))],
-    name='Mount top')
-
-chair_task = HierarchicalTask(root=SequentialCombination(
-    [mount_central, mount_legs, release_central, mount_top], name='Mount chair'))
 
 ## Convert the task into a POMDP
 
