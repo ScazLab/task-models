@@ -9,8 +9,8 @@ function loadhtm(file)
 
   console.log('Loading file: '+file);
 
-  var width  = 1590,
-      height =  825;
+  var width  = 1270,
+      height =  645;
 
   var i = 0,
       duration = 500,
