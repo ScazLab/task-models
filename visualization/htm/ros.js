@@ -66,6 +66,21 @@ var errorPressedR = new ROSLIB.Topic({
   messageType : 'baxter_core_msgs/DigitalIOState'
 });
 
+// Service Client to interface with the left arm
+var leftArmService  = new ROSLIB.Service({
+  ros : ros,
+  name: '/action_provider/service_left',
+  messageType : 'baxter_collaboration/DoAction'
+});
+
+// Service Client to interface with the right arm
+var rightArmService = new ROSLIB.Service({
+  ros : ros,
+  name: '/action_provider/service_right',
+  messageType : 'baxter_collaboration/DoAction'
+});
+
+
 // Add a callback for any element on the page
 function callback(e) {
     var e = window.e || e;
@@ -73,10 +88,11 @@ function callback(e) {
     // console.log(e.target.tagName);
     if (e.target.tagName == 'BUTTON')
     {
+        var obj = e.target.firstChild.nodeValue;
         console.log('Pressed '+ e.target.tagName +
-                    ' item: ' + e.target.firstChild.nodeValue);
+                    ' item: ' + obj);
 
-        if (e.target.firstChild.nodeValue == 'error')
+        if (obj == 'error')
         {
           var message = new ROSLIB.Message({
             state: 1,
@@ -86,18 +102,41 @@ function callback(e) {
           errorPressedL.publish(message);
           errorPressedR.publish(message);
         }
-        else if (e.target.firstChild.nodeValue == 'get CF'  ||
-                 e.target.firstChild.nodeValue == 'get LL'  ||
-                 e.target.firstChild.nodeValue == 'get RL'  ||
-                 e.target.firstChild.nodeValue == 'get TOP' ||
-                 e.target.firstChild.nodeValue == 'hold'     )
+        else if (obj == 'hold')
         {
-          console.log('I m here!');
+          var req = new ROSLIB.ServiceRequest(
+          {
+            action: 'hold',
+            object: -1
+          });
+          var res = new ROSLIB.ServiceResponse();
+
+          rightArmService.callService(req,function(rsp) {
+              console.log('Got Response: ' + rsp.success);
+          });
+        }
+        else if (obj == 'get CF' || obj == 'get LL' ||
+                 obj == 'get RL' || obj == 'get TOP' )
+        {
+          var req = new ROSLIB.ServiceRequest();
+          req.action = 'get';
+
+          if      (obj.replace('get ','') == 'CF')  { req.object = 24; }
+          else if (obj.replace('get ','') == 'LL')  { req.object = 17; }
+          else if (obj.replace('get ','') == 'RL')  { req.object = 26; }
+          else if (obj.replace('get ','') == 'TOP') { req.object = 21; }
+          else { console.error('Requested an object that was not allowed!'); };
+
+          var res = new ROSLIB.ServiceResponse();
+
+          leftArmService.callService(req,function(rsp) {
+              console.log('Got Response: ' + rsp.success);
+          });
         }
         else
         {
           var message = new ROSLIB.Message({
-            data: e.target.firstChild.nodeValue
+            data: obj
           });
 
           elemPressed.publish(message);
