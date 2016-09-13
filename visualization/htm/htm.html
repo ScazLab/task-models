@@ -36,55 +36,9 @@
     </div>
     <div class="container">
         <div class="row">
-            <div class="col-md-10 text-center">
+            <div class="col-md-12 text-center">
                 <div id="svg-container" class="svg-container">
                     <svg></svg>
-                </div>
-            </div>
-            <div class="interface col-md-2 text-xs-center">
-                <!-- Indicates a successful or positive action -->
-                <!-- <button type="button" class="btn btn-success btn-lg">yes</button>
-                <button type="button" class="btn btn-danger btn-lg">no</button> -->
-
-                <button type="button" class="btn btn-info btn-lg">get CF</button>
-                <button type="button" class="btn btn-info btn-lg">get LL</button>
-                <button type="button" class="btn btn-info btn-lg">get RL</button>
-                <button type="button" class="btn btn-info btn-lg">get TOP</button>
-                <button type="button" class="btn btn-info btn-lg">hold</button>
-
-                <!-- <button type="button" class="btn btn-danger btn-lg">error</button> -->
-            </div>
-        </div>
-    </div>
-    <div id="status" class="container">
-        <div class="row">
-            <div class="col-md-12 text-xs-center">
-                <div id="connecting" class="alert alert-info" role="alert">
-                  ROS STATUS: Connecting to rosbridge...
-                </div>
-                <div id="connected" style="display:none;" class="alert alert-success" role="alert">
-                  ROS STATUS: Connected!
-                </div>
-                <div id="error" style="display:none;" class="alert alert-warning" role="alert">
-                  ROS STATUS: Error in the backend!
-                </div>
-                <div id="closed" style="display:none;" class="alert alert-danger" role="alert">
-                  ROS STATUS: Connection closed.
-                </div>
-            </div>
-            <div class="col-md-12 text-xs-center">
-                <div class="btn-group" id="troubleshooting" style="display:none;">
-                    <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Troubleshooting</button>
-                    <div class="dropdown-menu">
-                        <a class="dropdown-item" href="#">0. Check the IP of the baxter's robot by looking for the <code>eth1</code> interface in <code>sudo ifconfig</code></a>
-                        <a class="dropdown-item" href="#">0. Copy this address into the <code>ros.js</code> file at line <code>33</code>, and in <code>rosbridge_websocket.launch</code> file at line <code>3</code></a>
-                        <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="#">1. Run <code>roslaunch rosbridge_server rosbridge_websocket.launch</code></a>
-                        <a class="dropdown-item" href="#">2. Reload this page</a>
-                        <a class="dropdown-item" href="#">3. Run <code>rostopic echo /web_interface</code></a>
-                        <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="#">4. At every press of the yes/no buttons, a message is sent on the topic <code>/web_interface</code> with some information on the button that has been pressed</a>
-                    </div>
                 </div>
             </div>
         </div>
@@ -93,10 +47,6 @@
 
 <!-- load the d3.js library -->
 <script src="http://d3js.org/d3.v3.min.js"></script>
-<!-- load the roslib.js libraries -->
-<script src="http://cdn.robotwebtools.org/EventEmitter2/current/eventemitter2.min.js"></script>
-<script type="text/javascript" src="http://cdn.robotwebtools.org/roslibjs/current/roslib.js"></script>
-
 <!-- jQuery Version 3.0.0 -->
 <script type="text/javascript" src="http://code.jquery.com/jquery-2.0.0.min.js"></script>
 <!-- Tether for Bootstrap -->
@@ -105,7 +55,6 @@
 <script src="https://cdn.rawgit.com/twbs/bootstrap/v4.0.0-alpha.2/dist/js/bootstrap.min.js"></script>
 
 <script src="htm.js"></script>
-<script src="ros.js"></script>
 
 <script type="text/javascript">
     document.getElementById('get_file').onclick = function() {

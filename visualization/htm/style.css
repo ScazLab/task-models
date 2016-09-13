@@ -54,15 +54,6 @@ h6,
   margin-bottom: 0;
 }
 
-.interface .btn {
-  min-height: 74px;
-  min-width: 70px;
-  font-size: 1.4rem;
-  font-weight: 300;
-  margin-top: 10px;
-  margin-bottom: 10px;
-}
-
 .svg-container {
   display: inline-block;
   position: relative;
@@ -169,13 +160,6 @@ h6,
   .container {
       max-width: 80%;
   }
-
-  .interface .btn {
-    min-height: 97px;
-    min-width: 120px;
-    font-size: 1.8rem;
-  }
-
 }
 
 @media(max-width:650px) {
