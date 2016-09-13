@@ -1,12 +1,12 @@
 
 var defaultjsonfile = 'test.json';
-var show_errors = true;
+var show_done = true;
 loadpolicy('');
 
 function loadpolicy(file, errors)
 {
-  if (typeof(errors)==='undefined') { errors = show_errors; }
-  else                              { show_errors = errors; }
+  if (typeof(errors)==='undefined') { errors = show_done; }
+  else                              { show_done = errors; }
   if (file == '') { file = defaultjsonfile;}
   else            { defaultjsonfile = file;};
 
@@ -22,7 +22,7 @@ function loadpolicy(file, errors)
               //class to make it responsive
               .classed("svg-content-responsive", true);
 
-  svg.call(d3.behavior.zoom().on('zoom', redraw));
+  svg.call(d3.behavior.zoom().scaleExtent([0.2, 2]).on('zoom', redraw));
 
   svg.append('text')
      .attr('dx', width/2)
@@ -84,8 +84,8 @@ function loadpolicy(file, errors)
       {
         if (json.transitions[i][j] != null)
         {
-          if (show_errors == false) {
-            if (json.observations[j] != 'error') {
+          if (show_done == false) {
+            if (json.observations[j] != 'done') {
               links.push({source: nodes[i].name,
                           target: nodes[json.transitions[i][j]].name,
                           obs:    json.observations[j]})
