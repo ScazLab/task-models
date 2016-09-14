@@ -102,15 +102,16 @@ class _NodeToPOMDP(object):
         raise NotImplementedError
 
     @staticmethod
-    def from_node(node, t_com, flags=[]):
+    def from_node(node, t_ask, t_tell, flags=[]):
         if isinstance(node, LeafCombination):
-            return _LeafToPOMDP(node, t_com, flags)
+            return _LeafToPOMDP(node, t_ask, t_tell, flags)
         elif isinstance(node, SequentialCombination):
-            return _SequenceToPOMDP(node, t_com, flags)
+            return _SequenceToPOMDP(node, t_ask, t_tell, flags)
         elif isinstance(node, AlternativeCombination):
-            return _AlternativesToPOMDP(node, t_com, flags)
+            return _AlternativesToPOMDP(node, t_ask, t_tell, flags)
         elif isinstance(node, ParallelCombination):
-            return _AlternativesToPOMDP(node.to_alternative(), t_com, flags)
+            return _AlternativesToPOMDP(node.to_alternative(), t_ask, t_tell,
+                                        flags)
         else:
             raise ValueError('Unkown combination: ' + type(node))
 
@@ -130,8 +131,9 @@ class _LeafToPOMDP(_NodeToPOMDP):
     act = 'phy'
     com = 'com'
 
-    def __init__(self, leaf, t_com, flags):
-        self.t_com = t_com
+    def __init__(self, leaf, t_ask, t_tell, flags):
+        self.t_tell = t_tell
+        self.t_ask = t_ask
         self.leaf = leaf
         # states: before (H: human intend act), before (R: robot, human do not
         # intend to act), after
@@ -158,7 +160,8 @@ class _LeafToPOMDP(_NodeToPOMDP):
 
     @property
     def durations(self):
-        return [self.t_err] + [self.t_com] * 3  # does not include wait
+        return [self.t_err, self.t_ask, self.t_tell, self.t_ask]
+        # (does not include wait)
 
     @property
     def _proba_no(self):
@@ -274,9 +277,9 @@ def _start_indices_from(l):
 
 class _ParentNodeToPOMDP(_NodeToPOMDP):
 
-    def __init__(self, node, t_com, flags=[]):
+    def __init__(self, node, t_ask, t_tell, flags=[]):
         self.node = node
-        self.children = [self.from_node(n, t_com, flags=flags)
+        self.children = [self.from_node(n, t_ask, t_tell, flags=flags)
                          for n in node.children]
         child_states = [c.states for c in self.children]
         self.s_indices = _start_indices_from(child_states)
@@ -371,11 +374,12 @@ class HTMToPOMDP:
     end = -1
     endr = -2  # End reward
 
-    def __init__(self, t_wait, t_com, intr_cost=0, end_reward=10.,
+    def __init__(self, t_wait, t_ask, t_tell, intr_cost=0, end_reward=10.,
                  deterministic=False, structured=False, loop=False,
                  reward_state=False):
         self.t_wait = t_wait
-        self.t_com = t_com
+        self.t_ask = t_ask
+        self.t_tell = t_tell
         self.end_reward = end_reward
         # Intrinsic costs of communication or action (in addition to duration)
         self.c_intr = intr_cost
@@ -410,7 +414,8 @@ class HTMToPOMDP:
             R[self.wait, self.end, ...] = -self.end_reward   # except on wait
 
     def task_to_pomdp(self, task):
-        n2p = _NodeToPOMDP.from_node(task.root, self.t_com, flags=self.flags)
+        n2p = _NodeToPOMDP.from_node(task.root, self.t_ask, self.t_tell,
+                                     flags=self.flags)
         states = [s for s in n2p.states]
         if 'reward_state' in self.flags:
             states.append('end-reward')

@@ -5,7 +5,8 @@ from htm.task_to_pomdp import CollaborativeAction
 
 # Costs
 T_WAIT = 1.
-T_COMM = 2.
+T_ASK = 2.
+T_TELL = 2.
 C_INTR = 1.
 C_ERR = 5.
 INF = 100.

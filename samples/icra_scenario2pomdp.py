@@ -1,7 +1,8 @@
 import os
 
 from htm.task_to_pomdp import HTMToPOMDP
-from htm.stool_scenarios import stool_task_sequential, T_WAIT, T_COMM, C_INTR
+from htm.stool_scenarios import (stool_task_sequential, T_WAIT, T_ASK, T_TELL,
+                                 C_INTR)
 
 
 ## Tested scenarios:
@@ -14,7 +15,7 @@ LOOP = False
 
 ## Convert the task into a POMDP
 
-h2p = HTMToPOMDP(T_WAIT, T_COMM, C_INTR, end_reward=R_END, loop=LOOP)
+h2p = HTMToPOMDP(T_WAIT, T_ASK, T_TELL, C_INTR, end_reward=R_END, loop=LOOP)
 p = h2p.task_to_pomdp(stool_task_sequential)
 #p.discount = .99
 

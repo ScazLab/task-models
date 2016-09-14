@@ -20,7 +20,7 @@ class TestLeafToPOMDP(TestCase):
     def setUp(self):
         leaf = LeafCombination(
             CollaborativeAction('Do it', (3., 2., 5.), human_probability=.3))
-        self.l2p = _NodeToPOMDP.from_node(leaf, 2.)
+        self.l2p = _NodeToPOMDP.from_node(leaf, 2., 1.)
 
     def test_times(self):
         self.assertEqual(self.l2p.t_hum, 3.)
@@ -28,7 +28,7 @@ class TestLeafToPOMDP(TestCase):
         self.assertEqual(self.l2p.t_err, 5.)
 
     def test_durations(self):
-        self.assertEqual(self.l2p.durations, [5., 2, 2, 2])
+        self.assertEqual(self.l2p.durations, [5., 2, 1, 2])
 
     def test_start(self):
         self.assertEqual(self.l2p.start, [1])
@@ -77,7 +77,7 @@ class TestLeafToPOMDP(TestCase):
     def test_with_failure_probability(self):
         leaf = LeafCombination(
             CollaborativeAction('Do it', (3., 2., 5.), fail_probability=.2))
-        l2p = _NodeToPOMDP.from_node(leaf, 2.)
+        l2p = _NodeToPOMDP.from_node(leaf, 2., 1.)
         T = np.zeros((7, 8, 8))
         l2p.update_T(T, 0, 2, 3, [6, 7], [.2, .8], list(range(7)))
         p_phy_robot = np.zeros((8))
@@ -89,7 +89,7 @@ class TestLeafToPOMDP(TestCase):
     def test_with_no_probability(self):
         leaf = LeafCombination(
             CollaborativeAction('Do it', (3., 2., 5.), no_probability=.2))
-        l2p = _NodeToPOMDP.from_node(leaf, 2.)
+        l2p = _NodeToPOMDP.from_node(leaf, 2., 1.)
         T = np.zeros((7, 8, 8))
         l2p.update_T(T, 0, 2, 3, [6, 7], [.2, .8], list(range(7)))
         p_ask_int = np.zeros((8))
@@ -101,7 +101,7 @@ class TestLeafToPOMDP(TestCase):
 class TestParentToPOMDP(object):
 
     def test_durations(self):
-        self.assertEqual(self.n2p.durations, [5., 2, 2, 2, 4, 2, 2, 2])
+        self.assertEqual(self.n2p.durations, [5., 2, 1, 2, 4, 2, 1, 2])
 
     def test_update_T_stays_in_range(self):
         T0 = np.random.random((11, 10, 10))
@@ -154,7 +154,7 @@ class TestSequenceToPOMDP(TestParentToPOMDP, TestCase):
         l2 = LeafCombination(CollaborativeAction('Do b', (2., 3., 4.),
                                                  human_probability=.7))
         seq = SequentialCombination([l1, l2], name='Do all')
-        self.n2p = _NodeToPOMDP.from_node(seq, 2.)
+        self.n2p = _NodeToPOMDP.from_node(seq, 2., 1.)
 
     def test_init(self):
         self.assertEqual(self.n2p.init, [0])
@@ -175,7 +175,7 @@ class TestAlternativeToPOMDP(TestParentToPOMDP, TestCase):
         l2 = LeafCombination(CollaborativeAction('Do b', (2., 3., 4.),
                                                  human_probability=.7))
         alt = AlternativeCombination([l1, l2], name='Do all')
-        self.n2p = _NodeToPOMDP.from_node(alt, 2.)
+        self.n2p = _NodeToPOMDP.from_node(alt, 2., 1.)
 
     def test_init(self):
         self.assertEqual(self.n2p.init, [0, 3])
@@ -187,7 +187,7 @@ class TestAlternativeToPOMDP(TestParentToPOMDP, TestCase):
 class TestHTM2POMDP(TestCase):
 
     def setUp(self):
-        self.h2p = HTMToPOMDP(1., 2., 1., end_reward=0.)
+        self.h2p = HTMToPOMDP(1., 2., 1., 1., end_reward=0.)
 
     def test_leaf_to_pomdp(self):
         # No probability of failure or human saying no here
@@ -215,7 +215,7 @@ class TestHTM2POMDP(TestCase):
                        [0., 0.,          1.,          0.],
                        [0., 0.,          0.,          1.]],
                       [[0., 0.,          1.,          0.],
-                       [0., 0.51341712,  0.,          0.48658288],
+                       [0., 0.71653131,  0.,          0.28346869],
                        [0., 0.,          1.,          0.],
                        [0., 0.,          0.,          1.]],
                       [[1., 0.,          0.,          0.],
@@ -256,7 +256,7 @@ class TestHTM2POMDP(TestCase):
         R = -np.broadcast_to(np.array([[1, 1, 1, 0],
                                        [6, 6, 3, 1],
                                        [3, 3, 3, 1],
-                                       [3, 3, 3, 1],
+                                       [2, 2, 2, 1],
                                        [3, 3, 3, 1],
                                        ]
                                       )[:, :, None, None],
@@ -310,10 +310,10 @@ class TestHTM2POMDP(TestCase):
              [0., 0.,      0., 0.,      0.,      0., 1.]],
             # Tell intention a
             [[0., 0.,      1., 0.,      0.,      0., 0.],
-             [0., 0.51342, 0., 0.48658, 0.,      0., 0.],
+             [0., 0.71653, 0., 0.28347, 0.,      0., 0.],
              [0., 0.,      1., 0.,      0.,      0., 0.],
              [0., 0.,      0., 1.,      0.,      0., 0.],
-             [0., 0.,      0., 0.,      0.36788, 0., 0.63212],
+             [0., 0.,      0., 0.,      0.60653, 0., 0.39347],
              [0., 0.,      0., 0.,      0.,      1., 0.],
              [0., 0.,      0., 0.,      0.,      0., 1.]],
             # Ask finished a
@@ -342,10 +342,10 @@ class TestHTM2POMDP(TestCase):
              [0., 0.,      0., 0.,      0.,      0., 1.]],
             # Tell intention b
             [[1., 0.,      0., 0.,      0.,      0., 0.],
-             [0., 0.51342, 0., 0.48658, 0.,      0., 0.],
+             [0., 0.71653, 0., 0.28347, 0.,      0., 0.],
              [0., 0.,      1., 0.,      0.,      0., 0.],
              [0., 0.,      0., 0.,      0.,      1., 0.],
-             [0., 0.,      0., 0.,      0.36788, 0., 0.63212],
+             [0., 0.,      0., 0.,      0.60653, 0., 0.39347],
              [0., 0.,      0., 0.,      0.,      1., 0.],
              [0., 0.,      0., 0.,      0.,      0., 1.]],
             # Ask finished b
@@ -436,11 +436,11 @@ class TestHTM2POMDP(TestCase):
         R = -np.broadcast_to(np.array([[1] * 6 + [0],
                                        [6, 6, 3, 6, 6, 6, 1],
                                        [3] * 6 + [1],
-                                       [3] * 6 + [1],
+                                       [2] * 6 + [1],
                                        [3] * 6 + [1],
                                        [5, 5, 5, 5, 5, 4, 1],
                                        [3] * 6 + [1],
-                                       [3] * 6 + [1],
+                                       [2] * 6 + [1],
                                        [3] * 6 + [1]]
                                       )[:, :, None, None],
                              (9, 7, 7, 4))
@@ -494,10 +494,10 @@ class TestHTM2POMDP(TestCase):
              [0., 0.,      0., 0.,      0.,      0., 1.]],
             # Tell intention a
             [[0., 0.,      1., 0.,      0.,      0., 0.],
-             [0., 0.51342, 0., 0.,      0.,      0., 0.48658],
+             [0., 0.71653, 0., 0.,      0.,      0., 0.28347],
              [0., 0.,      1., 0.,      0.,      0., 0.],
              [0., 0.,      0., 1.,      0.,      0., 0.],
-             [0., 0.,      0., 0.,      0.36788, 0., 0.63212],
+             [0., 0.,      0., 0.,      0.60653, 0., 0.39347],
              [0., 0.,      0., 0.,      0.,      1., 0.],
              [0., 0.,      0., 0.,      0.,      0., 1.]],
             # Ask finished a
@@ -526,10 +526,10 @@ class TestHTM2POMDP(TestCase):
              [0., 0.,      0., 0.,      0.,      0., 1.]],
             # Tell intention b
             [[1., 0.,      0., 0.,      0.,      0., 0.],
-             [0., 0.51342, 0., 0.,      0.,      0., 0.48658],
+             [0., 0.71653, 0., 0.,      0.,      0., 0.28347],
              [0., 0.,      1., 0.,      0.,      0., 0.],
              [0., 0.,      0., 0.,      0.,      1., 0.],
-             [0., 0.,      0., 0.,      0.36788, 0., 0.63212],
+             [0., 0.,      0., 0.,      0.60653, 0., 0.39347],
              [0., 0.,      0., 0.,      0.,      1., 0.],
              [0., 0.,      0., 0.,      0.,      0., 1.]],
             # Ask finished b
@@ -620,25 +620,25 @@ class TestHTM2POMDP(TestCase):
         R = -np.broadcast_to(np.array([[1] * 6 + [0],
                                        [6, 6, 3, 6, 6, 6, 1],
                                        [3] * 6 + [1],
-                                       [3] * 6 + [1],
+                                       [2] * 6 + [1],
                                        [3] * 6 + [1],
                                        [5, 5, 5, 5, 5, 4, 1],
                                        [3] * 6 + [1],
-                                       [3] * 6 + [1],
+                                       [2] * 6 + [1],
                                        [3] * 6 + [1]]
                                       )[:, :, None, None],
                              (9, 7, 7, 4))
         np.testing.assert_array_equal(R, p.R)
 
     def test_end_reward(self):
-        h2p = HTMToPOMDP(1., 2., 1., end_reward=13.)
+        h2p = HTMToPOMDP(1., 2., 1., 1., end_reward=13.)
         task = HierarchicalTask(root=LeafCombination(
             CollaborativeAction('Do it', (3., 2., 5.))))
         p = h2p.task_to_pomdp(task)
         self.assertTrue((p.R[h2p.wait, h2p.end, h2p.end, :] == 13.).all())
 
     def test_end_reward_on_seq(self):
-        h2p = HTMToPOMDP(1., 2., 1., end_reward=13.)
+        h2p = HTMToPOMDP(1., 2., 1., 1., end_reward=13.)
         task = HierarchicalTask(root=SequentialCombination([
             LeafCombination(CollaborativeAction(
                 'Do a', (3., 2., 5.), fail_probability=0., no_probability=0.)),
