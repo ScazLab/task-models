@@ -14,7 +14,7 @@ mount_central = SequentialCombination([
     LeafCombination(CollaborativeAction(
         'Get central frame', (INF, 20., 30.))),
     LeafCombination(CollaborativeAction(
-        'Hold central frame', (3., 15., INF)))],
+        'Hold central frame', (.01, 15., INF)))],
     name='Mount central frame')
 
 mount_legs = SequentialCombination([
