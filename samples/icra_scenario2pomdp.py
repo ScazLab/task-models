@@ -1,7 +1,7 @@
 import os
 
-from htm.task_to_pomdp import chair_task, T_WAIT, T_COMM, C_INTR
-from htm.stool_scenarios import HTMToPOMDP
+from htm.task_to_pomdp import HTMToPOMDP
+from htm.stool_scenarios import stool_task_sequential, T_WAIT, T_COMM, C_INTR
 
 
 ## Tested scenarios:
@@ -15,7 +15,7 @@ LOOP = False
 ## Convert the task into a POMDP
 
 h2p = HTMToPOMDP(T_WAIT, T_COMM, C_INTR, end_reward=R_END, loop=LOOP)
-p = h2p.task_to_pomdp(chair_task)
+p = h2p.task_to_pomdp(stool_task_sequential)
 #p.discount = .99
 
 gp = p.solve(method='grid', n_iterations=500, verbose=True)
