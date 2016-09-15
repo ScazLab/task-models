@@ -20,19 +20,21 @@ p = h2p.task_to_pomdp(stool_task_sequential)
 #p.discount = .99
 
 gp = p.solve(method='grid', n_iterations=500, verbose=True)
-gp.dump_to(os.path.join(os.path.dirname(__file__),
-                        '../visualization/policy/json/test.json'))
+gp.save_to_json(os.path.join(os.path.dirname(__file__),
+                             '../visualization/policy/json/test.json'))
 
 from htm.lib.pomdp import GraphPolicyBeliefRunner
 
 pol = GraphPolicyBeliefRunner(gp, p)
 pol.save_trajectories_from_starts(
-    os.path.join(os.path.dirname(__file__),
-                 '../visualization/trajectories/json/trajectories.json'),
+    os.path.join(
+        os.path.dirname(__file__),
+        '../visualization/trajectories/json/trajectories.json'),
     horizon=10, indent=2)
 gp2 = pol.visit()
-gp2.dump_to(os.path.join(os.path.dirname(__file__),
-                         '../visualization/policy/json/from_beliefs.json'))
+gp2.save_to_json(os.path.join(
+    os.path.dirname(__file__),
+    '../visualization/policy/json/from_beliefs.json'))
 
 
 from htm.plot import plot_beliefs
