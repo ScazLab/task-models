@@ -278,6 +278,42 @@ class POMDP:
             f.write(self.dump())
         return full_path
 
+    def to_dict(self):
+        return {'T': self.T.tolist(),
+                'O': self.O.tolist(),
+                'R': self.R.tolist(),
+                'start': self.start.tolist(),
+                'discount': self.discount,
+                'states': self.states,
+                'actions': self.actions,
+                'observations': self.observations,
+                }
+
+    def as_json(self):
+        return json.dumps(self.to_dict())
+
+    def save_as_json(self, path):
+        with open(path, 'w') as f:
+            json.dump(self.to_dict(), f)
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(np.asarray(d['T']), np.asarray(d['O']), np.asarray(d['R']),
+                   np.asarray(d['start']), d['discount'], states=d['states'],
+                   actions=d['actions'], observations=d['observations'],
+                   values='reward')
+
+    @classmethod
+    def from_json(cls, s):
+        d = json.loads(s)
+        return cls.from_dict(d)
+
+    @classmethod
+    def load_from_json(cls, path):
+        with open(path) as f:
+            d = json.load(f)
+            return cls.from_dict(d)
+
     def solve(self, timeout=None, n_iterations=None, method='incprune',
               grid_type=None, seed=None, verbose=False):
         """
@@ -367,15 +403,18 @@ class GraphPolicy:
             json.dump(self.to_dict(), fp, indent=indent)
 
     @classmethod
-    def from_json(cls, fp):
-        d = json.load(fp)
+    def from_dict(cls, d):
         return cls(d['actions'], d['observations'], d['transitions'],
                    d['values'], init=int(d['initial']))
 
     @classmethod
+    def from_json(cls, s):
+        return cls.from_dict(json.loads(s))
+
+    @classmethod
     def load_from(cls, path):
         with open(path) as f:
-            return cls.from_json(f)
+            return cls.from_dict(json.load(f))
 
 
 class GraphPolicyRunner(object):

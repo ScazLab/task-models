@@ -1,5 +1,4 @@
 import os
-import io
 from unittest import TestCase
 
 import numpy as np
@@ -265,6 +264,19 @@ class TestPOMDP(TestCase):
         c = p.belief_update(a, o, b)
         np.testing.assert_allclose(c, self.T[a, s, :])
 
+    def test_save_load(self):
+        p = POMDP(self.T, self.O, self.R, self.start, .8)
+        dump = p.as_json()
+        pp = POMDP.from_json(dump)
+        np.testing.assert_allclose(p.T, pp.T)
+        np.testing.assert_allclose(p.O, pp.O)
+        np.testing.assert_allclose(p.R, pp.R)
+        np.testing.assert_allclose(p.start, pp.start)
+        self.assertEqual(p.discount, pp.discount)
+        self.assertEqual(p.states, pp.states)
+        self.assertEqual(p.actions, pp.actions)
+        self.assertEqual(p.observations, pp.observations)
+
 
 class TestPolicy(TestCase):
 
@@ -292,10 +304,7 @@ class TestPolicy(TestCase):
     def test_save_load(self):
         pol = GraphPolicy(self.a, self.o, self.t, self.v, init=self.i)
         dump = pol.to_json()
-        try:
-            p = GraphPolicy.from_json(io.StringIO(dump))
-        except TypeError:  # Quick hack for python2
-            p = GraphPolicy.from_json(io.StringIO(dump.decode()))
+        p = GraphPolicy.from_json(dump)
         self.assertEqual(self.a, p.actions)
         self.assertEqual(self.o, p.observations)
         np.testing.assert_allclose(pol.transitions, p.transitions)
