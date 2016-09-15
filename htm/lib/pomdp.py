@@ -398,7 +398,7 @@ class GraphPolicy:
     def to_json(self, indent=None):
         return json.dumps(self.to_dict(), indent=indent)
 
-    def dump_to(self, path, indent=None):
+    def save_as_json(self, path, indent=None):
         with open(path, 'w') as fp:
             json.dump(self.to_dict(), fp, indent=indent)
 
@@ -412,7 +412,7 @@ class GraphPolicy:
         return cls.from_dict(json.loads(s))
 
     @classmethod
-    def load_from(cls, path):
+    def load_from_json(cls, path):
         with open(path) as f:
             return cls.from_dict(json.load(f))
 
