@@ -6,7 +6,9 @@ from htm.task import (HierarchicalTask, AbstractAction, SequentialCombination,
 bench_task = LeafCombination(AbstractAction('Mount Bench'))
 chair_task = LeafCombination(AbstractAction('Mount Chair'))
 
-central_frame = LeafCombination(AbstractAction('Take central frame'))
+take_central_frame = LeafCombination(AbstractAction('Take central frame'))
+hold_central_frame = LeafCombination(AbstractAction('Hold central frame'))
+release_central_frame = LeafCombination(AbstractAction('Drop central frame'))
 
 mount_leg_combinations = [
     SequentialCombination(
@@ -18,14 +20,16 @@ mount_leg_combinations = [
     ]
 
 mount_top_combination = SequentialCombination(
-    [LeafCombination(AbstractAction('Take  top'.format(i)), highlighted=True),
-     LeafCombination(AbstractAction('Place top'.format(i)))
+    [LeafCombination(AbstractAction('Take  top')),
+     LeafCombination(AbstractAction('Place top'))
      ],
-    name='Mount top'.format(i))
+    name='Mount top')
 
 stool_task = SequentialCombination(
-    [central_frame,
+    [take_central_frame,
+     hold_central_frame,
      ParallelCombination(mount_leg_combinations, name='Mount legs'),
+     release_central_frame,
      mount_top_combination,
      ],
     name='Mount Stool')
