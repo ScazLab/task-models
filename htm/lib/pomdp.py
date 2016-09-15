@@ -317,18 +317,26 @@ class POMDP:
         assert(max(actions) < len(self.actions))
         assert(max([t for ts in pg for t in ts if t is not None]) <= len(pg))
         action_names = [self.actions[a] for a in actions]
-        return GraphPolicy(action_names, self.observations, pg, vf, self.start)
+        return GraphPolicy(action_names, self.observations, pg, vf,
+                           start=self.start)
 
 
 class GraphPolicy:
 
-    def __init__(self, actions, observations, transitions, values, start):
+    def __init__(self, actions, observations, transitions, values, start=None,
+                 init=None):
         self.actions = actions
         self.observations = observations
         self.transitions = np.asarray(transitions)
         assert(self.transitions.shape == (self.n_nodes, len(observations)))
-        self.values = values
-        self.init = self.get_node_from_belief(start)
+        self.values = np.asarray(values)
+        if init is not None:
+            assert(init < self.n_nodes)
+            self.init = init
+        elif start is not None:
+            self.init = self.get_node_from_belief(start)
+        else:
+            raise ValueError('Must specify either init node or start belief.')
 
     @property
     def n_nodes(self):
@@ -357,6 +365,17 @@ class GraphPolicy:
     def dump_to(self, path, indent=None):
         with open(path, 'w') as fp:
             json.dump(self.to_dict(), fp, indent=indent)
+
+    @classmethod
+    def from_json(cls, fp):
+        d = json.load(fp)
+        return cls(d['actions'], d['observations'], d['transitions'],
+                   d['values'], init=int(d['initial']))
+
+    @classmethod
+    def load_from(cls, path):
+        with open(path) as f:
+            return cls.from_json(f)
 
 
 class GraphPolicyRunner(object):
@@ -440,20 +459,8 @@ class GraphPolicyBeliefRunner(GraphPolicyRunner):
     def visit(self, max_states=100):
         v = _Aux(self)
         v.visit()
-        return GraphPolicyFromBeliefVisit(v.actions, v.observations,
-                                          np.asarray(v.trans),
-                                          np.vstack(v.nodes), 0)
-
-
-class GraphPolicyFromBeliefVisit(GraphPolicy):
-
-    def __init__(self, actions, observations, transitions, values, init):
-        self.actions = actions
-        self.observations = observations
-        self.transitions = np.asarray(transitions)
-        assert(self.transitions.shape == (self.n_nodes, len(observations)))
-        self.values = values
-        self.init = init
+        return GraphPolicy(v.actions, v.observations, np.asarray(v.trans),
+                           np.vstack(v.nodes), init=0)
 
 
 class _Aux:

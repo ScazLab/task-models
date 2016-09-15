@@ -1,11 +1,12 @@
 import os
+import io
 from unittest import TestCase
 
 import numpy as np
 
 from htm.lib.pomdp import (parse_value_function, parse_policy_graph, POMDP,
                            _dump_list, _dump_1d_array, _dump_2d_array,
-                           _dump_3d_array, _dump_4d_array)
+                           _dump_3d_array, _dump_4d_array, GraphPolicy)
 
 
 TEST_VF = os.path.join(os.path.dirname(__file__), 'samples/example.alpha')
@@ -263,3 +264,40 @@ class TestPOMDP(TestCase):
         b[s] = 1.
         c = p.belief_update(a, o, b)
         np.testing.assert_allclose(c, self.T[a, s, :])
+
+
+class TestPolicy(TestCase):
+
+    def setUp(self):
+        self.a = ['a', 'b', 'a', 'c', 'c']
+        self.o = ['d', 'e']
+        self.t = [[0, 1], [2, 3], [4, 4], [3, 2], [1, 0]]
+        self.v = np.random.random((5, 12))
+        self.i = np.random.randint(5)
+
+    def test_init_with_start(self):
+        i = np.argmax(np.square(self.v).sum(-1))  # get the one with max norm
+        p = GraphPolicy(self.a, self.o, self.t, self.v, start=self.v[i])
+        # so that it also has maximum scalar product with itself
+        self.assertEqual(p.init, i)
+
+    def test_init_with_init(self):
+        p = GraphPolicy(self.a, self.o, self.t, self.v, init=self.i)
+        self.assertEqual(p.init, self.i)
+
+    def test_init_fails_without_init_or_start(self):
+        with self.assertRaises(ValueError):
+            GraphPolicy(self.a, self.o, self.t, self.v)
+
+    def test_save_load(self):
+        pol = GraphPolicy(self.a, self.o, self.t, self.v, init=self.i)
+        dump = pol.to_json()
+        try:
+            p = GraphPolicy.from_json(io.StringIO(dump))
+        except TypeError:  # Quick hack for python2
+            p = GraphPolicy.from_json(io.StringIO(dump.decode()))
+        self.assertEqual(self.a, p.actions)
+        self.assertEqual(self.o, p.observations)
+        np.testing.assert_allclose(pol.transitions, p.transitions)
+        np.testing.assert_allclose(pol.values, p.values)
+        self.assertEqual(self.i, p.init)
