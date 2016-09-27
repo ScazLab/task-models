@@ -4,7 +4,7 @@ from .lib.pomdp import POMDP
 from .task import (AbstractAction, SequentialCombination,
                    AlternativeCombination, LeafCombination,
                    ParallelCombination)
-from .task_to_pomdp import _name_radix
+from .task_to_pomdp import _name_radix, _start_indices_from, concatenate
 
 
 class CollaborativeAction(AbstractAction):
@@ -84,6 +84,61 @@ class _LeafToPOMDP(_NodeToPOMDP):
     def update_R(self, R, builder, s_start, s_next):
         get = builder.action_indices[self.get]
         R[get, s_start, s_next, :] = builder.cost_get
+
+
+class _ParentNodeToPOMDP(_NodeToPOMDP):
+
+    def __init__(self, node):
+        self.node = node
+        self.children = [self.from_node(n) for n in node.children]
+        child_states = [c.states for c in self.children]
+        self.s_indices = _start_indices_from(child_states)
+        self.states = concatenate(child_states)
+
+    def _next_init_children(self, s_start, s_next):
+        next_inits = [
+            [s_start + c_s_start + s for s in c.init]
+            for c, c_s_start in zip(self.children[1:], self.s_indices[1:])]
+        next_inits += [s_next]
+        return next_inits
+
+    def update_R(self, R, builder, s_start, s_next):
+        next_inits = self._next_init_children(s_start, s_next)
+        for i, c in enumerate(self.children):
+            c.update_R(R, builder, s_start + self.s_indices[i], next_inits[i])
+
+
+class _SequenceToPOMDP(_ParentNodeToPOMDP):
+
+    def _states_indices(self, s_start):
+        return [[s_start + self.s_indices[i] + j
+                 for j in range(len(c.states))]
+                for i, c in enumerate(self.children)]
+
+    @property
+    def init(self):
+        return self.children[0].init
+
+    @property
+    def start(self):
+        return self.children[0].start
+
+    def update_T(self, T, builder, s_start, s_next, s_next_probas):
+        next_inits = self._next_init_children(s_start, s_next)
+        next_probas = [c.start for c in self.children[1:]] + [s_next_probas]
+        for i, c in enumerate(self.children):
+            c.update_T(T, builder, s_start + self.s_indices[i], next_inits[i],
+                       next_probas[i])
+
+    def update_O(self, O, builder, s_start, s_next):
+        next_inits = self._next_init_children(s_start, s_next)
+        for i, c in enumerate(self.children):
+            c.update_O(O, builder, s_start + self.s_indices[i], next_inits[i])
+
+
+class _AlternativesToPOMDP(_NodeToPOMDP):
+
+    pass
 
 
 class HTMToPOMDP:
