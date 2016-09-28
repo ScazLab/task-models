@@ -23,7 +23,7 @@ class _NodeToPOMDP(object):
     o_yes = [0., 1., 0., 0.]
     o_no = [0., 0., 1., 0.]
     o_err = [0., 0., 0., 1.]
-    o_maybe_good = [.5, 0., 0., .5]
+    o_maybe_good = [.8, 0., 0., .2]
 
     init = None     # index of init states
     start = None    # start probabilities
@@ -51,7 +51,7 @@ class _NodeToPOMDP(object):
         elif isinstance(node, ParallelCombination):
             return _AlternativesToPOMDP(node.to_alternative())
         else:
-            raise ValueError('Unkown combination: ' + type(node))
+            raise ValueError('Unkown combination: ' + str(type(node)))
 
 
 class _LeafToPOMDP(_NodeToPOMDP):
