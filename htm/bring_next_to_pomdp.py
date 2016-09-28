@@ -169,11 +169,13 @@ class HTMToPOMDP:
 
     end = -1
 
-    def __init__(self, t_com, t_get, t_err, objects, end_reward=10.):
+    def __init__(self, t_com, t_get, t_err, objects, end_reward=10.,
+                 discount=.9):
         self.cost_com = t_com
         self.cost_get = t_get
         self.cost_err = t_err
         self.end_reward = end_reward
+        self.discount = discount
         self.get = ['get-' + o for o in objects]
         self.ask = ['ask-' + o for o in objects]
         self.actions = self.get + self.ask
@@ -216,6 +218,6 @@ class HTMToPOMDP:
         self.init_R(R)
         n2p.update_R(R, self, 0, [end])
         self.update_R_end(R)
-        return POMDP(T, O, R, start, discount=1., states=states,
+        return POMDP(T, O, R, start, discount=self.discount, states=states,
                      actions=self.actions, observations=n2p.observations,
                      values='cost')
