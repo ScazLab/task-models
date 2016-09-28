@@ -64,7 +64,7 @@ task = HierarchicalTask(root=AlternativeCombination([
         LeafCombination(CollaborativeAction('2h', '2')),
         ], 'hori'),
     ], name='alt'))
-h2p = HTMToPOMDP(1., 8., 50., ['0', '1', '2'], end_reward=50., discount=.9)
+h2p = HTMToPOMDP(1., 8., 5., ['0', '1', '2'], end_reward=50., loop=False)
 
 p = h2p.task_to_pomdp(task)
 gp = p.solve(method='grid', n_iterations=500, verbose=True)

@@ -8,6 +8,9 @@ from .task_to_pomdp import (_name_radix, _start_indices_from, concatenate,
                             uniform)
 
 
+LOOP = 'loop'
+
+
 class CollaborativeAction(AbstractAction):
 
     def __init__(self, name, obj):
@@ -23,7 +26,7 @@ class _NodeToPOMDP(object):
     o_yes = [0., 1., 0., 0.]
     o_no = [0., 0., 1., 0.]
     o_err = [0., 0., 0., 1.]
-    o_maybe_good = [.8, 0., 0., .2]
+    o_maybe_good = [.9, 0., 0., .1]
 
     init = None     # index of init states
     start = None    # start probabilities
@@ -170,11 +173,16 @@ class HTMToPOMDP:
     end = -1
 
     def __init__(self, t_com, t_get, t_err, objects, end_reward=10.,
-                 discount=.9):
+                 discount=None, loop=True):
         self.cost_com = t_com
         self.cost_get = t_get
         self.cost_err = t_err
         self.end_reward = end_reward
+        if discount is None:
+            if loop:
+                discount = .9
+            else:
+                discount = 1.
         self.discount = discount
         self.get = ['get-' + o for o in objects]
         self.ask = ['ask-' + o for o in objects]
@@ -182,10 +190,16 @@ class HTMToPOMDP:
         self.get_indices = [i for i in range(len(objects))]
         self.ask_indices = [len(objects) + i for i in range(len(objects))]
         self.action_indices = {a: i for i, a in enumerate(self.actions)}
+        self.flags = set()
+        if loop:
+            self.flags.add(LOOP)
 
     def update_T_end(self, T, init):
-        # Loop on success
-        T[:, self.end, init] = 1. / len(init)
+        if LOOP in self.flags:
+            # Loop on success
+            T[:, self.end, init] = 1. / len(init)
+        else:
+            T[:, self.end, self.end] = 1.
 
     def init_O(self, O):
         O[self.get_indices, :, :] = _NodeToPOMDP.o_err
@@ -196,7 +210,11 @@ class HTMToPOMDP:
         R[self.ask_indices, ...] = self.cost_com
 
     def update_R_end(self, R):
-        R[:, self.end, ...] = -self.end_reward   # Get reward on end
+        if LOOP in self.flags:
+            R[:, self.end, ...] = -self.end_reward   # Get reward on reset
+        else:
+            R[:, :, self.end, :] -= self.end_reward   # Get reward on end
+            R[:, self.end, self.end, :] = 0
 
     def task_to_pomdp(self, task):
         n2p = _NodeToPOMDP.from_node(task.root)
