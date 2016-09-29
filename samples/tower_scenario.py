@@ -49,25 +49,31 @@ class TowerProblem:
                                      names=['vertical', 'horizontal'])
 
 
+# 1  3  5
+# 0  2  4
+
 tp = TowerProblem()
+task_vh = tp.vertical_horizontal_task()
+orders_medium = [
+    [2, 0, 4, 3, 1, 5],
+    [2, 4, 0, 3, 5, 1],
+    tp.v_first(),
+    [0, 1, 4, 5, 2, 3],
+    [2, 3, 0, 1, 4, 5],
+    [2, 3, 4, 5, 0, 1],
+    ]
+task_medium = tp.task_from_orders(
+        orders_medium,
 task = tp.vertical_horizontal_task()
 h2p = HTMToPOMDP(2., 8., 5., tp.parts, end_reward=50., discount=.9)
 
-
-task = HierarchicalTask(root=AlternativeCombination([
-    SequentialCombination([
-        LeafCombination(CollaborativeAction('0v', '0')),
-        LeafCombination(CollaborativeAction('1v', '1')),
-        ], 'vert'),
-    SequentialCombination([
-        LeafCombination(CollaborativeAction('0h', '0')),
-        LeafCombination(CollaborativeAction('2h', '2')),
-        ], 'hori'),
-    ], name='alt'))
-h2p = HTMToPOMDP(1., 8., 5., ['0', '1', '2'], end_reward=50., loop=False)
+task = task_medium
+for o in orders_medium:
+    print(o)
 
 p = h2p.task_to_pomdp(task)
-gp = p.solve(method='grid', n_iterations=500, verbose=True)
+gp = p.solve(method='grid', grid_type='pairwise', n_iterations=50,
+             verbose=True)
 gp.save_as_json(os.path.join(os.path.dirname(__file__),
                              '../visualization/policy/json/test.json'))
 pol = GraphPolicyBeliefRunner(gp, p)
@@ -80,7 +86,3 @@ gp2 = pol.visit()
 gp2.save_as_json(os.path.join(
     os.path.dirname(__file__),
     '../visualization/policy/json/from_beliefs.json'))
-print([c.name for c in task.root.children[0].children])
-print([c.name for c in task.root.children[1].children])
-print('Vert: ', list(tp.v_first()))
-print('Hori: ', list(tp.h_first()))
