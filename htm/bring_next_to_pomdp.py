@@ -9,6 +9,7 @@ from .task_to_pomdp import (_name_radix, _start_indices_from, concatenate,
 
 
 LOOP = 'loop'
+NO_ANSWER = 'no-ans'
 
 
 class CollaborativeAction(AbstractAction):
@@ -25,6 +26,8 @@ class _NodeToPOMDP(object):
     o_none = [1., 0., 0., 0.]
     o_yes = [0., 1., 0., 0.]
     o_no = [0., 0., 1., 0.]
+    o_maybe_yes = [.1, .9, 0., 0.]
+    o_maybe_no = [.1, 0., .9, 0.]
     o_err = [0., 0., 0., 1.]
     o_maybe_good = [.9, 0., 0., .1]
 
@@ -83,7 +86,11 @@ class _LeafToPOMDP(_NodeToPOMDP):
         get = builder.action_indices[self.get]
         ask = builder.action_indices[self.ask]
         O[get, s_next, :] = self.o_maybe_good
-        O[ask, s_start, :] = self.o_yes
+        if NO_ANSWER in builder.flags:
+            o_ans = self.o_maybe_yes
+        else:
+            o_ans = self.o_yes
+        O[ask, s_start, :] = o_ans
 
     def update_R(self, R, builder, s_start, s_next):
         get = builder.action_indices[self.get]
@@ -173,7 +180,7 @@ class HTMToPOMDP:
     end = -1
 
     def __init__(self, t_com, t_get, t_err, objects, end_reward=10.,
-                 discount=None, loop=True):
+                 discount=None, loop=True, no_answer=False):
         self.cost_com = t_com
         self.cost_get = t_get
         self.cost_err = t_err
@@ -193,6 +200,8 @@ class HTMToPOMDP:
         self.flags = set()
         if loop:
             self.flags.add(LOOP)
+        if no_answer:
+            self.flags.add(NO_ANSWER)
 
     def update_T_end(self, T, init):
         if LOOP in self.flags:
@@ -203,7 +212,11 @@ class HTMToPOMDP:
 
     def init_O(self, O):
         O[self.get_indices, :, :] = _NodeToPOMDP.o_err
-        O[self.ask_indices, :, :] = _NodeToPOMDP.o_no
+        if NO_ANSWER in self.flags:
+            o_ans = _NodeToPOMDP.o_maybe_no
+        else:
+            o_ans = _NodeToPOMDP.o_no
+        O[self.ask_indices, :, :] = o_ans
 
     def init_R(self, R):
         R[self.get_indices, ...] = self.cost_err
