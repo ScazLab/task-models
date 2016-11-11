@@ -496,7 +496,7 @@ class GraphPolicyBeliefRunner(GraphPolicyRunner):
                       f, indent=indent)
 
     def visit(self, max_states=100):
-        v = _Aux(self)
+        v = _Aux(self, max_nodes=max_states)
         v.visit()
         return GraphPolicy(v.actions, v.observations, np.asarray(v.trans),
                            np.vstack(v.nodes), init=0)
@@ -504,11 +504,11 @@ class GraphPolicyBeliefRunner(GraphPolicyRunner):
 
 class _Aux:
 
-    max_nodes = 100
     tol = 1.e-2
 
-    def __init__(self, pgbr):
+    def __init__(self, pgbr, max_nodes=100):
         self.pr = pgbr
+        self.max_nodes = max_nodes
         self.nodes = []
         self.queue = Queue()  # FIFO
         self.trans = []
