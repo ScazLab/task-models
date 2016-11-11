@@ -314,6 +314,12 @@ class POMDP:
             d = json.load(f)
             return cls.from_dict(d)
 
+    def randomize(self, p_unexpected=1.e-3):
+        self.T += p_unexpected
+        self.T /= self.T.sum(-1)[..., None]
+        self.O += p_unexpected
+        self.O /= self.O.sum(-1)[..., None]
+
     def solve(self, timeout=None, n_iterations=None, method='incprune',
               grid_type=None, seed=None, verbose=False):
         """
