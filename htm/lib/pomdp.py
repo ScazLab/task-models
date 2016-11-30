@@ -126,6 +126,12 @@ def _dump_4d_array(a, name, xs, ys):
         ])
 
 
+def _assert_normal(array, name):
+    message = "Probabilities in {} should sum to 1."
+    if not np.allclose(array.sum(-1), 1.):
+        raise ValueError(message.format(name))
+
+
 class POMDP:
 
     """Partially observable Markov model.
@@ -210,10 +216,22 @@ class POMDP:
     def observations(self):
         return _as_list(self._o)
 
+    @property
+    def n_states(self):
+        return len(self.states)
+
+    @property
+    def n_actions(self):
+        return len(self.actions)
+
+    @property
+    def n_observations(self):
+        return len(self.observations)
+
     def _assert_shapes(self):
-        s = len(self.states)
-        a = len(self.actions)
-        o = len(self.observations)
+        s = self.n_states
+        a = self.n_actions
+        o = self.n_observations
         message = "Wrong shape for {}: got {}, expected {}."
 
         def assert_shape(array, name, shape):
@@ -226,15 +244,9 @@ class POMDP:
         assert_shape(self.R, 'R', (a, s, s, o))
 
     def _assert_normal(self):
-        message = "Probabilities in {} should sum to 1."
-
-        def assert_normal(array, name):
-            if not np.allclose(array.sum(-1), 1.):
-                raise ValueError(message.format(name))
-
-        assert_normal(self.start, 'start')
-        assert_normal(self.T, 'T')
-        assert_normal(self.O, 'O')
+        _assert_normal(self.start, 'start')
+        _assert_normal(self.T, 'T')
+        _assert_normal(self.O, 'O')
 
     def _assert_unique(self):
         message = "Found duplicate {}: {}"
@@ -256,6 +268,12 @@ class POMDP:
         if s == 0.:
             raise Impossible('Impossible observation: ' + str(o))
         return new_b / new_b.sum()
+
+    def sample_transition(self, a, s):
+        new_s = np.random.choice(self.n_states, p=self.T[a, s, :])
+        o = np.random.choice(self.n_observations, p=self.O[a, new_s, :])
+        r = self.R[a, s, new_s, o]
+        return new_s, o, r
 
     def dump(self):
         """Write POMDP description following:
@@ -561,3 +579,209 @@ class _Aux:
                     self.trans[ib][io] = int(ib_new)
                 except Impossible:
                     pass
+
+
+# POMCP
+
+class _SearchTree:
+
+    def __init__(self, model, horizon, exploration):
+        self.model = model
+        self.root = _SearchObservationNode(ArrayBelief(model.start),
+                                           model.n_actions)
+        self.horizon = horizon
+        self.exploration = exploration
+        # TODO: add option for particle belief (or decide depending on model)
+
+    def get_node(self, history):
+        """Raises ValueError if node does not exist or history is invalid."""
+        node = self.root
+        for i, h in enumerate(history):
+            try:
+                node = node.children[h]
+            except KeyError:
+                node = None
+            if node is None:
+                raise ValueError('{} is not a valid child at {} in {}'.format(
+                    h, i, history))
+        return node
+
+    def random_action(self):
+        return np.random.randint(self.model.n_actions)
+
+    def rollout_from_node(self, node, state, horizon):
+        if horizon == 0:
+            return 0
+        else:
+            full_return = 0.
+            gamma = 1.
+            while horizon > 0:
+                horizon -= 1
+                a = self.random_action()
+                state, _, r = self.model.sample_transition(a, state)
+                full_return += gamma * r
+                gamma *= self.model.discount
+            node.update(full_return)
+            return full_return
+
+    def simulate_from_node(self, node):
+        state = node.belief.sample()
+        self._simulate_from_node(node, state, self.horizon)
+
+    def _simulate_from_node(self, node, state, horizon):
+        if horizon == 0:
+            return node.value
+        else:
+            a = node.get_best_action(exploration=self.exploration)
+            child = node.safe_get_child(a)
+            new_s, o, r = self.model.sample_transition(a, state)
+            if o not in child.children:
+                # Create node with updated belief
+                child.children[o] = _SearchObservationNode(
+                    node.belief.successor(self.model, a, o),
+                    self.model.n_actions)
+                # Use rollout
+                partial_return = self.rollout_from_node(
+                    child.children[o], new_s, horizon - 1)
+            else:
+                # Continue regular search
+                partial_return = self._simulate_from_node(
+                    child.children[o], new_s, horizon - 1)
+            full_return = r + self.model.discount * partial_return
+            child.update(full_return)
+            node.update(full_return)
+            # TODO belief update (not needed for exact belief)
+            return full_return
+
+
+class _SearchNode:
+
+    def __init__(self):
+        self.n_simulations = 0
+        self.total_value = 0.
+        self.children = {}
+
+    def __str__(self):
+        return "[" + ", ".join(["{}: {}".format(i, self.children[i])
+                                for i in self._children_keys()]) + "]"
+
+    def _children_keys(self):
+        return self.children.keys()
+
+    @property
+    def value(self):
+        return 0. if self.n_simulations == 0 \
+                else self.total_value / self.n_simulations
+
+    def update(self, value):
+        self.total_value += value
+        self.n_simulations += 1
+
+
+class _SearchObservationNode(_SearchNode):
+    """
+    Children indexed by action.
+    """
+
+    def __init__(self, belief, n_actions):
+        super(_SearchObservationNode, self).__init__()
+        self.belief = belief
+        self.children = [None for _ in range(n_actions)]
+
+    def _children_keys(self):
+        return [i for i, c in enumerate(self.children) if c is not None]
+
+    def _is_all_init(self):
+        return None not in self.children
+
+    def get_best_action(self, exploration=0):
+        if self._is_all_init():
+            # Augmented greedy (UCT)
+            l_ns = np.log(self.n_simulations)
+            a = np.argmax([
+                child.value + exploration * np.sqrt(l_ns / child.n_simulations)
+                for child in self.children
+                ])
+        else:
+            # Chose an unexplored action
+            a = np.random.choice(
+                [i for i, c in enumerate(self.children) if c is None])
+        return a
+
+    def safe_get_child(self, a):
+        if self.children[a] is None:
+            self.children[a] = _SearchActionNode()
+        return self.children[a]
+
+
+class _SearchActionNode(_SearchNode):
+    """
+    Children indexed by observation.
+    """
+
+    pass
+
+
+class BaseBelief:
+
+    def sample(self):
+        raise NotImplemented
+
+    def successor(self, model):
+        raise NotImplemented
+
+
+class ArrayBelief:
+
+    def __init__(self, probabilities):
+        self.array = np.asarray(probabilities)
+        _assert_normal(self.array, 'probabilities')
+
+    def sample(self):
+        return np.random.choice(self.array.shape[0], p=self.array)
+
+    def successor(self, model, a, o):
+        return ArrayBelief(model.belief_update(a, o, self.array))
+
+
+class ParticleBelief:
+    pass
+
+
+class POMCPPolicyRunner(object):
+    """
+    :param particles: number of particles for belief estimation
+    :param horizon: length of simulation episodes
+    :param iterations: number of simulation episodes to run
+    :param exploration: UCT exploration parameter (c in [Silver2010])
+    """
+
+    def __init__(self, model, particles=20, iterations=100, horizon=100,
+                 exploration=.5):
+        self.tree = _SearchTree(model, horizon, exploration)
+        self.iterations = iterations
+        # TODO particles
+        self.reset()
+
+    def reset(self, belief=None):
+        if belief is None:
+            belief = self.tree.model.start
+        self.history = []
+        self._last_action = None
+
+    def get_action(self):
+        # Note iterations must be greater than the number of actions
+        # to guarantee that any action chosen as best_action is explored first
+        node = self.tree.get_node(self.history)
+        for _ in range(self.iterations):
+            self.tree.simulate_from_node(node)
+        a = node.get_best_action()
+        # No exploration during exploitation?
+        self._last_action = a
+        return a
+
+    def step(self, observation):
+        if self._last_action is None:
+            raise ValueError('Unknown last action')
+            # TODO rethink the design of the PolicyRunner class
+        self.history.extend([self._last_action, observation])

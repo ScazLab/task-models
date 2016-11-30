@@ -5,7 +5,10 @@ import numpy as np
 
 from htm.lib.pomdp import (parse_value_function, parse_policy_graph, POMDP,
                            _dump_list, _dump_1d_array, _dump_2d_array,
-                           _dump_3d_array, _dump_4d_array, GraphPolicy)
+                           _dump_3d_array, _dump_4d_array, GraphPolicy,
+                           _SearchNode, _SearchObservationNode,
+                           _SearchActionNode, _SearchTree, ArrayBelief,
+                           POMCPPolicyRunner)
 
 
 TEST_VF = os.path.join(os.path.dirname(__file__), 'samples/example.alpha')
@@ -310,3 +313,293 @@ class TestPolicy(TestCase):
         np.testing.assert_allclose(pol.transitions, p.transitions)
         np.testing.assert_allclose(pol.values, p.values)
         self.assertEqual(self.i, p.init)
+
+
+class TestSearchNode(TestCase):
+
+    def setUp(self):
+        self.node = _SearchNode()
+
+    def test_n_simulations_is_0(self):
+        self.assertEqual(self.node.n_simulations, 0)
+
+    def test_value_is_0(self):
+        self.assertIsInstance(self.node.total_value, float)
+        self.assertEqual(self.node.total_value, 0)
+        self.assertIsInstance(self.node.value, float)
+        self.assertEqual(self.node.value, 0)
+
+    def test_n_simulation_increases_after_update(self):
+        self.node.update(3)
+        self.assertEqual(self.node.n_simulations, 1)
+        self.node.update(2)
+        self.assertEqual(self.node.n_simulations, 2)
+
+    def test_value_is_float_after_update(self):
+        self.node.update(3)
+        self.assertIsInstance(self.node.total_value, float)
+        self.assertIsInstance(self.node.value, float)
+
+    def test_value_is_average(self):
+        self.node.update(1)
+        self.node.update(2)
+        self.assertEqual(self.node.value, 1.5)
+
+    def test_str(self):
+        child = _SearchNode()
+        self.node.children[1] = child
+        child.children[2] = _SearchNode()
+        self.node.children[3] = _SearchNode()
+        self.assertEqual(str(self.node), "[1: [2: []], 3: []]")
+
+
+class TestSearchObservationNode(TestCase):
+
+    def setUp(self):
+        self.dummy_belief = object()
+        self.n_actions = 10
+        self.node = _SearchObservationNode(self.dummy_belief, self.n_actions)
+
+    def test_safe_get_child_raises_index_error(self):
+        with self.assertRaises(IndexError):
+            self.node.safe_get_child(11)
+
+    def test_safe_get_child_init_child(self):
+        child = self.node.safe_get_child(3)
+        self.assertIsNot(child, None)
+        self.assertIs(child, self.node.children[3])
+
+    def test_get_best_action_is_unset(self):
+        for i in range(9):
+            c = self.node.safe_get_child(self.node.get_best_action())
+            c.update(0)
+        self.node.n_simulations = 10
+        unset = self.node.children.index(None)
+        a = self.node.get_best_action()
+        self.assertEqual(a, unset)
+
+    def test_get_best_action_is_best(self):
+        for i in range(10):
+            c = self.node.safe_get_child(i)
+            c.update(0)
+        self.node.n_simulations = 10
+        self.node.children[7].update(10)
+        a = self.node.get_best_action()
+        self.assertEqual(a, 7)
+
+    def test_get_best_action_is_not_best(self):
+        for i in range(10):
+            c = self.node.safe_get_child(i)
+            c.update(0)
+            c.update(0)
+        self.node.children[4].n_simulations = 1
+        self.node.children[4].total_value = 9.3  # n_simu = 1
+        self.node.children[7].update(30)  # n_simu = 3
+        self.node.n_simulations = 20  # log(20) is slightly less than 3
+        a = self.node.get_best_action(exploration=1.)  # sqrt(3) > 1.72
+        self.assertEqual(a, 4)
+
+    def test_get_best_action_is_still_best_for_small_exploration(self):
+        for i in range(10):
+            c = self.node.safe_get_child(i)
+            c.update(0)
+            c.update(0)
+        self.node.children[4].n_simulations = 1
+        self.node.children[4].total_value = 9.3  # n_simu = 1
+        self.node.children[7].update(30)  # n_simu = 3
+        self.node.n_simulations = 20  # log(20) is slightly less than 3
+        a = self.node.get_best_action(exploration=.5)  # sqrt(3) > 1.72
+        self.assertEqual(a, 7)
+
+    def test_get_best_action_is_always_best_without_exploration(self):
+        for i in range(10):
+            c = self.node.safe_get_child(i)
+            for i in range(1 + np.random.randint(9)):  # at least one sample
+                c.update(10. * np.random.random())
+        self.node.n_simulations = sum([self.node.children[i].n_simulations
+                                       for i in range(10)])
+        best = np.argmax([self.node.children[i].value for i in range(10)])
+        a = self.node.get_best_action()
+        self.assertEqual(a, best)
+
+    def test_str(self):
+        self.node.safe_get_child(2).children[1] = _SearchNode()
+        self.assertEqual(str(self.node), "[2: [1: []]]")
+
+
+class _FakeModel:
+
+    discount = .9
+
+    def __init__(self, start, n_actions, n_observations):
+        self.start = start
+        self.n_actions = n_actions
+        self.n_observations = n_observations
+        self.action = [a for a in range(self.n_actions)]
+        self.reset()
+
+    def sample_transition(self, action, state):
+        self.transitions_history.append((action, state))
+        return self.transitions.pop(0)
+
+    def belief_update(self, action, observation, belief):
+        self.successors_history.append((action, observation, belief))
+        return self.successors.pop(0)
+
+    def reset(self):
+        self.transitions = []
+        self.transitions_history = []
+        self.successors = []
+        self.successors_history = []
+
+
+class TestArrayBelief(TestCase):
+
+    def setUp(self):
+        self.p = np.array([.7, 0., .3])
+        self.belief = ArrayBelief(self.p)
+
+    def test_sample_is_int(self):
+        self.assertIsInstance(self.belief.sample(), int)
+
+    def test_sample_only_from_non_zeros(self):
+        for i in range(10):
+            self.assertNotEqual(self.p[self.belief.sample()], 0.)
+
+
+class TestSearchTree(TestCase):
+
+    def setUp(self):
+        self.start = np.zeros((10,))
+        self.start[-1] = 1.
+        self.model = _FakeModel(self.start, 3, 2)
+        self.tree = _SearchTree(self.model, 3, 1.)
+
+    def test_get_node(self):
+        ca = self.tree.root.safe_get_child(0)
+        co = _SearchObservationNode(ArrayBelief(self.start),
+                                    self.model.n_actions)
+        ca.children[5] = co
+        cca = co.safe_get_child(1)
+        cco = _SearchObservationNode(ArrayBelief(self.start),
+                                     self.model.n_actions)
+        cca.children[6] = cco
+        self.assertIs(self.tree.get_node([0, 5, 1, 6]), cco)
+        with self.assertRaises(ValueError):
+            self.tree.get_node([0, 5, 1, 7])
+
+    def test_rollout_from_node_with_horizon_0_is_0(self):
+        self.assertEqual(self.tree.rollout_from_node(self.tree.root, 1, 0), 0)
+        self.assertEqual(len(self.model.transitions_history), 0)
+
+    def test_rollout_from_node_with_horizon_1_is_reward(self):
+        r = 3.2
+        self.model.transitions = [(1, 0, r)]
+        self.assertEqual(self.tree.rollout_from_node(self.tree.root, 2, 1), r)
+        self.assertEqual(len(self.model.transitions_history), 1)
+        self.assertEqual(self.model.transitions_history[0][1], 2)
+
+    def test_rollout_from_node_with_horizon_2(self):
+        self.model.transitions = [(1, None, 11.), (2, None, 10.)]
+        self.assertEqual(self.tree.rollout_from_node(self.tree.root, 3, 2), 20)
+        self.assertEqual(len(self.model.transitions_history), 2)
+        self.assertEqual(self.model.transitions_history[0][1], 3)
+        self.assertEqual(self.model.transitions_history[1][1], 1)
+
+    def test_simulate_from_node_with_horizon_0(self):
+        self.tree.horizon = 0
+        self.tree.simulate_from_node(self.tree.root)
+        self.assertEqual(len(self.model.transitions_history), 0)
+        self.assertEqual(str(self.tree.root), "[]")
+        self.assertEqual(self.tree.root.n_simulations, 0)
+
+    def test_simulate_from_node_with_horizon_1(self):
+        self.model.transitions = [(1, 1, 11.)]
+        belief2 = np.zeros((10))
+        belief2[1] = 1.
+        self.model.successors = [belief2]
+        self.tree.horizon = 1
+        self.tree.simulate_from_node(self.tree.root)
+        self.assertEqual(len(self.model.transitions_history), 1)
+        a = self.model.transitions_history[0][0]
+        self.assertEqual(str(self.tree.root), "[{}: [1: []]]".format(a))
+        self.assertEqual(self.tree.root.n_simulations, 1)
+
+    def test_simulate_from_node_with_horizon_3(self):
+        self.model.discount = 1.
+        belief = np.zeros((10))
+        belief[1] = 1.
+
+        def ret_1(exploration=None):
+            return 1
+
+        self.tree.horizon = 3
+        # Always use action "1" at first
+        self.tree.root.get_best_action = ret_1
+        # First run
+        self.model.transitions = [(1, 1, 11.), (2, 0, 13.), (4, 0, 0.)]
+        self.model.successors = [belief]
+        self.tree.simulate_from_node(self.tree.root)
+        self.assertEqual(len(self.model.transitions_history), 3)
+        self.assertEqual(str(self.tree.root), "[1: [1: []]]")
+        self.assertEqual(self.tree.root.n_simulations, 1)
+        self.assertEqual(self.tree.root.total_value, 24.)
+        self.assertEqual(self.tree.get_node([1]).total_value, 24.)
+        self.assertEqual(self.tree.get_node([1, 1]).total_value, 13.)
+        # Second run
+        self.model.reset()
+        self.model.transitions = [(1, 1, 3.), (2, 0, 1.), (4, 0, 5.)]
+        self.model.successors = [belief]
+        self.tree.simulate_from_node(self.tree.root)
+        self.assertEqual(len(self.model.transitions_history), 3)
+        a1 = self.model.transitions_history[1][0]
+        self.assertEqual(str(self.tree.root),
+                         "[1: [1: [{}: [0: []]]]]".format(a1))
+        self.assertEqual(self.tree.root.n_simulations, 2)
+        self.assertEqual(self.tree.root.total_value, 33.)
+        self.assertEqual(self.tree.get_node([1]).total_value, 33.)
+        self.assertEqual(self.tree.get_node([1, 1]).total_value, 19.)
+        self.assertEqual(self.tree.get_node([1, 1, a1]).total_value, 6.)
+        self.assertEqual(self.tree.get_node([1, 1, a1, 0]).total_value, 5.)
+        # Third run
+        self.model.reset()
+        self.model.transitions = [(1, 0, 2.), (2, 1, 3.), (4, 0, 4.)]
+        self.model.successors = [belief]
+        self.tree.simulate_from_node(self.tree.root)
+        self.assertEqual(len(self.model.transitions_history), 3)
+        self.assertEqual(str(self.tree.root),
+                         "[1: [0: [], 1: [{}: [0: []]]]]".format(a1))
+        self.assertEqual(self.tree.root.n_simulations, 3)
+        self.assertEqual(self.tree.root.total_value, 42.)
+        self.assertEqual(self.tree.get_node([1]).total_value, 42.)
+        self.assertEqual(self.tree.get_node([1, 1]).total_value, 19.)
+        self.assertEqual(self.tree.get_node([1, 1, a1]).total_value, 6.)
+        self.assertEqual(self.tree.get_node([1, 1, a1, 0]).total_value, 5.)
+        self.assertEqual(self.tree.get_node([1, 0]).total_value, 7.)
+
+
+class TestPOMCPPolicyRunner(TestCase):
+
+    def setUp(self):
+        s = 3
+        a = 4
+        o = 2
+        T = np.random.dirichlet(np.ones((s,)), (a, s))
+        O = np.random.dirichlet(np.ones((o,)), (a, s))
+        R = np.random.random((a, s, s, o))
+        start = np.random.dirichlet(np.ones((s)))
+        self.pomdp = POMDP(T, O, R, start, 1, states=range(3),
+                           actions=set(['a', 'b', 'c', 'd']),
+                           observations=[True, False])
+        self.policy = POMCPPolicyRunner(self.pomdp, iterations=10, horizon=10)
+
+    def test_get_action_is_action(self):
+        a = self.policy.get_action()
+        self.assertIn(a, range(self.pomdp.n_actions))
+
+    def test_step_updates_history(self):
+        a = self.policy.get_action()
+        self.policy.history = [0, 1]
+        a = self.policy.get_action()
+        self.policy.step(0)
+        self.assertEqual(self.policy.history, [0, 1, a, 0])
