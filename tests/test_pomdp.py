@@ -355,6 +355,16 @@ class TestSearchNode(TestCase):
 
 class TestSearchObservationNode(TestCase):
 
+    class DummyBelief:
+
+        def to_list(self):
+            return []
+
+    class DummyModel:
+
+        actions = ['x', 'y', 'z', 'a', 'b', 'c', 'm', 'n', 'o', 'p']
+        observations = ['a', 'b', 'c']
+
     def setUp(self):
         self.dummy_belief = object()
         self.n_actions = 10
@@ -377,6 +387,14 @@ class TestSearchObservationNode(TestCase):
         unset = self.node.children.index(None)
         a = self.node.get_best_action()
         self.assertEqual(a, unset)
+
+    def test_get_best_action_is_unexplored(self):
+        for i in range(10):
+            c = self.node.safe_get_child(i)
+            if i != 3:
+                c.update(0)
+        self.node.n_simulations = 9
+        self.assertEqual(self.node.get_best_action(), 3)
 
     def test_get_best_action_is_best(self):
         for i in range(10):
@@ -425,6 +443,52 @@ class TestSearchObservationNode(TestCase):
     def test_str(self):
         self.node.safe_get_child(2).children[1] = _SearchNode()
         self.assertEqual(str(self.node), "[2: [1: []]]")
+
+    def _node_with_best_action(self, ai):
+        node = _SearchObservationNode(self.DummyBelief(), self.n_actions)
+        for i in range(10):
+            c = node.safe_get_child(i)
+            c.update(0)
+        node.n_simulations = 10
+        node.children[ai].n_simulations = 1
+        node.children[ai].total_value = 10.
+        return node
+
+    def test_to_dict_no_child(self):
+        node = self._node_with_best_action(1)
+        self.assertEqual(node.to_dict(self.DummyModel()),
+                         {'belief': [],
+                          'action': 'y',
+                          'node': None,
+                          'observations': [],
+                          'children': [],
+                          })
+
+    def test_to_dict_children(self):
+        node = self._node_with_best_action(1)
+        child = node.children[1]
+        child.children[0] = self._node_with_best_action(2)
+        child.children[2] = self._node_with_best_action(0)
+        self.assertEqual(node.to_dict(self.DummyModel()),
+                         {'belief': [],
+                          'action': 'y',
+                          'node': None,
+                          'observations': ['a', 'c'],
+                          'children': [
+                                {'belief': [],
+                                 'action': 'z',
+                                 'node': None,
+                                 'observations': [],
+                                 'children': [],
+                                 },
+                                {'belief': [],
+                                 'action': 'x',
+                                 'node': None,
+                                 'observations': [],
+                                 'children': [],
+                                 },
+                              ],
+                          })
 
 
 class _FakeModel:
@@ -581,25 +645,25 @@ class TestSearchTree(TestCase):
 class TestPOMCPPolicyRunner(TestCase):
 
     def setUp(self):
-        s = 3
-        a = 4
+        s = 4
+        a = 3
         o = 2
         T = np.random.dirichlet(np.ones((s,)), (a, s))
-        O = np.random.dirichlet(np.ones((o,)), (a, s))
+        O = np.ones((a, s, o)) * 1. / o  # ensures frequent observations
         R = np.random.random((a, s, s, o))
         start = np.random.dirichlet(np.ones((s)))
-        self.pomdp = POMDP(T, O, R, start, 1, states=range(3),
-                           actions=set(['a', 'b', 'c', 'd']),
+        self.pomdp = POMDP(T, O, R, start, 1, states=range(4),
+                           actions=set(['a', 'b', 'c']),
                            observations=[True, False])
-        self.policy = POMCPPolicyRunner(self.pomdp, iterations=10, horizon=10)
+        self.policy = POMCPPolicyRunner(self.pomdp, iterations=20, horizon=5)
 
     def test_get_action_is_action(self):
         a = self.policy.get_action()
-        self.assertIn(a, range(self.pomdp.n_actions))
+        self.assertIn(a, self.pomdp.actions)
 
     def test_step_updates_history(self):
-        a = self.policy.get_action()
-        self.policy.history = [0, 1]
-        a = self.policy.get_action()
-        self.policy.step(0)
+        self.policy.get_action()
+        self.policy.history = [0, 1]  # Note: Might fail if '1' unobserved
+        a = self.pomdp.actions.index(self.policy.get_action())
+        self.policy.step(True)
         self.assertEqual(self.policy.history, [0, 1, a, 0])

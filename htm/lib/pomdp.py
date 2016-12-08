@@ -653,8 +653,11 @@ class _SearchTree:
             # TODO belief update (not needed for exact belief)
             return full_return
 
+    def to_dict(self):
+        return self.root.to_dict(self.model)
 
-class _SearchNode:
+
+class _SearchNode(object):
 
     def __init__(self):
         self.n_simulations = 0
@@ -677,6 +680,9 @@ class _SearchNode:
         self.total_value += value
         self.n_simulations += 1
 
+    def to_dict(self, model):
+        raise NotImplemented
+
 
 class _SearchObservationNode(_SearchNode):
     """
@@ -691,11 +697,14 @@ class _SearchObservationNode(_SearchNode):
     def _children_keys(self):
         return [i for i, c in enumerate(self.children) if c is not None]
 
-    def _is_all_init(self):
-        return None not in self.children
+    def _not_init_children(self):
+        return [i for i, c in enumerate(self.children)
+                if c is None or c.n_simulations == 0]
 
     def get_best_action(self, exploration=0):
-        if self._is_all_init():
+        not_init = self._not_init_children()
+        if len(not_init) == 0:
+            assert(self.n_simulations > 0)  # explored if childre explored
             # Augmented greedy (UCT)
             l_ns = np.log(self.n_simulations)
             a = np.argmax([
@@ -704,14 +713,25 @@ class _SearchObservationNode(_SearchNode):
                 ])
         else:
             # Chose an unexplored action
-            a = np.random.choice(
-                [i for i, c in enumerate(self.children) if c is None])
+            a = np.random.choice(not_init)
         return a
 
     def safe_get_child(self, a):
         if self.children[a] is None:
             self.children[a] = _SearchActionNode()
         return self.children[a]
+
+    def to_dict(self, model):
+        a = self.get_best_action()
+        grand_children = self.safe_get_child(a).children
+        return {"belief": self.belief.to_list(),
+                "action": model.actions[a],
+                "node": None,
+                "observations": [model.observations[o]
+                                 for o in grand_children],
+                "children": [grand_children[o].to_dict(model)
+                             for o in grand_children],
+                }
 
 
 class _SearchActionNode(_SearchNode):
@@ -743,6 +763,9 @@ class ArrayBelief:
     def successor(self, model, a, o):
         return ArrayBelief(model.belief_update(a, o, self.array))
 
+    def to_list(self):
+        return self.array.tolist()
+
 
 class ParticleBelief:
     pass
@@ -763,6 +786,14 @@ class POMCPPolicyRunner(object):
         # TODO particles
         self.reset()
 
+    @property
+    def actions(self):
+        return self.tree.model.actions
+
+    @property
+    def observations(self):
+        return self.tree.model.observations
+
     def reset(self, belief=None):
         if belief is None:
             belief = self.tree.model.start
@@ -778,10 +809,14 @@ class POMCPPolicyRunner(object):
         a = node.get_best_action()
         # No exploration during exploitation?
         self._last_action = a
-        return a
+        return self.actions[a]
 
     def step(self, observation):
         if self._last_action is None:
             raise ValueError('Unknown last action')
             # TODO rethink the design of the PolicyRunner class
-        self.history.extend([self._last_action, observation])
+        o = self.observations.index(observation)
+        self.history.extend([self._last_action, o])
+
+    def trajectory_trees_from_starts(self):
+        return {"graphs": [self.tree.to_dict()]}
