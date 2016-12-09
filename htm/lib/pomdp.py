@@ -694,6 +694,10 @@ class _SearchObservationNode(_SearchNode):
         self.belief = belief
         self.children = [None for _ in range(n_actions)]
 
+    def children_dict(self, model):
+        return {model.actions[a]: c
+                for a, c in enumerate(self.children) if c is not None}
+
     def _children_keys(self):
         return [i for i, c in enumerate(self.children) if c is not None]
 
