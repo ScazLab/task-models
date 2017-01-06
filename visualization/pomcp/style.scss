@@ -1,0 +1,244 @@
+$light-gray: #edeeef;
+$gray: #505050;
+$dark-gray: #3c3c3c;
+$red: #D9534F;
+$green: #5CB85C;
+$blue: #3894F0;
+
+$color-error: $red;
+$color-yes: $green;
+$color-no: $blue;
+$color-none: $dark-gray;
+
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url("fonts/Montserrat-Light.otf") format("opentype");
+  font-weight: 300;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url("fonts/Montserrat-UltraLight.otf") format("opentype");
+  font-weight: 100;
+}
+
+html {
+  font-size: 18px;
+}
+
+body {
+  background-color: $light-gray;
+  color: $gray;
+  font-family: 'Lato', sans-serif;
+}
+
+a,
+a:hover,
+a:focus,
+a:active,
+a.active {
+  outline: 0;
+  color: inherit;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+#get_file,
+.title.filename,
+.message.error,
+.legend {
+  text-transform: uppercase;
+  font-family: Montserrat,"Helvetica Neue",Helvetica,Arial,sans-serif;
+  font-weight: 100;
+}
+
+.row>div {
+  padding-top: 20px;
+}
+
+.btn-group .btn {
+  margin-bottom: 0;
+}
+
+.svg-container {
+  display: inline-block;
+  position: relative;
+  width: 100%;
+  padding-bottom: 50%; /* aspect ratio */
+  vertical-align: top;
+  overflow: hidden;
+}
+
+.svg-content-responsive {
+  display: inline-block;
+  position: absolute;
+  top: 10px;
+  left: 0;
+  background-color: #fff;
+}
+
+.mouse-down {
+  cursor: move;
+}
+
+.message.error,
+.title.filename {
+  font-size: 1.6rem;
+  font-weight: 300;
+}
+
+.message.error {
+  font-size: 4rem;
+  fill: $color-error;
+}
+
+.message.info {
+  font-size: 1.4rem;
+  text-transform: none;
+}
+
+.node {
+  cursor: pointer;
+  text {
+    fill: $dark-gray;
+  }
+  &:active {
+    cursor: move;
+  }
+  &:hover circle {
+    stroke: $dark-gray;
+  }
+}
+
+.nodecircle {
+  fill: $dark-gray;
+}
+
+.nodecircle.initial {
+  fill: $green;
+}
+
+.nodetext {
+  font-size: 1rem;
+}
+
+.nodetext.initial {
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.link {
+  fill: none;
+  stroke: #bbb;
+  stroke-width: 2px;
+}
+
+.link.none {
+  stroke: $color-none;
+}
+
+.link.yes {
+  stroke: $color-yes;
+}
+
+.link.no {
+  stroke: $color-no;
+}
+
+.link.error {
+  stroke: $color-error;
+}
+
+.legend {
+  font-size: .8rem;
+  font-weight: 300;
+}
+
+#status .alert,
+#status .btn-group,
+#status button {
+  width: 100%;
+}
+
+#status button {
+  font-size: 1.2rem;
+  min-height: 60px;
+}
+
+#status .dropdown-item {
+  white-space: normal;
+}
+
+#status .dropdown-menu,
+#status .dropdown-item {
+  max-width: 100%;
+}
+
+#my_file {
+  display: none;
+}
+
+#get_file {
+  font-weight: 300;
+}
+
+@media (max-width: 1600px) {
+  .input-group {
+    max-width: 750px;
+  }
+}
+
+@media (min-width:2000px) {
+  .container {
+      max-width: 80%;
+  }
+}
+
+@media(max-width:650px) {
+  .input-wrapper {
+    display: none;
+  }
+}
+
+.text-center {
+  text-align: center;
+}
+
+table {
+  margin: 1rem auto;
+}
+
+#belief-container,
+#value-container {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: .2rem;
+    tr.belief,
+    tr.values {
+      td {
+        background: white;
+        height: 1rem;
+      }
+    }
+    tr.states,
+    tr.actions {
+      th {
+        transform: rotate(-45deg);
+        transform-origin: 50% 0%;
+        white-space: nowrap;
+        font-size: 40%;
+      }
+    }
+    th.action.best {
+      color: $red;
+    }
+    td.value.best {
+      border: .1rem solid $red;
+    }
+}
