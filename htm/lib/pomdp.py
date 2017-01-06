@@ -1,6 +1,7 @@
 # encoding: utf-8
 
 import os
+import math
 import json
 import subprocess
 from distutils import spawn
@@ -653,8 +654,8 @@ class _SearchTree:
             # TODO belief update (not needed for exact belief)
             return full_return
 
-    def to_dict(self):
-        return self.root.to_dict(self.model)
+    def to_dict(self, as_policy=False):
+        return self.root.to_dict(self.model, as_policy=as_policy)
 
 
 class _SearchNode(object):
@@ -680,8 +681,11 @@ class _SearchNode(object):
         self.total_value += value
         self.n_simulations += 1
 
-    def to_dict(self, model):
-        raise NotImplemented
+    def to_dict(self, model, as_policy=False):
+        return {"value": self.value,
+                "visits": self.n_simulations,
+                "node": None,
+                }
 
 
 class _SearchObservationNode(_SearchNode):
@@ -705,16 +709,19 @@ class _SearchObservationNode(_SearchNode):
         return [i for i, c in enumerate(self.children)
                 if c is None or c.n_simulations == 0]
 
+    def augmented_values(self, exploration=0):
+        # Note: all children should be initialized
+        l_ns = np.log(self.n_simulations)
+        return [child.value + exploration * np.sqrt(l_ns / child.n_simulations)
+                if child is not None else np.nan
+                for child in self.children]
+
     def get_best_action(self, exploration=0):
         not_init = self._not_init_children()
         if len(not_init) == 0:
             assert(self.n_simulations > 0)  # explored if childre explored
             # Augmented greedy (UCT)
-            l_ns = np.log(self.n_simulations)
-            a = np.argmax([
-                child.value + exploration * np.sqrt(l_ns / child.n_simulations)
-                for child in self.children
-                ])
+            a = np.argmax([self.augmented_values(exploration=exploration)])
         else:
             # Chose an unexplored action
             a = np.random.choice(not_init)
@@ -725,17 +732,35 @@ class _SearchObservationNode(_SearchNode):
             self.children[a] = _SearchActionNode()
         return self.children[a]
 
-    def to_dict(self, model):
-        a = self.get_best_action()
-        grand_children = self.safe_get_child(a).children
-        return {"belief": self.belief.to_list(),
+    def to_dict(self, model, as_policy=False, observed=None):
+        base = super(_SearchObservationNode, self).to_dict(model,
+                                                           as_policy=as_policy)
+        base["belief"] = self.belief.to_list()
+        if as_policy:
+            a = self.get_best_action()
+            grand_children = self.safe_get_child(a).children
+            base.update({
                 "action": model.actions[a],
-                "node": None,
                 "observations": [model.observations[o]
                                  for o in grand_children],
-                "children": [grand_children[o].to_dict(model)
-                             for o in grand_children],
-                }
+                "observed": observed,
+                "children": [
+                    grand_children[o].to_dict(model, as_policy=as_policy,
+                                              observed=i)
+                    for i, o in enumerate(grand_children)],
+                "values": [v if not math.isnan(v) else None
+                           for v in self.augmented_values()],  # For json
+                })
+        else:
+            base.update({
+                "actions": [model.actions[i]
+                            for i, c in enumerate(self.children)
+                            if c is not None],
+                "children": [c.to_dict(model, as_policy=as_policy)
+                             for c in self.children if c is not None],
+                })
+
+        return base
 
 
 class _SearchActionNode(_SearchNode):
@@ -743,7 +768,20 @@ class _SearchActionNode(_SearchNode):
     Children indexed by observation.
     """
 
-    pass
+    def to_dict(self, model, as_policy=False):
+        if as_policy:
+            raise NotImplemented
+        else:
+            base = super(_SearchActionNode, self).to_dict(model,
+                                                          as_policy=as_policy)
+            base.update({
+                "observations": [model.observations[o]
+                                 for o in self.children],
+                "children": [self.children[o].to_dict(model,
+                                                      as_policy=as_policy)
+                             for o in self.children],
+                })
+            return base
 
 
 class BaseBelief:
@@ -822,5 +860,5 @@ class POMCPPolicyRunner(object):
         o = self.observations.index(observation)
         self.history.extend([self._last_action, o])
 
-    def trajectory_trees_from_starts(self):
-        return {"graphs": [self.tree.to_dict()]}
+    def trajectory_trees_from_starts(self, qvalue=False):
+        return {"graphs": [self.tree.to_dict(as_policy=not qvalue)]}
