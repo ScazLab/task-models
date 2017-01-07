@@ -12,7 +12,7 @@ function loadpomcp(file)
   console.log('Loading file: '+file);
 
   var width  = 1110,
-      height =  555;
+      height =  400;
 
   var i = 0,
       duration = 500,
@@ -67,8 +67,11 @@ function loadpomcp(file)
     values.select("tr.actions").selectAll('th').data(actions).enter().append('th')
           .attr("class", "action")
           .text(function(d) { return shorten_action(d); });
-    values.select("tr.values").selectAll('td').data(actions).enter().append('td')
-          .attr("title", function(d) { return d; });
+    ["values", "visits"].forEach(function(tr_class) {
+      values.select("tr." + tr_class).selectAll('td').data(actions).enter()
+        .append('td')
+            .attr("title", function(d) { return d; });
+    })
 
     root = json.graphs[0];
     root.initial = true;
@@ -273,16 +276,13 @@ function loadpomcp(file)
     // Display belief
     beliefs.select("tr.belief").selectAll('td').data(d.data.belief)
         .style("background", function(b) { return d3.interpolateBlues(b); });
-    // Display values
+    // Display values and visits
     var max_abs_val = d.data.values.reduce(function(max, x) {
         return (x == null) ? max : (Math.abs(x) > max) ? Math.abs(x) : max;
     }, 1.);
     var best = d.data.values.reduce(function(b, x) {
         return (x == null) ? b : Math.max(b, x);
     }, -max_abs_val);
-
-    console.log("Values:", best, d.data.value, d.data.values);
-
     values.select("tr.values").selectAll('td').data(d.data.values)
         .style("background", function(v) {
           return (v == null) ? '#edeeef' : d3.interpolateRdBu(0.5 * (1 - v / max_abs_val));
@@ -293,5 +293,16 @@ function loadpomcp(file)
         });
     values.select("tr.actions").selectAll('th').data(actions)
         .attr("class", function (a) {return "action" + ((a == d.data.action) ? " best" : "");});
+    var max_visits = 1. * Math.max(...d.data.child_visits);
+    values.select("tr.visits").selectAll('td').data(d.data.child_visits)
+        .style("background", function(n) {
+          return (n == 0) ? '#edeeef' : d3.interpolateReds(n / max_visits);
+        })
+        .attr("class", function (n) {
+          return ("visit" + ((n == max_visits) ? " best" : "")
+                          + ((n > 0.5 * max_visits) ? " big-value" : ""));
+        })
+        .text(function(v) { return (v > 0) ? v : ''; })
+        .attr('title', function(v) { return v; });
   };
 };

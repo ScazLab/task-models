@@ -219,16 +219,20 @@ table {
     table-layout: fixed;
     border-collapse: separate;
     border-spacing: .2rem;
-    tr.belief,
-    tr.values {
+    tbody {
       td {
         background: white;
         height: 1rem;
       }
-    }
-    tr.states,
-    tr.actions {
       th {
+        font-size: 80%;
+      }
+    }
+    thead {
+      th:first-child {
+        width: 2.5em;
+      }
+      th+th {
         transform: rotate(-45deg);
         transform-origin: 50% 0%;
         white-space: nowrap;
@@ -238,7 +242,15 @@ table {
     th.action.best {
       color: $red;
     }
+    td.visit.best,
     td.value.best {
       border: .1rem solid $red;
+    }
+    td.visit {
+      text-align: center;
+      font-size: 40%;
+      &.big-value {
+        color: $light-gray;
+      }
     }
 }

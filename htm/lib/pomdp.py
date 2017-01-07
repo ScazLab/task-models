@@ -750,6 +750,8 @@ class _SearchObservationNode(_SearchNode):
                     for i, o in enumerate(grand_children)],
                 "values": [v if not math.isnan(v) else None
                            for v in self.augmented_values()],  # For json
+                "child_visits": [c.n_simulations if c is not None else 0
+                                 for c in self.children],
                 })
         else:
             base.update({
