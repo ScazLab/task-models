@@ -229,10 +229,10 @@ table {
       }
     }
     thead {
-      th:first-child {
-        width: 2.5em;
+      th.legend {
+        width: 3em;
       }
-      th+th {
+      th:not(.legend) {
         transform: rotate(-45deg);
         transform-origin: 50% 0%;
         white-space: nowrap;

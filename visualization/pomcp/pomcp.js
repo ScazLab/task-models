@@ -57,14 +57,14 @@ function loadpomcp(file)
     states = json.states;
 
     // Init the belief representation
-    beliefs.select("tr.states").selectAll('th').data(states).enter().append('th')
+    beliefs.select("tr.states").selectAll('th:not(.legend)').data(states).enter().append('th')
           .attr("class", "state")
           .text(function(d) { return d; });
     beliefs.select("tr.belief").selectAll('td').data(states).enter().append('td')
           .attr("title", function(d) { return d; });
         
     // Init the value representation
-    values.select("tr.actions").selectAll('th').data(actions).enter().append('th')
+    values.select("tr.actions").selectAll('th:not(.legend)').data(actions).enter().append('th')
           .attr("class", "action")
           .text(function(d) { return shorten_action(d); });
     ["values", "visits"].forEach(function(tr_class) {
@@ -291,7 +291,7 @@ function loadpomcp(file)
         .attr("class", function (v) {
           return "value" + ((v == best) ? " best" : "");
         });
-    values.select("tr.actions").selectAll('th').data(actions)
+    values.select("tr.actions").selectAll('th:not(.legend)').data(actions)
         .attr("class", function (a) {return "action" + ((a == d.data.action) ? " best" : "");});
     var max_visits = 1. * Math.max(...d.data.child_visits);
     values.select("tr.visits").selectAll('td').data(d.data.child_visits)
