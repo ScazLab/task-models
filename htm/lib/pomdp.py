@@ -670,7 +670,7 @@ class _SearchNode(object):
                                 for i in self._children_keys()]) + "]"
 
     def _children_keys(self):
-        return self.children.keys()
+        return sorted(self.children.keys())
 
     @property
     def value(self):
@@ -710,7 +710,7 @@ class _SearchObservationNode(_SearchNode):
                 if c is None or c.n_simulations == 0]
 
     def augmented_values(self, exploration=0):
-        # Note: all children should be initialized
+        # Note: nans are returned for not initialized children
         l_ns = np.log(self.n_simulations)
         return [child.value + exploration * np.sqrt(l_ns / child.n_simulations)
                 if child is not None else np.nan
@@ -719,7 +719,7 @@ class _SearchObservationNode(_SearchNode):
     def get_best_action(self, exploration=0):
         not_init = self._not_init_children()
         if len(not_init) == 0:
-            assert(self.n_simulations > 0)  # explored if childre explored
+            assert(self.n_simulations > 0)  # explored if children explored
             # Augmented greedy (UCT)
             a = np.argmax([self.augmented_values(exploration=exploration)])
         else:
