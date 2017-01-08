@@ -14,7 +14,7 @@ function loadpomcp(file)
   var width  = 1110,
       height =  400;
 
-  var i = 0,
+  var node_count = 0,
       duration = 500,
       root,
       actions,
@@ -88,6 +88,34 @@ function loadpomcp(file)
     update();
   });
 
+  function shorten_action(a) {
+    return a.replace('intention','int')
+            .replace('phy','P-')
+            .replace('com-','C-')
+            .replace('-get',' Get')
+            .replace('-snap',' Snap')
+            .replace('-left-leg','LL')
+            .replace('-right-leg','RL')
+            .replace('-central-frame','CF');
+  }
+
+  function max_abs(arr) {
+    return arr.reduce(function(max, x) {
+        return (x == null) ? max : (Math.abs(x) > max) ? Math.abs(x) : max;
+    }, 1.);
+  }
+
+  function nodeTranslate(d) {
+      return 'translate(' + d.y + ',' + d.x + ')';
+  }
+
+  function linkDiagonal(d) {
+    return "M" + d.source.y + "," + d.source.x
+      + "C" + (d.source.y + d.target.y) / 2 + "," + d.source.x
+      + " " + (d.source.y + d.target.y) / 2 + "," + d.target.x
+      + " " + d.target.y + "," + d.target.x;
+  }
+
   function update(source) {
     // Compute the new tree layout.
     var treeRoot = tree(d3.hierarchy(root));
@@ -104,24 +132,14 @@ function loadpomcp(file)
 
 
     // Normalize for fixed-depth.
-  //  nodes.forEach(function(d) { d.y = d.depth * 160; });
+    nodes.forEach(function(d) { d.y = d.depth * 160; });
     //  DEBUG
-    function nodeTranslate(d) {
-        return 'translate(' + d.y + ',' + d.x + ')';
-    }
-
-    function linkDiagonal(d) {
-      return "M" + d.source.y + "," + d.source.x
-        + "C" + (d.source.y + d.target.y) / 2 + "," + d.source.x
-        + " " + (d.source.y + d.target.y) / 2 + "," + d.target.x
-        + " " + d.target.y + "," + d.target.x;
-    }
 
     // Update the nodes…
     var node = g_nodes.selectAll('g.node')
-        .data(nodes);
+        .data(nodes, function(d) { return (d.data.id != null) ? d.data.id : (d.data.id = node_count++); });
 
-    // Enter any new nodes at the parent's previous position.
+    // Enter any new nodes at the source position.
     var nodeEnter = node.enter().append('g')
           .attr('class', 'node')
           .attr('transform', sourceTranslate)
@@ -133,9 +151,13 @@ function loadpomcp(file)
             return "Visits: " + d.data.visits + "\nValue: " + d.data.value;
           });
 
+    function node_class(d) {
+        return 'nodecircle' + ((d.initial) ? ' initial': '');
+    }
+
     nodeEnter.append('circle')
         .attr('r', 1e-6)
-        .attr('class', function(d) { if (d.initial) { return 'nodecircle initial'; } return 'nodecircle';})
+        .attr('class', node_class)
       .transition()
         .duration(duration)
         .attr('r', 4.5);
@@ -154,15 +176,14 @@ function loadpomcp(file)
           .duration(duration)
           .attr('transform', nodeTranslate);
 
-
-    // Transition nodes to their new position.
+    // Transition nodes to their new position on update.
     node.transition()
         .duration(duration)
         .attr('transform', nodeTranslate);
 
     node.select('circle')
         .attr('r', 4.5)
-        .attr('class', function(d) { if (d.initial) { return 'nodecircle initial'; } return 'node';});
+        .attr('class', node_class);
 
     node.select('text')
         .style('fill-opacity', 1);
@@ -181,7 +202,7 @@ function loadpomcp(file)
 
     // Update the links…
     var link = g_links.selectAll('path.link')
-        .data(links);//, function(d) { return d.target.id; });
+        .data(links, function(d) { return d.target.data.id; });
 
     // Enter any new links at the parent's previous position.
     link.enter().append('path')
@@ -225,7 +246,6 @@ function loadpomcp(file)
       data._children = null;
     }
     update(d);
-    displayValues(d);
   }
 
   function redraw()
@@ -258,21 +278,8 @@ function loadpomcp(file)
     appendmarker('error', '#D9534F')
   };
 
-  function shorten_action(a) {
-    return a.replace('intention','int')
-            .replace('phy','P-')
-            .replace('com-','C-')
-            .replace('-get',' Get')
-            .replace('-snap',' Snap')
-            .replace('-left-leg','LL')
-            .replace('-right-leg','RL')
-            .replace('-central-frame','CF');
-  }
-
   function displayValues(d)
   {
-    console.log(beliefs.select("tr.belief").selectAll('td'), d.data);
-
     // Display belief
     beliefs.select("tr.belief").selectAll('td').data(d.data.belief)
         .style("background", function(b) { return d3.interpolateBlues(b); });
