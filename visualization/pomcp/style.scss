@@ -106,6 +106,7 @@ h6,
   cursor: pointer;
   text {
     fill: $dark-gray;
+    font-size: 60%;
   }
   &:active {
     cursor: move;
@@ -225,12 +226,12 @@ table {
         height: 1rem;
       }
       th {
-        font-size: 80%;
+        font-size: 60%;
       }
     }
     thead {
       th.legend {
-        width: 3em;
+        width: 4em;
       }
       th:not(.legend) {
         transform: rotate(-45deg);

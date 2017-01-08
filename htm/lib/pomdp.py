@@ -750,6 +750,12 @@ class _SearchObservationNode(_SearchNode):
                     for i, o in enumerate(grand_children)],
                 "values": [v if not math.isnan(v) else None
                            for v in self.augmented_values()],  # For json
+                "exploration_terms": [
+                    np.sqrt(np.log(self.n_simulations) / child.n_simulations)
+                    if ((child is not None) and child.n_simulations > 0)
+                    else None
+                    for child in self.children
+                    ],
                 "child_visits": [c.n_simulations if c is not None else 0
                                  for c in self.children],
                 })

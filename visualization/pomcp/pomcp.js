@@ -1,6 +1,9 @@
 defaultjsonfile = 'pomcp.json';
 var defaultColor = '#3c3c3c';
 
+var exploration = 200;
+
+
 
 loadpomcp('');
 
@@ -67,7 +70,7 @@ function loadpomcp(file)
     values.select("tr.actions").selectAll('th:not(.legend)').data(actions).enter().append('th')
           .attr("class", "action")
           .text(function(d) { return shorten_action(d); });
-    ["values", "visits"].forEach(function(tr_class) {
+    ["values", "augmented.values", "visits"].forEach(function(tr_class) {
       values.select("tr." + tr_class).selectAll('td').data(actions).enter()
         .append('td')
             .attr("title", function(d) { return d; });
@@ -148,7 +151,9 @@ function loadpomcp(file)
 
     nodeEnter.append('svg:title')
           .text(function(d) {
-            return "Visits: " + d.data.visits + "\nValue: " + d.data.value;
+            return ("Action: " + d.data.action +
+                    "\nVisits: " + d.data.visits +
+                    "\nValue: " + d.data.value);
           });
 
     function node_class(d) {
@@ -282,14 +287,21 @@ function loadpomcp(file)
   {
     // Display belief
     beliefs.select("tr.belief").selectAll('td').data(d.data.belief)
-        .style("background", function(b) { return d3.interpolateBlues(b); });
+        .style("background", function(b) { return d3.interpolateBlues(b); })
+        .attr("title", function(b) { return b; });
     // Display values and visits
-    var max_abs_val = d.data.values.reduce(function(max, x) {
-        return (x == null) ? max : (Math.abs(x) > max) ? Math.abs(x) : max;
-    }, 1.);
+    var max_abs_val = max_abs(d.data.values);
+    var augmented = d.data.values.map(function(x, i) {
+        return x + exploration * d.data.exploration_terms[i];
+    });
+    var max_abs_aug = max_abs(augmented);
     var best = d.data.values.reduce(function(b, x) {
         return (x == null) ? b : Math.max(b, x);
     }, -max_abs_val);
+    var best_aug = augmented.reduce(function(b, x) {
+        return (x == null) ? b : Math.max(b, x);
+    }, -max_abs_aug);
+    // - values
     values.select("tr.values").selectAll('td').data(d.data.values)
         .style("background", function(v) {
           return (v == null) ? '#edeeef' : d3.interpolateRdBu(0.5 * (1 - v / max_abs_val));
@@ -298,8 +310,19 @@ function loadpomcp(file)
         .attr("class", function (v) {
           return "value" + ((v == best) ? " best" : "");
         });
+    // - augmented values
+    values.select("tr.values.augmented").selectAll('td').data(augmented)
+        .style("background", function(v) {
+          return (v == null) ? '#edeeef' : d3.interpolateRdBu(0.5 * (1 - v / max_abs_val));
+        })
+        .attr("title", function(v) {return v;})
+        .attr("class", function (v) {
+          return "value" + ((v == best_aug) ? " best" : "");
+        });
+    // - highlight best action
     values.select("tr.actions").selectAll('th:not(.legend)').data(actions)
         .attr("class", function (a) {return "action" + ((a == d.data.action) ? " best" : "");});
+    // - visits
     var max_visits = 1. * Math.max(...d.data.child_visits);
     values.select("tr.visits").selectAll('td').data(d.data.child_visits)
         .style("background", function(n) {
