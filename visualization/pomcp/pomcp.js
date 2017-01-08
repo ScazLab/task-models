@@ -102,12 +102,6 @@ function loadpomcp(file)
             .replace('-central-frame','CF');
   }
 
-  function max_abs(arr) {
-    return arr.reduce(function(max, x) {
-        return (x == null) ? max : (Math.abs(x) > max) ? Math.abs(x) : max;
-    }, 1.);
-  }
-
   function nodeTranslate(d) {
       return 'translate(' + d.y + ',' + d.x + ')';
   }
@@ -283,6 +277,14 @@ function loadpomcp(file)
     appendmarker('error', '#D9534F')
   };
 
+  function value_color_scale(values) {
+    var max_abs = d3.max(values, Math.abs);
+    var scale = d3.scaleLinear().domain([-max_abs, max_abs]).range([1, 0]);
+    return function(x) {
+      return (x == null) ? '#edeeef' : d3.interpolateRdBu(scale(x));
+    };
+  }
+
   function displayValues(d)
   {
     // Display belief
@@ -290,31 +292,23 @@ function loadpomcp(file)
         .style("background", function(b) { return d3.interpolateBlues(b); })
         .attr("title", function(b) { return b; });
     // Display values and visits
-    var max_abs_val = max_abs(d.data.values);
+    var val_scale = value_color_scale(d.data.values);
     var augmented = d.data.values.map(function(x, i) {
         return x + exploration * d.data.exploration_terms[i];
     });
-    var max_abs_aug = max_abs(augmented);
-    var best = d.data.values.reduce(function(b, x) {
-        return (x == null) ? b : Math.max(b, x);
-    }, -max_abs_val);
-    var best_aug = augmented.reduce(function(b, x) {
-        return (x == null) ? b : Math.max(b, x);
-    }, -max_abs_aug);
+    var aug_scale = value_color_scale(augmented);
+    var best = d3.max(d.data.values);
+    var best_aug = d3.max(augmented);
     // - values
     values.select("tr.values").selectAll('td').data(d.data.values)
-        .style("background", function(v) {
-          return (v == null) ? '#edeeef' : d3.interpolateRdBu(0.5 * (1 - v / max_abs_val));
-        })
+        .style("background", val_scale)
         .attr("title", function(v) {return v;})
         .attr("class", function (v) {
           return "value" + ((v == best) ? " best" : "");
         });
     // - augmented values
     values.select("tr.values.augmented").selectAll('td').data(augmented)
-        .style("background", function(v) {
-          return (v == null) ? '#edeeef' : d3.interpolateRdBu(0.5 * (1 - v / max_abs_val));
-        })
+        .style("background", aug_scale)
         .attr("title", function(v) {return v;})
         .attr("class", function (v) {
           return "value" + ((v == best_aug) ? " best" : "");
