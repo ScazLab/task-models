@@ -588,8 +588,7 @@ class _SearchTree:
 
     def __init__(self, model, horizon, exploration):
         self.model = model
-        self.root = _SearchObservationNode(ArrayBelief(model.start),
-                                           model.n_actions)
+        self.root = self._observation_node_for_belief(ArrayBelief(model.start))
         self.horizon = horizon
         self.exploration = exploration
         # TODO: add option for particle belief (or decide depending on model)
@@ -629,6 +628,9 @@ class _SearchTree:
         state = node.belief.sample()
         self._simulate_from_node(node, state, self.horizon)
 
+    def _observation_node_for_belief(self, b):
+        return _SearchObservationNode(b, self.model.n_actions)
+
     def _simulate_from_node(self, node, state, horizon):
         if horizon == 0:
             return node.value
@@ -638,9 +640,8 @@ class _SearchTree:
             new_s, o, r = self.model.sample_transition(a, state)
             if o not in child.children:
                 # Create node with updated belief
-                child.children[o] = _SearchObservationNode(
-                    node.belief.successor(self.model, a, o),
-                    self.model.n_actions)
+                child.children[o] = self._observation_node_for_belief(
+                    node.belief.successor(self.model, a, o))
                 # Use rollout
                 partial_return = self.rollout_from_node(
                     child.children[o], new_s, horizon - 1)
@@ -656,6 +657,27 @@ class _SearchTree:
 
     def to_dict(self, as_policy=False):
         return self.root.to_dict(self.model, as_policy=as_policy)
+
+
+class _ObservationLookupSearchTree(_SearchTree):
+
+    def __init__(self, model, horizon, exploration):
+        self._obs_nodes = {}  # used in super for root initialization
+        super(_ObservationLookupSearchTree, self).__init__(model, horizon,
+                                                           exploration)
+
+    def _observation_node_for_belief(self, b):
+        # Returns node for given belief, creating one if none exists
+        if b not in self._obs_nodes:
+            self._obs_nodes[b] = _SearchObservationNode(
+                b, self.model.n_actions)
+        return self._obs_nodes[b]
+
+    # Here we need to keep track of visited children since the tree is no more
+    # a tree...
+    def to_dict(self, as_policy=False):
+        return self.root.to_dict(self.model, as_policy=as_policy,
+                                 exclude_visited=set())
 
 
 class _SearchNode(object):
@@ -681,7 +703,7 @@ class _SearchNode(object):
         self.total_value += value
         self.n_simulations += 1
 
-    def to_dict(self, model, as_policy=False):
+    def to_dict(self, model, as_policy=False, exclude_visited=None):
         return {"value": self.value,
                 "visits": self.n_simulations,
                 "node": None,
@@ -732,22 +754,23 @@ class _SearchObservationNode(_SearchNode):
             self.children[a] = _SearchActionNode()
         return self.children[a]
 
-    def to_dict(self, model, as_policy=False, observed=None):
-        base = super(_SearchObservationNode, self).to_dict(model,
-                                                           as_policy=as_policy)
+    def to_dict(self, model, as_policy=False, observed=None,
+                exclude_visited=None):
+        children = True
+        if exclude_visited is not None:
+            if self.belief in exclude_visited:
+                children = False
+            else:
+                exclude_visited.add(self.belief)
+        base = super(_SearchObservationNode, self).to_dict(
+            model, as_policy=as_policy, exclude_visited=exclude_visited)
         base["belief"] = self.belief.to_list()
         if as_policy:
             a = self.get_best_action()
             grand_children = self.safe_get_child(a).children
             base.update({
                 "action": model.actions[a],
-                "observations": [model.observations[o]
-                                 for o in grand_children],
                 "observed": observed,
-                "children": [
-                    grand_children[o].to_dict(model, as_policy=as_policy,
-                                              observed=i)
-                    for i, o in enumerate(grand_children)],
                 "values": [v if not math.isnan(v) else None
                            for v in self.augmented_values()],  # For json
                 "exploration_terms": [
@@ -759,14 +782,28 @@ class _SearchObservationNode(_SearchNode):
                 "child_visits": [c.n_simulations if c is not None else 0
                                  for c in self.children],
                 })
+            if children:
+                base.update({
+                    "observations": [model.observations[o]
+                                     for o in grand_children],
+                    "children": [
+                        grand_children[o].to_dict(
+                            model, as_policy=as_policy, observed=i,
+                            exclude_visited=exclude_visited)
+                        for i, o in enumerate(grand_children)],
+                    })
         else:
-            base.update({
-                "actions": [model.actions[i]
-                            for i, c in enumerate(self.children)
-                            if c is not None],
-                "children": [c.to_dict(model, as_policy=as_policy)
-                             for c in self.children if c is not None],
-                })
+            if children:
+                base.update({
+                    "actions": [model.actions[i]
+                                for i, c in enumerate(self.children)
+                                if c is not None],
+                    "children": [c.to_dict(model, as_policy=as_policy,
+                                           exclude_visited=exclude_visited)
+                                 for c in self.children if c is not None],
+                    })
+            else:
+                base.update({'actions': [], 'children': []})
 
         return base
 
@@ -776,17 +813,18 @@ class _SearchActionNode(_SearchNode):
     Children indexed by observation.
     """
 
-    def to_dict(self, model, as_policy=False):
+    def to_dict(self, model, as_policy=False, exclude_visited=None):
         if as_policy:
             raise NotImplemented
         else:
-            base = super(_SearchActionNode, self).to_dict(model,
-                                                          as_policy=as_policy)
+            base = super(_SearchActionNode, self).to_dict(
+                model, as_policy=as_policy, exclude_visited=exclude_visited)
             base.update({
                 "observations": [model.observations[o]
                                  for o in self.children],
-                "children": [self.children[o].to_dict(model,
-                                                      as_policy=as_policy)
+                "children": [self.children[o].to_dict(
+                                model, as_policy=as_policy,
+                                exclude_visited=exclude_visited)
                              for o in self.children],
                 })
             return base
@@ -806,6 +844,13 @@ class ArrayBelief:
     def __init__(self, probabilities):
         self.array = np.asarray(probabilities)
         _assert_normal(self.array, 'probabilities')
+
+    def __hash__(self):
+        return hash(self.array.tostring())
+
+    def __eq__(self, other):
+        return (isinstance(other, ArrayBelief)
+                and (self.array == other.array).all())
 
     def sample(self):
         return np.random.choice(self.array.shape[0], p=self.array)
@@ -827,11 +872,14 @@ class POMCPPolicyRunner(object):
     :param horizon: length of simulation episodes
     :param iterations: number of simulation episodes to run
     :param exploration: UCT exploration parameter (c in [Silver2010])
+    :param belief_values: group values for histories with same belief
     """
 
     def __init__(self, model, particles=20, iterations=100, horizon=100,
-                 exploration=.5):
-        self.tree = _SearchTree(model, horizon, exploration)
+                 exploration=.5, belief_values=False):
+        tree_class = (_SearchTree if belief_values
+                      else _ObservationLookupSearchTree)
+        self.tree = tree_class(model, horizon, exploration)
         self.iterations = iterations
         # TODO particles
         self.reset()

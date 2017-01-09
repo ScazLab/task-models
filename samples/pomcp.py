@@ -109,7 +109,7 @@ p = h2p.task_to_pomdp(stool_task_sequential)
 #p.discount = .99
 
 pol = POMCPPolicyRunner(p, iterations=ITERATIONS, horizon=HORIZON,
-                        exploration=EXPLORATION)
+                        exploration=EXPLORATION, belief_values=True)
 N = 10
 best = None
 maxl = 0
