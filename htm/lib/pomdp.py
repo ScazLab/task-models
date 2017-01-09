@@ -877,8 +877,8 @@ class POMCPPolicyRunner(object):
 
     def __init__(self, model, particles=20, iterations=100, horizon=100,
                  exploration=.5, belief_values=False):
-        tree_class = (_SearchTree if belief_values
-                      else _ObservationLookupSearchTree)
+        tree_class = (_ObservationLookupSearchTree if belief_values
+                      else _SearchTree)
         self.tree = tree_class(model, horizon, exploration)
         self.iterations = iterations
         # TODO particles
