@@ -1,10 +1,6 @@
 defaultjsonfile = 'pomcp.json';
 var defaultColor = '#3c3c3c';
 
-var exploration = 200;
-
-
-
 loadpomcp('');
 
 function loadpomcp(file)
@@ -24,7 +20,7 @@ function loadpomcp(file)
       states;
 
   var tree = d3.tree()
-               .size([height / 2, width / 2]);
+               .size([.8 * height, .8 * width]);
 
   var beliefs = d3.select('#belief-container');
   var values  = d3.select('#value-container');
@@ -58,6 +54,7 @@ function loadpomcp(file)
 
     actions = json.actions;
     states = json.states;
+    exploration = json.exploration || 1;
 
     // Init the belief representation
     beliefs.select("tr.states").selectAll('th:not(.legend)').data(states).enter().append('th')
@@ -294,7 +291,7 @@ function loadpomcp(file)
     // Display values and visits
     var val_scale = value_color_scale(d.data.values);
     var augmented = d.data.values.map(function(x, i) {
-        return x + exploration * d.data.exploration_terms[i];
+        return (x == null) ? null : x + exploration * d.data.exploration_terms[i];
     });
     var aug_scale = value_color_scale(augmented);
     var best = d3.max(d.data.values);
