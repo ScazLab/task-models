@@ -680,11 +680,29 @@ class _ObservationLookupSearchTree(_SearchTree):
                                  exclude_visited=set())
 
 
+class _ValueAverage(object):
+
+    def __init__(self, alpha=0):
+        self.n_simulations = 0
+        self.total_value = 0.
+        assert(0 <= alpha <= 1)
+        self.alpha = alpha
+
+    @property
+    def value(self):
+        return 0. if self.n_simulations == 0 \
+                else self.total_value / self.n_simulations
+
+    def update(self, value):
+        self.total_value = ((self.total_value + value) * (1 - self.alpha)
+                            + self.alpha * self.n_simulations * value)
+        self.n_simulations += 1
+
+
 class _SearchNode(object):
 
     def __init__(self):
-        self.n_simulations = 0
-        self.total_value = 0.
+        self._avg = _ValueAverage(alpha=0)
         self.children = {}
 
     def __str__(self):
@@ -695,13 +713,15 @@ class _SearchNode(object):
         return sorted(self.children.keys())
 
     @property
+    def n_simulations(self):
+        return self._avg.n_simulations
+
+    @property
     def value(self):
-        return 0. if self.n_simulations == 0 \
-                else self.total_value / self.n_simulations
+        return self._avg.value
 
     def update(self, value):
-        self.total_value += value
-        self.n_simulations += 1
+        self._avg.update(value)
 
     def to_dict(self, model, as_policy=False, exclude_visited=None):
         return {"value": self.value,
