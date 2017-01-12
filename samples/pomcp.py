@@ -96,7 +96,9 @@ R_STATE = True
 
 HORIZON = 100
 ITERATIONS = 100
-EXPLORATION = 1000
+EXPLORATION = 1  # 1000
+RELATIVE_EXPLO = True  # In this case use smaller exploration
+BELIEF_VALUES = True
 
 ## Convert the task into a POMDP
 
@@ -106,8 +108,10 @@ p = h2p.task_to_pomdp(stool_task_sequential)
 #p.discount = .99
 
 pol = POMCPPolicyRunner(p, iterations=ITERATIONS, horizon=HORIZON,
-                        exploration=EXPLORATION, belief_values=True)
-N = 10
+                        exploration=EXPLORATION,
+                        relative_exploration=RELATIVE_EXPLO,
+                        belief_values=BELIEF_VALUES)
+N = 100
 best = None
 maxl = 0
 for i in range(N):
@@ -119,10 +123,13 @@ for i in range(N):
     print(s, end='\r')
     best = pol.get_action()  # Some exploration
 print('Exploring... [done]')
+if BELIEF_VALUES:
+    print('Found {} distinct beliefs.'.format(len(pol.tree._obs_nodes)))
 dic = pol.trajectory_trees_from_starts()
 dic['actions'] = pol.tree.model.actions
 dic['states'] = pol.tree.model.states
 dic['exploration'] = EXPLORATION
+dic['relative_exploration'] = RELATIVE_EXPLO
 
 with open(os.path.join(
         os.path.dirname(__file__),

@@ -586,11 +586,13 @@ class _Aux:
 
 class _SearchTree:
 
-    def __init__(self, model, horizon, exploration):
+    def __init__(self, model, horizon, exploration,
+                 relative_exploration=False):
         self.model = model
         self.root = self._observation_node_for_belief(ArrayBelief(model.start))
         self.horizon = horizon
         self.exploration = exploration
+        self.relative_explo = relative_exploration
         # TODO: add option for particle belief (or decide depending on model)
 
     def get_node(self, history):
@@ -635,7 +637,8 @@ class _SearchTree:
         if horizon == 0:
             return node.value
         else:
-            a = node.get_best_action(exploration=self.exploration)
+            a = node.get_best_action(exploration=self.exploration,
+                                     relative_exploration=self.relative_explo)
             child = node.safe_get_child(a)
             new_s, o, r = self.model.sample_transition(a, state)
             if o not in child.children:
@@ -661,10 +664,12 @@ class _SearchTree:
 
 class _ObservationLookupSearchTree(_SearchTree):
 
-    def __init__(self, model, horizon, exploration):
+    def __init__(self, model, horizon, exploration,
+                 relative_exploration=False):
         self._obs_nodes = {}  # used in super for root initialization
-        super(_ObservationLookupSearchTree, self).__init__(model, horizon,
-                                                           exploration)
+        super(_ObservationLookupSearchTree, self).__init__(
+            model, horizon, exploration,
+            relative_exploration=relative_exploration)
 
     def _observation_node_for_belief(self, b):
         # Returns node for given belief, creating one if none exists
@@ -751,19 +756,24 @@ class _SearchObservationNode(_SearchNode):
         return [i for i, c in enumerate(self.children)
                 if c is None or c.n_simulations == 0]
 
-    def augmented_values(self, exploration=0):
+    def augmented_values(self, exploration=0, relative=False):
         # Note: nans are returned for not initialized children
+        if exploration > 0 and relative:
+            vals = [child.value if child is not None else np.nan
+                    for child in self.children]
+            exploration *= np.nanmax(vals) - np.nanmin(vals)
         l_ns = np.log(self.n_simulations)
         return [child.value + exploration * np.sqrt(l_ns / child.n_simulations)
                 if child is not None else np.nan
                 for child in self.children]
 
-    def get_best_action(self, exploration=0):
+    def get_best_action(self, exploration=0, relative_exploration=False):
         not_init = self._not_init_children()
         if len(not_init) == 0:
             assert(self.n_simulations > 0)  # explored if children explored
             # Augmented greedy (UCT)
-            a = np.argmax([self.augmented_values(exploration=exploration)])
+            a = np.argmax([self.augmented_values(
+                exploration=exploration, relative=relative_exploration)])
         else:
             # Chose an unexplored action
             a = np.random.choice(not_init)
@@ -896,10 +906,14 @@ class POMCPPolicyRunner(object):
     """
 
     def __init__(self, model, particles=20, iterations=100, horizon=100,
-                 exploration=.5, belief_values=False):
+                 exploration=None, relative_exploration=False,
+                 belief_values=False):
+        if exploration is None:
+            exploration = 1. if relative_exploration else 100
         tree_class = (_ObservationLookupSearchTree if belief_values
                       else _SearchTree)
-        self.tree = tree_class(model, horizon, exploration)
+        self.tree = tree_class(model, horizon, exploration,
+                               relative_exploration=relative_exploration)
         self.iterations = iterations
         # TODO particles
         self.reset()

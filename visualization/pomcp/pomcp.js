@@ -54,7 +54,8 @@ function loadpomcp(file)
 
     actions = json.actions;
     states = json.states;
-    exploration = json.exploration || 1;
+    exploration = (json.exploration == null) ? 1. : json.exploration;
+    relative_exploration = json.relative_exploration;
 
     // Init the belief representation
     beliefs.select("tr.states").selectAll('th:not(.legend)').data(states).enter().append('th')
@@ -290,8 +291,12 @@ function loadpomcp(file)
         .attr("title", function(b) { return b; });
     // Display values and visits
     var val_scale = value_color_scale(d.data.values);
+    cur_explo = exploration;
+    if (relative_exploration) {
+      cur_explo *= (d3.max(d.data.values) - d3.min(d.data.values));
+    }
     var augmented = d.data.values.map(function(x, i) {
-        return (x == null) ? null : x + exploration * d.data.exploration_terms[i];
+        return (x == null) ? null : x + cur_explo * d.data.exploration_terms[i];
     });
     var aug_scale = value_color_scale(augmented);
     var best = d3.max(d.data.values);
