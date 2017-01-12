@@ -93,6 +93,7 @@ R_STATE = True
 # 2. with full sequence of sequential actions
 # R_END = 100
 # LOOP = True
+R_SUBTASK = 100
 
 HORIZON = 100
 ITERATIONS = 100
@@ -102,8 +103,8 @@ BELIEF_VALUES = True
 
 ## Convert the task into a POMDP
 
-h2p = HTMToPOMDP(T_WAIT, T_ASK, T_TELL, C_INTR, end_reward=R_END, loop=LOOP,
-                 reward_state=R_STATE)
+h2p = HTMToPOMDP(T_WAIT, T_ASK, T_TELL, intr_cost=C_INTR, end_reward=R_END,
+                 loop=LOOP, reward_state=R_STATE, subtask_reward=R_SUBTASK)
 p = h2p.task_to_pomdp(stool_task_sequential)
 #p.discount = .99
 

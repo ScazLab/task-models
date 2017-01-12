@@ -18,8 +18,8 @@ class CollaborativeAction(AbstractAction):
     """Collaborative action that can be achieved either by robot or human.
 
     :param name: str (must be unique)
-    :param durations: (float, float, float)
-        Duration for robot and human to perform the action as well as error
+    :param durations: (float: human, float: robot, float: error)
+        Duration for human and robot to perform the action as well as error
         time when robot starts action at wrong moment (the error time includes
         the time of acting before interruption as well as the recovery time).
     :param human_probability: float
@@ -102,16 +102,17 @@ class _NodeToPOMDP(object):
         raise NotImplementedError
 
     @staticmethod
-    def from_node(node, t_ask, t_tell, flags=[]):
+    def from_node(node, t_ask, t_tell, subtask_reward, flags=[]):
         if isinstance(node, LeafCombination):
-            return _LeafToPOMDP(node, t_ask, t_tell, flags)
+            return _LeafToPOMDP(node, t_ask, t_tell, subtask_reward, flags)
         elif isinstance(node, SequentialCombination):
-            return _SequenceToPOMDP(node, t_ask, t_tell, flags)
+            return _SequenceToPOMDP(node, t_ask, t_tell, subtask_reward, flags)
         elif isinstance(node, AlternativeCombination):
-            return _AlternativesToPOMDP(node, t_ask, t_tell, flags)
+            return _AlternativesToPOMDP(node, t_ask, t_tell, subtask_reward,
+                                        flags)
         elif isinstance(node, ParallelCombination):
             return _AlternativesToPOMDP(node.to_alternative(), t_ask, t_tell,
-                                        flags)
+                                        subtask_reward, flags)
         else:
             raise ValueError('Unkown combination: ' + type(node))
 
@@ -131,7 +132,7 @@ class _LeafToPOMDP(_NodeToPOMDP):
     act = 'phy'
     com = 'com'
 
-    def __init__(self, leaf, t_ask, t_tell, flags):
+    def __init__(self, leaf, t_ask, t_tell, subtask_reward=None, flags):
         self.t_tell = t_tell
         self.t_ask = t_ask
         self.leaf = leaf
@@ -145,6 +146,7 @@ class _LeafToPOMDP(_NodeToPOMDP):
                                   self.com + '-tell-intention',
                                   self.com + '-ask-finished']]
         self.flags = flags
+        self.subtask_reward = subtask_reward
 
     @property
     def t_hum(self):
@@ -264,8 +266,13 @@ class _LeafToPOMDP(_NodeToPOMDP):
         R[a_phy, s_r, :, :] = self.t_rob + intr_cost
         if 'structured' in self.flags:
             R[a_ti, :, :, :] = 100
-            R[a_ti, s_i, s_h, :] = self.t_com
-            R[a_ti, s_i, s_r, :] = self.t_com
+            R[a_ti, s_i, s_h, :] = self.t_com + intr_cost
+            R[a_ti, s_i, s_r, :] = self.t_com + intr_cost
+        if 'subtask_reward' in self.flags:
+            # Value transitions to any other node
+            R[:, s_start:(s_start + 3), :s_start, :] -= self.subtask_reward
+            R[:, s_start:(s_start + 3),
+              (s_start + 3):, :] -= self.subtask_reward
 
 
 def _start_indices_from(l):
@@ -277,9 +284,10 @@ def _start_indices_from(l):
 
 class _ParentNodeToPOMDP(_NodeToPOMDP):
 
-    def __init__(self, node, t_ask, t_tell, flags=[]):
+    def __init__(self, node, t_ask, t_tell, subtask_reward=None, flags=[]):
         self.node = node
-        self.children = [self.from_node(n, t_ask, t_tell, flags=flags)
+        self.children = [self.from_node(n, t_ask, t_tell, subtask_reward,
+                                        flags=flags)
                          for n in node.children]
         child_states = [c.states for c in self.children]
         self.s_indices = _start_indices_from(child_states)
@@ -372,15 +380,16 @@ class HTMToPOMDP:
 
     wait = 0
     end = -1
-    endr = -2  # End reward
+    endr = -2  # End reward state
 
     def __init__(self, t_wait, t_ask, t_tell, intr_cost=0, end_reward=10.,
                  deterministic=False, structured=False, loop=False,
-                 reward_state=False):
+                 reward_state=False, subtask_reward=None):
         self.t_wait = t_wait
         self.t_ask = t_ask
         self.t_tell = t_tell
         self.end_reward = end_reward
+        self.subtask_reward = subtask_reward
         # Intrinsic costs of communication or action (in addition to duration)
         self.c_intr = intr_cost
         self.flags = set()
@@ -392,6 +401,8 @@ class HTMToPOMDP:
             self.flags.add('loop')
         if reward_state:
             self.flags.add('reward_state')
+        if subtask_reward is not None:
+            self.flags.add('subtask_reward')
 
     def update_T_end(self, T, init):
         if 'loop' in self.flags:
@@ -415,7 +426,7 @@ class HTMToPOMDP:
 
     def task_to_pomdp(self, task):
         n2p = _NodeToPOMDP.from_node(task.root, self.t_ask, self.t_tell,
-                                     flags=self.flags)
+                                     self.subtask_reward, flags=self.flags)
         states = [s for s in n2p.states]
         if 'reward_state' in self.flags:
             states.append('end-reward')
