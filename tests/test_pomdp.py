@@ -318,14 +318,14 @@ class TestPolicy(TestCase):
 class TestSearchNode(TestCase):
 
     def setUp(self):
-        self.node = _SearchNode()
+        self.node = _SearchNode(alpha=0.)
 
     def test_n_simulations_is_0(self):
         self.assertEqual(self.node.n_simulations, 0)
 
     def test_value_is_0(self):
-        self.assertIsInstance(self.node.total_value, float)
-        self.assertEqual(self.node.total_value, 0)
+        self.assertIsInstance(self.node._avg.total_value, float)
+        self.assertEqual(self.node._avg.total_value, 0)
         self.assertIsInstance(self.node.value, float)
         self.assertEqual(self.node.value, 0)
 
@@ -337,7 +337,7 @@ class TestSearchNode(TestCase):
 
     def test_value_is_float_after_update(self):
         self.node.update(3)
-        self.assertIsInstance(self.node.total_value, float)
+        self.assertIsInstance(self.node._avg.total_value, float)
         self.assertIsInstance(self.node.value, float)
 
     def test_value_is_average(self):
@@ -383,7 +383,7 @@ class TestSearchObservationNode(TestCase):
         for i in range(9):
             c = self.node.safe_get_child(self.node.get_best_action())
             c.update(0)
-        self.node.n_simulations = 10
+        self.node._avg.n_simulations = 10
         unset = self.node.children.index(None)
         a = self.node.get_best_action()
         self.assertEqual(a, unset)
@@ -393,14 +393,14 @@ class TestSearchObservationNode(TestCase):
             c = self.node.safe_get_child(i)
             if i != 3:
                 c.update(0)
-        self.node.n_simulations = 9
+        self.node._avg.n_simulations = 9
         self.assertEqual(self.node.get_best_action(), 3)
 
     def test_get_best_action_is_best(self):
         for i in range(10):
             c = self.node.safe_get_child(i)
             c.update(0)
-        self.node.n_simulations = 10
+        self.node._avg.n_simulations = 10
         self.node.children[7].update(10)
         a = self.node.get_best_action()
         self.assertEqual(a, 7)
@@ -410,10 +410,10 @@ class TestSearchObservationNode(TestCase):
             c = self.node.safe_get_child(i)
             c.update(0)
             c.update(0)
-        self.node.children[4].n_simulations = 1
-        self.node.children[4].total_value = 9.3  # n_simu = 1
+        self.node.children[4]._avg.n_simulations = 1
+        self.node.children[4]._avg.total_value = 9.3  # n_simu = 1
         self.node.children[7].update(30)  # n_simu = 3
-        self.node.n_simulations = 20  # log(20) is slightly less than 3
+        self.node._avg.n_simulations = 20  # log(20) is slightly less than 3
         a = self.node.get_best_action(exploration=1.)  # sqrt(3) > 1.72
         self.assertEqual(a, 4)
 
@@ -422,10 +422,10 @@ class TestSearchObservationNode(TestCase):
             c = self.node.safe_get_child(i)
             c.update(0)
             c.update(0)
-        self.node.children[4].n_simulations = 1
-        self.node.children[4].total_value = 9.3  # n_simu = 1
+        self.node.children[4]._avg.n_simulations = 1
+        self.node.children[4]._avg.total_value = 9.3  # n_simu = 1
         self.node.children[7].update(30)  # n_simu = 3
-        self.node.n_simulations = 20  # log(20) is slightly less than 3
+        self.node._avg.n_simulations = 20  # log(20) is slightly less than 3
         a = self.node.get_best_action(exploration=.5)  # sqrt(3) > 1.72
         self.assertEqual(a, 7)
 
@@ -434,8 +434,8 @@ class TestSearchObservationNode(TestCase):
             c = self.node.safe_get_child(i)
             for i in range(1 + np.random.randint(9)):  # at least one sample
                 c.update(10. * np.random.random())
-        self.node.n_simulations = sum([self.node.children[i].n_simulations
-                                       for i in range(10)])
+        self.node._avg.n_simulations = sum([self.node.children[i].n_simulations
+                                            for i in range(10)])
         best = np.argmax([self.node.children[i].value for i in range(10)])
         a = self.node.get_best_action()
         self.assertEqual(a, best)
@@ -449,9 +449,9 @@ class TestSearchObservationNode(TestCase):
         for i in range(10):
             c = node.safe_get_child(i)
             c.update(0)
-        node.n_simulations = 10
-        node.children[ai].n_simulations = 1
-        node.children[ai].total_value = 10.
+        node._avg.n_simulations = 10
+        node.children[ai]._avg.n_simulations = 1
+        node.children[ai]._avg.total_value = 10.
         return node
 
     @skip("outdated")
@@ -543,7 +543,7 @@ class TestSearchTree(TestCase):
         self.start = np.zeros((10,))
         self.start[-1] = 1.
         self.model = _FakeModel(self.start, 3, 2)
-        self.tree = _SearchTree(self.model, 3, 1.)
+        self.tree = _SearchTree(self.model, 3, 1., node_params={'alpha': 0.})
 
     def test_get_node(self):
         ca = self.tree.root.safe_get_child(0)
@@ -600,7 +600,7 @@ class TestSearchTree(TestCase):
         belief = np.zeros((10))
         belief[1] = 1.
 
-        def ret_1(exploration=None):
+        def ret_1(exploration=None, relative_exploration=None):
             return 1
 
         self.tree.horizon = 3
@@ -613,9 +613,9 @@ class TestSearchTree(TestCase):
         self.assertEqual(len(self.model.transitions_history), 3)
         self.assertEqual(str(self.tree.root), "[1: [1: []]]")
         self.assertEqual(self.tree.root.n_simulations, 1)
-        self.assertEqual(self.tree.root.total_value, 24.)
-        self.assertEqual(self.tree.get_node([1]).total_value, 24.)
-        self.assertEqual(self.tree.get_node([1, 1]).total_value, 13.)
+        self.assertEqual(self.tree.root._avg.total_value, 24.)
+        self.assertEqual(self.tree.get_node([1])._avg.total_value, 24.)
+        self.assertEqual(self.tree.get_node([1, 1])._avg.total_value, 13.)
         # Second run
         self.model.reset()
         self.model.transitions = [(1, 1, 3.), (2, 0, 1.), (4, 0, 5.)]
@@ -626,11 +626,11 @@ class TestSearchTree(TestCase):
         self.assertEqual(str(self.tree.root),
                          "[1: [1: [{}: [0: []]]]]".format(a1))
         self.assertEqual(self.tree.root.n_simulations, 2)
-        self.assertEqual(self.tree.root.total_value, 33.)
-        self.assertEqual(self.tree.get_node([1]).total_value, 33.)
-        self.assertEqual(self.tree.get_node([1, 1]).total_value, 19.)
-        self.assertEqual(self.tree.get_node([1, 1, a1]).total_value, 6.)
-        self.assertEqual(self.tree.get_node([1, 1, a1, 0]).total_value, 5.)
+        self.assertEqual(self.tree.root._avg.total_value, 33.)
+        self.assertEqual(self.tree.get_node([1])._avg.total_value, 33.)
+        self.assertEqual(self.tree.get_node([1, 1])._avg.total_value, 19.)
+        self.assertEqual(self.tree.get_node([1, 1, a1])._avg.total_value, 6.)
+        self.assertEqual(self.tree.get_node([1, 1, a1, 0])._avg.total_value, 5.)
         # Third run
         self.model.reset()
         self.model.transitions = [(1, 0, 2.), (2, 1, 3.), (4, 0, 4.)]
@@ -640,12 +640,12 @@ class TestSearchTree(TestCase):
         self.assertEqual(str(self.tree.root),
                          "[1: [0: [], 1: [{}: [0: []]]]]".format(a1))
         self.assertEqual(self.tree.root.n_simulations, 3)
-        self.assertEqual(self.tree.root.total_value, 42.)
-        self.assertEqual(self.tree.get_node([1]).total_value, 42.)
-        self.assertEqual(self.tree.get_node([1, 1]).total_value, 19.)
-        self.assertEqual(self.tree.get_node([1, 1, a1]).total_value, 6.)
-        self.assertEqual(self.tree.get_node([1, 1, a1, 0]).total_value, 5.)
-        self.assertEqual(self.tree.get_node([1, 0]).total_value, 7.)
+        self.assertEqual(self.tree.root._avg.total_value, 42.)
+        self.assertEqual(self.tree.get_node([1])._avg.total_value, 42.)
+        self.assertEqual(self.tree.get_node([1, 1])._avg.total_value, 19.)
+        self.assertEqual(self.tree.get_node([1, 1, a1])._avg.total_value, 6.)
+        self.assertEqual(self.tree.get_node([1, 1, a1, 0])._avg.total_value, 5.)
+        self.assertEqual(self.tree.get_node([1, 0])._avg.total_value, 7.)
 
 
 class TestPOMCPPolicyRunner(TestCase):

@@ -144,7 +144,7 @@ class POMDP:
         (must sum to 1 on last dimension)
     :param R: array of shape (n_actions, n_states, n_states, n_observations)
         Rewards or cost (must sum to 1 on last dimension)
-    :param start: array os shape (n_states)
+    :param start: array of shape (n_states)
         Initial state probabilities
     :param discount: discount factor (int)
     :param states: None | iterable of states
@@ -587,8 +587,9 @@ class _Aux:
 class _SearchTree:
 
     def __init__(self, model, horizon, exploration,
-                 relative_exploration=False):
+                 relative_exploration=False, node_params={}):
         self.model = model
+        self._node_params = node_params
         self.root = self._observation_node_for_belief(ArrayBelief(model.start))
         self.horizon = horizon
         self.exploration = exploration
@@ -631,7 +632,7 @@ class _SearchTree:
         self._simulate_from_node(node, state, self.horizon)
 
     def _observation_node_for_belief(self, b):
-        return _SearchObservationNode(b, self.model.n_actions)
+        return _SearchObservationNode(b, self.model.n_actions, **self._node_params)
 
     def _simulate_from_node(self, node, state, horizon):
         if horizon == 0:
@@ -665,17 +666,18 @@ class _SearchTree:
 class _ObservationLookupSearchTree(_SearchTree):
 
     def __init__(self, model, horizon, exploration,
-                 relative_exploration=False):
+                 relative_exploration=False, node_params={}):
         self._obs_nodes = {}  # used in super for root initialization
         super(_ObservationLookupSearchTree, self).__init__(
             model, horizon, exploration,
-            relative_exploration=relative_exploration)
+            relative_exploration=relative_exploration,
+            node_params=node_params)
 
     def _observation_node_for_belief(self, b):
         # Returns node for given belief, creating one if none exists
         if b not in self._obs_nodes:
             self._obs_nodes[b] = _SearchObservationNode(
-                b, self.model.n_actions)
+                b, self.model.n_actions, **self._node_params)
         return self._obs_nodes[b]
 
     # Here we need to keep track of visited children since the tree is no more
@@ -706,8 +708,8 @@ class _ValueAverage(object):
 
 class _SearchNode(object):
 
-    def __init__(self):
-        self._avg = _ValueAverage(alpha=0)
+    def __init__(self, alpha=.001):
+        self._avg = _ValueAverage(alpha=alpha)
         self.children = {}
 
     def __str__(self):
@@ -740,10 +742,11 @@ class _SearchObservationNode(_SearchNode):
     Children indexed by action.
     """
 
-    def __init__(self, belief, n_actions):
-        super(_SearchObservationNode, self).__init__()
+    def __init__(self, belief, n_actions, alpha=.001):
+        super(_SearchObservationNode, self).__init__(alpha=alpha)
         self.belief = belief
         self.children = [None for _ in range(n_actions)]
+        self._children_alpha = alpha
 
     def children_dict(self, model):
         return {model.actions[a]: c
@@ -781,7 +784,7 @@ class _SearchObservationNode(_SearchNode):
 
     def safe_get_child(self, a):
         if self.children[a] is None:
-            self.children[a] = _SearchActionNode()
+            self.children[a] = _SearchActionNode(alpha=self._children_alpha)
         return self.children[a]
 
     def to_dict(self, model, as_policy=False, observed=None,
