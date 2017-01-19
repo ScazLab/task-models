@@ -120,11 +120,13 @@ class SupportivePOMDP:
     observations = ['None']
     n_observations = 1
 
-    def __init__(self, htm):
+    def __init__(self, htm, discount=1.):
+        self.discount = discount
         h2d = _HTMToDAG(htm)
         self.htm_nodes = h2d.nodes
         assert(len(self.htm_nodes) < 128)  # we use dtype=np.int8
-        self.htm_succs = h2d.succs
+        # set final state as successors of last actions in HTM
+        self.htm_succs = [[self.n_htm_states] if len(s) == 0 else s for s in h2d.succs]
         self.htm_init = h2d.init
         self._populate_conditions()
         self._skip_to_obj = 1 + len(self.preferences) + 1
@@ -168,7 +170,7 @@ class SupportivePOMDP:
         """Computes reward and modifies state to match transition from node
         to a random successor.
         """
-        s[self.F_HTM] = np.choice(self.htm_succs[node])
+        s[self.F_HTM] = np.random.choice(self.htm_succs[node])
         return sum([self._update_for_condition(s, c, o)
                     for c, o in self.htm_conditions[node]])
 

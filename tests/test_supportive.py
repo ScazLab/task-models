@@ -87,6 +87,9 @@ class TestSupportivePOMDP(TestCase):
             [(CONSUMES, 1), (CONSUMES, 2),
              (USES, 3), (CONSUMES_SOME, 4)]])
 
+    def test_last_actions_lead_to_final_state(self):
+        self.assertEqual(self.p.htm_succs, [[1], [2]])
+
     def test_features(self):
         self.assertEqual(len(self.p.features), self.p.n_features)
         self.assertEqual(self.p.features, [
