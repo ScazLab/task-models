@@ -268,13 +268,16 @@ class POMDP:
         s = new_b.sum()
         if s == 0.:
             raise Impossible('Impossible observation: ' + str(o))
-        return new_b / new_b.sum()
+        return new_b / s
 
     def sample_transition(self, a, s):
         new_s = np.random.choice(self.n_states, p=self.T[a, s, :])
         o = np.random.choice(self.n_observations, p=self.O[a, new_s, :])
         r = self.R[a, s, new_s, o]
         return new_s, o, r
+
+    def sample_start(self):
+        return np.random.choice(self.n_states, p=self.start)
 
     def dump(self):
         """Write POMDP description following:
@@ -587,14 +590,26 @@ class _Aux:
 class _SearchTree:
 
     def __init__(self, model, horizon, exploration,
-                 relative_exploration=False, node_params={}):
+                 relative_exploration=False, belief='array', belief_params={},
+                 node_params={}):
+        self._belief = belief
+        self._belief_params = belief_params
         self.model = model
         self._node_params = node_params
-        self.root = self._observation_node_for_belief(ArrayBelief(model.start))
+        self.root = self._observation_node_for_belief(self._belief_start())
         self.horizon = horizon
         self.exploration = exploration
         self.relative_explo = relative_exploration
         # TODO: add option for particle belief (or decide depending on model)
+
+    def _belief_start(self):
+        if self._belief == 'array':
+            return ArrayBelief(self.model.start, **self._belief_params)
+        elif self._belief == 'particle':
+            return ParticleBelief(self.model.sample_start, self.model.n_states,
+                                  **self._belief_params)
+        else:
+            raise ValueError('Unknown belief type: ' + self._belief)
 
     def get_node(self, history):
         """Raises ValueError if node does not exist or history is invalid."""
@@ -666,11 +681,15 @@ class _SearchTree:
 class _ObservationLookupSearchTree(_SearchTree):
 
     def __init__(self, model, horizon, exploration,
-                 relative_exploration=False, node_params={}):
+                 relative_exploration=False, belief='array', belief_params={},
+                 node_params={}):
         self._obs_nodes = {}  # used in super for root initialization
+        if belief == 'particle':
+            raise ValueError('_ObservationLookupSearchTree does not support particle belief')
         super(_ObservationLookupSearchTree, self).__init__(
             model, horizon, exploration,
             relative_exploration=relative_exploration,
+            belief=belief, belief_params={},
             node_params=node_params)
 
     def _observation_node_for_belief(self, b):
@@ -868,7 +887,7 @@ class BaseBelief:
     def sample(self):
         raise NotImplemented
 
-    def successor(self, model):
+    def successor(self, model, a, o):
         raise NotImplemented
 
 
@@ -895,8 +914,54 @@ class ArrayBelief:
         return self.array.tolist()
 
 
+class _SuccessorSampler:
+
+    class MaxSamplesReached(RuntimeError):
+        pass
+
+    def __init__(self, model, belief, a, o, max_samples=100000):
+        self.n_sampled = 0
+        self.model = model
+        self.belief = belief
+        self.a = a
+        self.o = o
+        self.max_samples = max_samples
+
+    def _sample(self):
+        self.n_sampled += 1
+        if self.n_sampled > self.max_samples:
+            raise self.MaxSamplesReached(
+                'Impossible to sample enough particles for transition to '
+                + (self.a, self.o))
+        return self.belief.sample()
+
+    def __call__(self):
+        o = None
+        while o != self.o:
+            s, o, _ = self.model.sample_transition(self.a, self._sample())
+        return s
+
+
 class ParticleBelief:
-    pass
+
+    def __init__(self, sampler, n_states, n_particles=100):
+        self.n_states = n_states
+        self.n_particles = n_particles
+        self.part_states = [sampler() for _ in range(self.n_particles)]
+
+    def sample(self):
+        return self.part_states[np.random.choice(self.n_particles)]
+
+    def successor(self, model, a, o):
+        sampler = _SuccessorSampler(model, self, a, o,
+                                    max_samples=1000 * self.n_particles)
+        return ParticleBelief(sampler, self.n_states, self.n_particles)
+
+    def to_array(self):
+        raise NotImplementedError
+
+    def to_list(self):
+        self.to_array().tolist()
 
 
 class POMCPPolicyRunner(object):
@@ -910,13 +975,14 @@ class POMCPPolicyRunner(object):
 
     def __init__(self, model, particles=20, iterations=100, horizon=100,
                  exploration=None, relative_exploration=False,
-                 belief_values=False):
+                 belief_values=False, belief='array', belief_params={}):
         if exploration is None:
             exploration = 1. if relative_exploration else 100
         tree_class = (_ObservationLookupSearchTree if belief_values
                       else _SearchTree)
         self.tree = tree_class(model, horizon, exploration,
-                               relative_exploration=relative_exploration)
+                               relative_exploration=relative_exploration,
+                               belief=belief, belief_params=belief_params)
         self.iterations = iterations
         # TODO particles
         self.reset()
@@ -930,8 +996,8 @@ class POMCPPolicyRunner(object):
         return self.tree.model.observations
 
     def reset(self, belief=None):
-        if belief is None:
-            belief = self.tree.model.start
+        if belief is not None:
+            raise NotImplementedError
         self.history = []
         self._last_action = None
 

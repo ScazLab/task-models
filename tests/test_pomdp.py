@@ -1,4 +1,5 @@
 import os
+from numbers import Integral
 from unittest import TestCase, skip
 
 import numpy as np
@@ -8,7 +9,7 @@ from htm.lib.pomdp import (parse_value_function, parse_policy_graph, POMDP,
                            _dump_3d_array, _dump_4d_array, GraphPolicy,
                            _SearchNode, _SearchObservationNode,
                            _SearchActionNode, _SearchTree, ArrayBelief,
-                           POMCPPolicyRunner)
+                           ParticleBelief, POMCPPolicyRunner)
 
 
 TEST_VF = os.path.join(os.path.dirname(__file__), 'samples/example.alpha')
@@ -503,10 +504,14 @@ class _FakeModel:
 
     def __init__(self, start, n_actions, n_observations):
         self.start = start
+        self.n_states = len(self.start)
         self.n_actions = n_actions
         self.n_observations = n_observations
         self.action = [a for a in range(self.n_actions)]
         self.reset()
+
+    def sample_start(self):
+        return np.random.choice(self.n_states, p=self.start)
 
     def sample_transition(self, action, state):
         self.transitions_history.append((action, state))
@@ -523,18 +528,69 @@ class _FakeModel:
         self.successors_history = []
 
 
-class TestArrayBelief(TestCase):
+class BeliefBaseTest(object):
+
+    class FakeModel:
+
+        def __init__(self, successor_0, successor_1):
+            self.sampled_on = []
+            self.successors = [successor_0, successor_1]
+
+        def belief_update(self, a, o, array):
+            return self.successors[o]  # only accepts o = (0|1)
+
+        def sample_transition(self, a, s):
+            self.sampled_on.append((a, s))
+            if np.random.random() < .5:
+                o = 0
+            else:
+                o = 1
+            return np.random.choice(3, p=self.successors[o]), o, -1.5
 
     def setUp(self):
         self.p = np.array([.7, 0., .3])
-        self.belief = ArrayBelief(self.p)
 
     def test_sample_is_int(self):
-        self.assertIsInstance(self.belief.sample(), int)
+        self.assertIsInstance(self.belief.sample(), Integral)
 
     def test_sample_only_from_non_zeros(self):
         for i in range(10):
             self.assertNotEqual(self.p[self.belief.sample()], 0.)
+
+
+class TestArrayBelief(BeliefBaseTest, TestCase):
+
+    def setUp(self):
+        super(TestArrayBelief, self).setUp()
+        self.belief = ArrayBelief(self.p)
+
+    def test_successor(self):
+        p_succ = np.array([.6, .4, 0.])
+        model = self.FakeModel(np.array([0., 0.1, 0.9]), p_succ)
+        succ = self.belief.successor(model, 2, 1)
+        self.assertIsInstance(succ, ArrayBelief)
+        np.testing.assert_array_equal(succ.array, p_succ)
+
+
+class TestParticleBelief(BeliefBaseTest, TestCase):
+
+    def setUp(self):
+        super(TestParticleBelief, self).setUp()
+
+        def sampler():
+            return int(np.random.choice(3, p=self.p))
+
+        self.belief = ParticleBelief(sampler, 3, 10)
+
+    def test_successor(self):
+        p_succ = np.array([.6, .4, 0.])
+        model = self.FakeModel(np.array([0., 0.1, 0.9]), p_succ)
+        succ = self.belief.successor(model, 2, 1)
+        self.assertIsInstance(succ, ParticleBelief)
+        self.assertNotIn(2, succ.part_states)
+        self.assertTrue(all([a == 2 for (a, _) in model.sampled_on]))
+        self.assertTrue(all([s in self.belief.part_states
+                             for (_, s) in model.sampled_on]))
 
 
 class TestSearchTree(TestCase):
@@ -544,6 +600,15 @@ class TestSearchTree(TestCase):
         self.start[-1] = 1.
         self.model = _FakeModel(self.start, 3, 2)
         self.tree = _SearchTree(self.model, 3, 1., node_params={'alpha': 0.})
+
+    def test_belief_type(self):
+        tree = _SearchTree(self.model, 3, 1., belief='array')
+        self.assertIsInstance(tree.root.belief, ArrayBelief)
+        tree = _SearchTree(self.model, 3, 1., belief='particle',
+                           belief_params={'n_particles': 37})
+        self.assertIsInstance(tree.root.belief, ParticleBelief)
+        self.assertEqual(tree.root.belief.n_particles, 37)
+        self.assertEqual(tree.root.belief.n_states, 10)
 
     def test_get_node(self):
         ca = self.tree.root.safe_get_child(0)
