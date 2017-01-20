@@ -107,11 +107,11 @@ class _SupportivePOMDPState:
             self.s,
             self.htm,
             "".join([str(self.has_preference(i))
-                      for i in range(self._shift_htm - self._shift_pref)]),
+                     for i in range(self._shift_htm - self._shift_pref)]),
             "".join([str(self.has_body_feature(i))
-                      for i in range(self._shift_pref - self._shift_body)]),
+                     for i in range(self._shift_pref - self._shift_body)]),
             "".join([str(self.has_object(i))
-                      for i in range(self._shift_body)]))
+                     for i in range(self._shift_body)]))
 
     @property
     def htm(self):
@@ -174,7 +174,6 @@ class SupportivePOMDP:
     preferences = ['hold-preference']
     p_preferences = [0.5]
 
-    states = None
     observations = ['None']
     n_observations = 1
 
@@ -188,7 +187,7 @@ class SupportivePOMDP:
         self.htm_init = h2d.init
         self._populate_conditions()
         self.n_states = self.n_htm_states * (
-                2 ** (1 + len(self.preferences) + 1 + len(self.objects)))
+            2 ** (1 + len(self.preferences) + 1 + len(self.objects)))
         self._skip_to_a_obj = 2
         self.n_actions = self._skip_to_a_obj + 2 * len(self.objects)
 
@@ -218,6 +217,9 @@ class SupportivePOMDP:
     @property
     def htm_final(self):
         return len(self.htm_nodes)
+
+    def is_final(self, s):
+        return self._int_to_state(s).htm == self.htm_final
 
     @property
     def features(self):
