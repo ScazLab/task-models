@@ -7,7 +7,8 @@ from htm.task import (SequentialCombination, AlternativeCombination,
                       LeafCombination, ParallelCombination)
 from htm.supportive import (_HTMToDAG, unique, SupportivePOMDP, AssembleFoot,
                             AssembleTopJoint, AssembleLegToTop, BringTop,
-                            CONSUMES, USES, CONSUMES_SOME)
+                            CONSUMES, USES, CONSUMES_SOME,
+                            _SupportivePOMDPState)
 
 
 class TestHelpers(TestCase):
@@ -65,6 +66,69 @@ class TestHTMToDAG(TestCase):
         self.assertEqual(res.init, [0, 2])
 
 
+class TestSupportivePOMDPState(TestCase):
+
+    def setUp(self):
+        self._s = _SupportivePOMDPState(5, 3, 2, 4)
+
+    def test_set_get_htm(self):
+        self.assertEqual(self._s.htm, 0)
+        for i in range(3):
+            self._s.set_preference(i, 1)
+        for i in range(2):
+            self._s.set_body_feature(i, 1)
+        for i in range(4):
+            self._s.set_object(i, 1)
+        self.assertEqual(self._s.htm, 0)
+        self._s.htm = 3
+        self.assertEqual(self._s.htm, 3)
+
+    def test_set_get_preference(self):
+        for i in range(3):
+            self.assertEqual(self._s.has_preference(i), 0)
+        self._s.htm = 3
+        for i in range(2):
+            self._s.set_body_feature(i, 1)
+        for i in range(4):
+            self._s.set_object(i, 1)
+        for i in range(3):
+            self.assertEqual(self._s.has_preference(i), 0)
+        for i in range(3):
+            self.assertEqual(self._s.has_preference(i), 0)
+            self._s.set_preference(i, i % 2)
+            self.assertEqual(self._s.has_preference(i), i % 2)
+
+    def test_set_get_body_features(self):
+        for i in range(2):
+            self.assertEqual(self._s.has_body_feature(i), 0)
+        self._s.htm = 3
+        for i in range(3):
+            self._s.set_preference(i, 1)
+        for i in range(4):
+            self._s.set_object(i, 1)
+        for i in range(2):
+            self.assertEqual(self._s.has_body_feature(i), 0)
+        for i in range(2):
+            self.assertEqual(self._s.has_body_feature(i), 0)
+            self._s.set_body_feature(i, i % 2)
+            self.assertEqual(self._s.has_body_feature(i), i % 2)
+
+    def test_set_get_object(self):
+        for i in range(4):
+            self.assertEqual(self._s.has_object(i), 0)
+        self._s.htm = 3
+        for i in range(2):
+            self._s.set_body_feature(i, 1)
+        for i in range(3):
+            self._s.set_preference(i, 1)
+        for i in range(4):
+            self.assertEqual(self._s.has_object(i), 0)
+        for i in range(4):
+            self.assertEqual(self._s.has_object(i), 0)
+            self._s.set_object(i, i % 2)
+            self.assertEqual(self._s.has_object(i), i % 2)
+
+
 class TestSupportivePOMDP(TestCase):
 
     def setUp(self):
@@ -91,7 +155,6 @@ class TestSupportivePOMDP(TestCase):
         self.assertEqual(self.p.htm_succs, [[1], [2]])
 
     def test_features(self):
-        self.assertEqual(len(self.p.features), self.p.n_features)
         self.assertEqual(self.p.features, [
             'HTM', 'hold-preference', 'holding', 'top', 'foot', 'leg',
             'screwdriver', 'screws'])
@@ -113,40 +176,41 @@ class TestSupportivePOMDP(TestCase):
         self.assertTrue(self.p._is_bring(self.p._bring(2)))
         self.assertFalse(self.p._is_bring(self.p._remove(2)))
 
-    def test_object_feature(self):
-        self.assertIsInstance(self.p._obj_feat(3), int)
-        self.assertEqual(self.p._obj_feat(3), 6)
-
     def test_sample_start_no_hold(self):
         self.p.p_preferences = [0]
-        s = self.p.sample_start()
-        self.assertEqual(s[0], 0)
-        self.assertEqual(s[1], 0)
-        np.testing.assert_array_equal(s[2:], 0)
-        self.assertEqual(s.dtype, np.int8)
+        _s = self.p._int_to_state(self.p.sample_start())
+        self.assertEqual(_s.htm, 0)
+        self.assertEqual(_s.has_preference(0), 0)
+        self.assertEqual(_s.has_body_feature(0), 0)
+        for i in range(5):
+            self.assertEqual(_s.has_object(i), 0)
 
     def test_sample_start_hold(self):
-        self.p.p_preferences = [1]
-        s = self.p.sample_start()
-        self.assertEqual(s[0], 0)
-        self.assertEqual(s[1], 1)
-        np.testing.assert_array_equal(s[2:], 0)
-        self.assertEqual(s.dtype, np.int8)
+        self.p.p_preferences = [1.]
+        _s = self.p._int_to_state(self.p.sample_start())
+        self.assertEqual(_s.htm, 0)
+        self.assertEqual(_s.has_preference(0), 1)
+        self.assertEqual(_s.has_body_feature(0), 0)
+        for i in range(5):
+            self.assertEqual(_s.has_object(i), 0)
 
     def test_sample_transition(self):
-        s = np.zeros((self.p.n_features,), dtype=np.int8)
+        s = 0
         # Bring object
         a = self.p._bring(1)
         s, o, r = self.p.sample_transition(a, s)
-        self.assertEqual(s[4], 1)
+        _s = self.p._int_to_state(s)
+        self.assertEqual(_s.has_object(1), 1)
         self.assertEqual(o, self.p.O_NONE)
         # Remove object
         a = self.p._remove(1)
         s, o, r = self.p.sample_transition(a, s)
-        self.assertEqual(s[4], 0)
+        _s = self.p._int_to_state(s)
+        self.assertEqual(_s.has_object(1), 0)
         self.assertEqual(o, self.p.O_NONE)
         # Transition to new task state
         a = self.p.A_WAIT
         s, o, r = self.p.sample_transition(a, s)
-        self.assertEqual(s[3], 1)  # Top is there
+        _s = self.p._int_to_state(s)
+        self.assertEqual(_s.has_object(0), 0)  # Top not there. TODO: is it OK?
         self.assertEqual(o, self.p.O_NONE)

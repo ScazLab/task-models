@@ -92,6 +92,49 @@ class AssembleLegToTop(SupportedAction):
                            ]
 
 
+class _SupportivePOMDPState:
+    """Enables conversion of states between integers and array representation
+    """
+
+    def __init__(self, n_htm_states, n_preferences, n_body_features, n_objects, s=0):
+        self._shift_body = n_objects
+        self._shift_pref = self._shift_body + n_body_features
+        self._shift_htm = self._shift_pref + n_preferences
+        self.s = s
+
+    @property
+    def htm(self):
+        return self.s >> self._shift_htm
+
+    @htm.setter
+    def htm(self, n):
+        self.s += (n << self._shift_htm) - (self.htm << self._shift_htm)
+
+    def _get_bit(self, i):
+        return (self.s >> i) % 2
+
+    def _set_bit(self, i, b):
+        self.s += (b << i) - (self._get_bit(i) << i)
+
+    def has_preference(self, i):
+        return self._get_bit(self._shift_pref + i)
+
+    def set_preference(self, i, pref):
+        self._set_bit(self._shift_pref + i, pref)
+
+    def has_body_feature(self, i):
+        return self._get_bit(self._shift_body + i)
+
+    def set_body_feature(self, i, b):
+        self._set_bit(self._shift_body + i, b)
+
+    has_object = _get_bit
+    set_object = _set_bit
+
+    def to_int(self):
+        return self.s
+
+
 class SupportivePOMDP:
     """
     Each action has a condition attribute that is a pair (condition, object)
@@ -101,12 +144,16 @@ class SupportivePOMDP:
     The HTM feature has the following values:
     - one for each node in the DAG representation of the HTM
     - one final state
+
+    Note on state representation:
+    - for public API, states are integers, denoted as `s`
+    - for private methods states may be using the _SupportivePOMDPState;
+    they are then denoted as `_s`.
     """
 
     A_WAIT = 0
     A_HOLD = 1
     O_NONE = 0
-    F_HTM = 0
 
     p_consume_all = .5
     r_subtask = 10.
@@ -126,14 +173,17 @@ class SupportivePOMDP:
         self.htm_nodes = h2d.nodes
         assert(len(self.htm_nodes) < 128)  # we use dtype=np.int8
         # set final state as successors of last actions in HTM
-        self.htm_succs = [[self.n_htm_states] if len(s) == 0 else s for s in h2d.succs]
+        self.htm_succs = [[self.htm_final] if len(s) == 0 else s for s in h2d.succs]
         self.htm_init = h2d.init
         self._populate_conditions()
-        self._skip_to_obj = 1 + len(self.preferences) + 1
-        self.n_features = self._skip_to_obj + len(self.objects)
-        self.n_states = self.n_htm_states * (2 ** self.n_features)
+        self.n_states = self.n_htm_states * (
+                2 ** (1 + len(self.preferences) + 1 + len(self.objects)))
         self._skip_to_a_obj = 2
         self.n_actions = self._skip_to_a_obj + 2 * len(self.objects)
+
+    def _int_to_state(self, s=0):
+        return _SupportivePOMDPState(self.n_htm_states, len(self.preferences),
+                                     1, len(self.objects), s=s)
 
     def get_object_id(self, object_name):
         # Note: this is not efficient
@@ -155,6 +205,10 @@ class SupportivePOMDP:
         return len(self.htm_nodes) + 1
 
     @property
+    def htm_final(self):
+        return len(self.htm_nodes)
+
+    @property
     def features(self):
         return ['HTM'] + self.preferences + ['holding'] + self.objects
 
@@ -166,16 +220,13 @@ class SupportivePOMDP:
     def belief_update(self, a, o, b):
         raise NotImplemented
 
-    def _update_for_transition(self, s, node):
+    def _update_for_transition(self, _s, node):
         """Computes reward and modifies state to match transition from node
         to a random successor.
         """
-        s[self.F_HTM] = np.random.choice(self.htm_succs[node])
-        return sum([self._update_for_condition(s, c, o)
+        _s.htm = np.random.choice(self.htm_succs[node])
+        return sum([self._update_for_condition(_s, c, o)
                     for c, o in self.htm_conditions[node]])
-
-    def _obj_feat(self, obj):
-        return self._skip_to_obj + obj
 
     def _obj_from_action(self, a):
         return (a - self._skip_to_a_obj) // 2
@@ -189,52 +240,53 @@ class SupportivePOMDP:
     def _remove(self, obj):
         return self._bring(obj) + 1
 
-    def _update_for_condition(self, s, c, o):
+    def _update_for_condition(self, _s, c, obj):
         """Computes reward and modifies state according to conditions.
         """
-        f_o = self._obj_feat(o)
-        r = self._cost_get(o) if s[f_o] else 0.  # all conditions need object to be there
+        r = self._cost_get(obj) if _s.has_object(obj) else 0.
+        # note: all conditions need object to be there
         if c == CONSUMES:
-            s[f_o] = 0
+            _s.set_object(obj, 0)
         elif c == CONSUMES_SOME:
-            s[f_o] = 0 if np.random.random() < self.p_consume_all else 1.
+            _s.set_object(obj, 0 if np.random.random() < self.p_consume_all else 1)
         return r
 
     def _cost_get(self, o):
         return -10  # Cost for the human to get the object
 
     def sample_transition(self, a, s):
-        new_s = s.copy()
+        _s = self._int_to_state(s)
+        _new_s = self._int_to_state(s)
         if a == self.A_WAIT or a == self.A_HOLD:
             r = 0 if a == self.A_WAIT else -self.intrinsic_cost
-            if s[self.F_HTM] == self.n_htm_states:  # Final state
+            if _s.htm == self.htm_final:  # Final state
                 obs = self.O_NONE
             else:
-                r += self._update_for_transition(new_s, s[self.F_HTM])
+                r += self._update_for_transition(_new_s, _s.htm)
                 obs = self.O_NONE
-                if new_s[self.F_HTM] == self.n_htm_states:
+                if _new_s.htm == self.htm_final:
                     r += self.r_final
                 else:
                     r += self.r_subtask
         else:
-            f_o = self._obj_feat(self._obj_from_action(a))
+            obj = self._obj_from_action(a)
             if self._is_bring(a):  # Bring
-                new_s[f_o] = 1
+                _new_s.set_object(obj, 1)
                 obs = self.O_NONE
             else:  # Remove
-                new_s[f_o] = 0
+                _new_s.set_object(obj, 0)
                 obs = self.O_NONE
             # TODO: add random transitions on other features
             r = -self.intrinsic_cost  # Intrinsic action cost
-        return new_s, obs, r
+        return _new_s.to_int(), obs, r
 
     def sample_start(self):
         htm_id = np.random.choice(self.htm_init)
-        s = np.zeros((self.n_features), np.int8)
-        s[self.F_HTM] = htm_id
-        for i, p in enumerate(self.preferences):
-            s[1 + i] = 1 if np.random.random() < self.p_preferences[i] else 0
-        return s
+        _s = self._int_to_state()
+        _s.htm = htm_id
+        for i, p in enumerate(self.p_preferences):
+            _s.set_preference(i, 1 if np.random.random() < p else 0)
+        return _s.to_int()
 
     @property
     def start(self):
