@@ -128,6 +128,16 @@ class TestSupportivePOMDPState(TestCase):
             self._s.set_object(i, i % 2)
             self.assertEqual(self._s.has_object(i), i % 2)
 
+    def test_str(self):
+        self._s.htm = 3
+        for i in range(3):
+            self._s.set_preference(i, i % 2)
+        for i in range(2):
+            self._s.set_body_feature(i, i % 2)
+        for i in range(4):
+            self._s.set_object(i, (i + 1) % 2)
+        self.assertEqual(str(self._s), "<1701: 3 010 01 1010>")
+
 
 class TestSupportivePOMDP(TestCase):
 

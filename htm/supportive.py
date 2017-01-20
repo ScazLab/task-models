@@ -102,6 +102,17 @@ class _SupportivePOMDPState:
         self._shift_htm = self._shift_pref + n_preferences
         self.s = s
 
+    def __str__(self):
+        return "<{}: {} {} {} {}>".format(
+            self.s,
+            self.htm,
+            "".join([str(self.has_preference(i))
+                      for i in range(self._shift_htm - self._shift_pref)]),
+            "".join([str(self.has_body_feature(i))
+                      for i in range(self._shift_pref - self._shift_body)]),
+            "".join([str(self.has_object(i))
+                      for i in range(self._shift_body)]))
+
     @property
     def htm(self):
         return self.s >> self._shift_htm
@@ -211,6 +222,10 @@ class SupportivePOMDP:
     @property
     def features(self):
         return ['HTM'] + self.preferences + ['holding'] + self.objects
+
+    @property
+    def states(self):
+        return [str(self._int_to_state(i)) for i in range(self.n_states)]
 
     @property
     def actions(self):
