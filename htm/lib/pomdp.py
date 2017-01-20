@@ -882,7 +882,7 @@ class _SearchActionNode(_SearchNode):
             return base
 
 
-class BaseBelief:
+class BaseBelief(object):
 
     def sample(self):
         raise NotImplemented
@@ -890,8 +890,11 @@ class BaseBelief:
     def successor(self, model, a, o):
         raise NotImplemented
 
+    def to_list(self):
+        return self.array.tolist()
 
-class ArrayBelief:
+
+class ArrayBelief(BaseBelief):
 
     def __init__(self, probabilities):
         self.array = np.asarray(probabilities)
@@ -909,9 +912,6 @@ class ArrayBelief:
 
     def successor(self, model, a, o):
         return ArrayBelief(model.belief_update(a, o, self.array))
-
-    def to_list(self):
-        return self.array.tolist()
 
 
 class _SuccessorSampler:
@@ -942,7 +942,7 @@ class _SuccessorSampler:
         return s
 
 
-class ParticleBelief:
+class ParticleBelief(BaseBelief):
 
     def __init__(self, sampler, n_states, n_particles=100):
         self.n_states = n_states
@@ -957,11 +957,12 @@ class ParticleBelief:
                                     max_samples=1000 * self.n_particles)
         return ParticleBelief(sampler, self.n_states, self.n_particles)
 
-    def to_array(self):
-        raise NotImplementedError
-
-    def to_list(self):
-        self.to_array().tolist()
+    @property
+    def array(self):
+        a = np.zeros((self.n_states))
+        for i in self.part_states:
+            a[i] += 1
+        return a / (a.sum() or 1.)
 
 
 class POMCPPolicyRunner(object):
