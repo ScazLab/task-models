@@ -69,10 +69,10 @@ class AssembleFoot(SupportedAction):
 
     def __init__(self, leg):
         super(AssembleFoot, self).__init__('Assemble foot on ' + leg)
-        self.conditions = [(CONSUMES, 'foot'),
+        self.conditions = [(USES, 'feet'),
                            (CONSUMES, 'leg'),
                            (USES, 'screwdriver'),
-                           (CONSUMES_SOME, 'screws'),
+                           (USES, 'screws'),
                            ]
 
 
@@ -82,9 +82,9 @@ class AssembleTopJoint(SupportedAction):
 
     def __init__(self, leg):
         super(AssembleTopJoint, self).__init__('Assemble joint on ' + leg)
-        self.conditions = [(CONSUMES, 'joint'),
+        self.conditions = [(USES, 'joints'),
                            (USES, 'screwdriver'),
-                           (CONSUMES_SOME, 'screws'),
+                           (USES, 'screws'),
                            ]
 
 
@@ -95,7 +95,7 @@ class AssembleLegToTop(SupportedAction):
     def __init__(self, leg):
         super(AssembleLegToTop, self).__init__('Assemble {} to top'.format(leg))
         self.conditions = [(USES, 'screwdriver'),
-                           (CONSUMES_SOME, 'screws'),
+                           (USES, 'screws'),
                            ]
 
 
@@ -197,7 +197,7 @@ class SupportivePOMDP:
         self.n_states = self.n_htm_states * (
             2 ** (1 + len(self.preferences) + 1 + len(self.objects)))
         self._skip_to_a_obj = 2
-        self.n_actions = self._skip_to_a_obj + 2 * len(self.objects)
+        self.n_actions = self._skip_to_a_obj + len(self.objects) + sum(self.clearable)
 
     def _int_to_state(self, s=0):
         return _SupportivePOMDPState(self.n_htm_states, len(self.preferences),
@@ -207,14 +207,19 @@ class SupportivePOMDP:
         # Note: this is not efficient
         if object_name not in self.objects:
             self.objects.append(object_name)
+            self.clearable.append(False)
         return self.objects.index(object_name)
 
     def _populate_conditions(self):
         self.objects = []
+        self.clearable = []
         self.htm_conditions = [[] for _ in self.htm_nodes]
         for n, conditions in zip(self.htm_nodes, self.htm_conditions):
             for c, o in n.action.conditions:
-                conditions.append((c, self.get_object_id(o)))
+                i_o = self.get_object_id(o)
+                if c == USES or c == CONSUMES_SOME:
+                    self.clearable[i_o] = True
+                conditions.append((c, i_o))
 
     @property
     def n_htm_states(self):
@@ -243,7 +248,8 @@ class SupportivePOMDP:
     @property
     def actions(self):
         return ['wait', 'hold'] + list(chain(*[
-            ['bring ' + o, 'remove ' + o] for o in self.objects]))
+            ['bring ' + o] + (['clear ' + o] if c else [])
+            for o, c in zip(self.objects, self.clearable)]))
 
     def belief_update(self, a, o, b):
         raise NotImplemented
