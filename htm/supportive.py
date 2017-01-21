@@ -56,12 +56,16 @@ class SupportedAction(AbstractAction):
 
 class BringTop(SupportedAction):
 
+    hold = False
+
     def __init__(self):
         super(BringTop, self).__init__('Bring Top')
         self.conditions = [(CONSUMES, 'top')]
 
 
 class AssembleFoot(SupportedAction):
+
+    hold = True
 
     def __init__(self, leg):
         super(AssembleFoot, self).__init__('Assemble foot on ' + leg)
@@ -74,6 +78,8 @@ class AssembleFoot(SupportedAction):
 
 class AssembleTopJoint(SupportedAction):
 
+    hold = True
+
     def __init__(self, leg):
         super(AssembleTopJoint, self).__init__('Assemble joint on ' + leg)
         self.conditions = [(CONSUMES, 'joint'),
@@ -84,10 +90,11 @@ class AssembleTopJoint(SupportedAction):
 
 class AssembleLegToTop(SupportedAction):
 
+    hold = True
+
     def __init__(self, leg):
         super(AssembleLegToTop, self).__init__('Assemble {} to top'.format(leg))
-        self.conditions = [(CONSUMES, 'joint'),
-                           (USES, 'screwdriver'),
+        self.conditions = [(USES, 'screwdriver'),
                            (CONSUMES_SOME, 'screws'),
                            ]
 
@@ -169,9 +176,10 @@ class SupportivePOMDP:
     p_consume_all = .5
     r_subtask = 10.
     r_final = 100.
+    r_preference = 5.
     intrinsic_cost = 1
 
-    preferences = ['hold-preference']
+    preferences = ['hold']
     p_preferences = [0.5]
 
     observations = ['None']
@@ -223,7 +231,10 @@ class SupportivePOMDP:
 
     @property
     def features(self):
-        return ['HTM'] + self.preferences + ['holding'] + self.objects
+        return (['HTM'] +
+                ['{}-preference'.format(p) for p in self.preferences] +
+                ['holding'] +
+                self.objects)
 
     @property
     def states(self):
@@ -276,6 +287,9 @@ class SupportivePOMDP:
         _new_s = self._int_to_state(s)
         if a == self.A_WAIT or a == self.A_HOLD:
             r = 0 if a == self.A_WAIT else -self.intrinsic_cost
+            if (self.htm_nodes[_s.htm].action.hold and a == self.A_HOLD and
+                    _s.has_preference(self.preferences.index('hold'))):
+                r += self.r_preference
             if _s.htm == self.htm_final:  # Final state
                 obs = self.O_NONE
             else:

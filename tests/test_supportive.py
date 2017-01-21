@@ -1,7 +1,5 @@
 from unittest import TestCase
 
-import numpy as np
-
 from htm.task_to_pomdp import (CollaborativeAction)
 from htm.task import (SequentialCombination, AlternativeCombination,
                       LeafCombination, ParallelCombination)
@@ -224,3 +222,32 @@ class TestSupportivePOMDP(TestCase):
         _s = self.p._int_to_state(s)
         self.assertEqual(_s.has_object(0), 0)  # Top not there. TODO: is it OK?
         self.assertEqual(o, self.p.O_NONE)
+
+    def test_sample_transition_hold(self):
+        htm = SequentialCombination([self.alt, self.af])
+        p = SupportivePOMDP(htm)
+        _s = p._int_to_state()
+        _s.set_object(p.objects.index('screws'), 1)
+        _s.set_object(p.objects.index('screwdriver'), 1)
+        # Preference for holding
+        _s.set_preference(0, 1)
+        # - Wait
+        s, o, r = p.sample_transition(p.A_WAIT, _s.to_int())
+        self.assertEqual(r, 10.)
+        # - Hold
+        s, o, r = p.sample_transition(p.A_HOLD, _s.to_int())
+        self.assertEqual(r, 10. - 1. + 5.)
+        # No preference for holding
+        _s.set_preference(0, 0)
+        # - Wait
+        s, o, r = p.sample_transition(p.A_WAIT, _s.to_int())
+        self.assertEqual(r, 10.)
+        # - Hold
+        s, o, r = p.sample_transition(p.A_HOLD, _s.to_int())
+        self.assertEqual(r, 10. - 1.)
+        # Not required in task (Bring-top is first node in self.p)
+        _s = self.p._int_to_state()
+        _s.set_object(self.p.objects.index('top'), 1)
+        _s.set_preference(0, 1)
+        s, o, r = self.p.sample_transition(self.p.A_HOLD, _s.to_int())
+        self.assertEqual(r, 10. - 1.)
