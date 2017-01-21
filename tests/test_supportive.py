@@ -136,6 +136,12 @@ class TestSupportivePOMDPState(TestCase):
             self._s.set_object(i, (i + 1) % 2)
         self.assertEqual(str(self._s), "<1701: 3 010 01 1010>")
 
+    def test_is_final(self):
+        self._s.htm = 3
+        self.assertFalse(self._s.is_final())
+        self._s.htm = 4
+        self.assertTrue(self._s.is_final())
+
 
 class TestSupportivePOMDP(TestCase):
 

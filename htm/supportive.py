@@ -107,6 +107,7 @@ class _SupportivePOMDPState:
         self._shift_body = n_objects
         self._shift_pref = self._shift_body + n_body_features
         self._shift_htm = self._shift_pref + n_preferences
+        self._final_htm = n_htm_states - 1
         self.s = s
 
     def __str__(self):
@@ -127,6 +128,9 @@ class _SupportivePOMDPState:
     @htm.setter
     def htm(self, n):
         self.s += (n << self._shift_htm) - (self.htm << self._shift_htm)
+
+    def is_final(self):
+        return self.htm == self._final_htm
 
     def _get_bit(self, i):
         return (self.s >> i) % 2
@@ -232,7 +236,7 @@ class SupportivePOMDP:
         return len(self.htm_nodes)
 
     def is_final(self, s):
-        return self._int_to_state(s).htm == self.htm_final
+        return self._int_to_state(s).is_final()
 
     @property
     def features(self):
@@ -293,7 +297,7 @@ class SupportivePOMDP:
         _new_s = self._int_to_state(s)
         if a == self.A_WAIT or a == self.A_HOLD:
             r = 0 if a == self.A_WAIT else -self.intrinsic_cost
-            if _s.htm == self.htm_final:  # Final state
+            if _s.is_final():  # Final state
                 obs = self.O_NONE
             else:
                 if (self.htm_nodes[_s.htm].action.hold and a == self.A_HOLD and
@@ -301,7 +305,7 @@ class SupportivePOMDP:
                     r += self.r_preference
                 r += self._update_for_transition(_new_s, _s.htm)
                 obs = self.O_NONE
-                if _new_s.htm == self.htm_final:
+                if _new_s.is_final():
                     r += self.r_final
                 else:
                     r += self.r_subtask
