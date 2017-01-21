@@ -251,3 +251,9 @@ class TestSupportivePOMDP(TestCase):
         _s.set_preference(0, 1)
         s, o, r = self.p.sample_transition(self.p.A_HOLD, _s.to_int())
         self.assertEqual(r, 10. - 1.)
+        # Does not apply on final node
+        _s = self.p._int_to_state()
+        _s.htm = self.p.htm_final
+        _s.set_preference(0, 1)
+        s, o, r = self.p.sample_transition(self.p.A_HOLD, _s.to_int())
+        self.assertEqual(r, - 1.)

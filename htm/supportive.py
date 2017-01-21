@@ -293,12 +293,12 @@ class SupportivePOMDP:
         _new_s = self._int_to_state(s)
         if a == self.A_WAIT or a == self.A_HOLD:
             r = 0 if a == self.A_WAIT else -self.intrinsic_cost
-            if (self.htm_nodes[_s.htm].action.hold and a == self.A_HOLD and
-                    _s.has_preference(self.preferences.index('hold'))):
-                r += self.r_preference
             if _s.htm == self.htm_final:  # Final state
                 obs = self.O_NONE
             else:
+                if (self.htm_nodes[_s.htm].action.hold and a == self.A_HOLD and
+                        _s.has_preference(self.preferences.index('hold'))):
+                    r += self.r_preference
                 r += self._update_for_transition(_new_s, _s.htm)
                 obs = self.O_NONE
                 if _new_s.htm == self.htm_final:
