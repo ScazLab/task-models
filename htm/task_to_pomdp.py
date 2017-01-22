@@ -102,17 +102,21 @@ class _NodeToPOMDP(object):
         raise NotImplementedError
 
     @staticmethod
-    def from_node(node, t_ask, t_tell, subtask_reward, flags=[]):
+    def from_node(node, t_ask, t_tell, subtask_reward=None, flags=[]):
         if isinstance(node, LeafCombination):
-            return _LeafToPOMDP(node, t_ask, t_tell, subtask_reward, flags)
+            return _LeafToPOMDP(node, t_ask, t_tell,
+                                subtask_reward=subtask_reward, flags=flags)
         elif isinstance(node, SequentialCombination):
-            return _SequenceToPOMDP(node, t_ask, t_tell, subtask_reward, flags)
+            return _SequenceToPOMDP(node, t_ask, t_tell,
+                                    subtask_reward=subtask_reward, flags=flags)
         elif isinstance(node, AlternativeCombination):
-            return _AlternativesToPOMDP(node, t_ask, t_tell, subtask_reward,
-                                        flags)
+            return _AlternativesToPOMDP(node, t_ask, t_tell,
+                                        subtask_reward=subtask_reward,
+                                        flags=flags)
         elif isinstance(node, ParallelCombination):
             return _AlternativesToPOMDP(node.to_alternative(), t_ask, t_tell,
-                                        subtask_reward, flags)
+                                        subtask_reward=subtask_reward,
+                                        flags=flags)
         else:
             raise ValueError('Unkown combination: ' + type(node))
 
@@ -132,7 +136,7 @@ class _LeafToPOMDP(_NodeToPOMDP):
     act = 'phy'
     com = 'com'
 
-    def __init__(self, leaf, t_ask, t_tell, subtask_reward=None, flags):
+    def __init__(self, leaf, t_ask, t_tell, subtask_reward=None, flags=[]):
         self.t_tell = t_tell
         self.t_ask = t_ask
         self.leaf = leaf
@@ -286,7 +290,8 @@ class _ParentNodeToPOMDP(_NodeToPOMDP):
 
     def __init__(self, node, t_ask, t_tell, subtask_reward=None, flags=[]):
         self.node = node
-        self.children = [self.from_node(n, t_ask, t_tell, subtask_reward,
+        self.children = [self.from_node(n, t_ask, t_tell,
+                                        subtask_reward=subtask_reward,
                                         flags=flags)
                          for n in node.children]
         child_states = [c.states for c in self.children]
@@ -426,7 +431,8 @@ class HTMToPOMDP:
 
     def task_to_pomdp(self, task):
         n2p = _NodeToPOMDP.from_node(task.root, self.t_ask, self.t_tell,
-                                     self.subtask_reward, flags=self.flags)
+                                     subtask_reward=self.subtask_reward,
+                                     flags=self.flags)
         states = [s for s in n2p.states]
         if 'reward_state' in self.flags:
             states.append('end-reward')

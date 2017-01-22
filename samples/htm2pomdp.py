@@ -18,6 +18,7 @@ LOOP = False
 # 2. with full sequence of sequential actions
 # R_END = 100
 # LOOP = True
+R_SUBTASK = None
 
 ## Define the task
 mount_central = SequentialCombination([
@@ -54,12 +55,12 @@ chair_task = HierarchicalTask(root=SequentialCombination(
 ## Convert the task into a POMDP
 
 h2p = HTMToPOMDP(T_WAIT, T_COMM, C_INTR, end_reward=R_END, loop=LOOP,
-                 reward_state=False)
+                 reward_state=False, subtask_reward=R_SUBTASK)
 p = h2p.task_to_pomdp(chair_task)
 #p.discount = .99
 
 gp = p.solve(method='grid', n_iterations=500, verbose=True)
-gp.save_to_json(os.path.join(os.path.dirname(__file__),
+gp.save_as_json(os.path.join(os.path.dirname(__file__),
                              '../visualization/policy/json/test.json'))
 
 from htm.lib.pomdp import GraphPolicyBeliefRunner
@@ -70,7 +71,7 @@ pol.save_trajectories_from_starts(
                  '../visualization/trajectories/json/trajectories.json'),
     horizon=10, indent=2)
 gp2 = pol.visit()
-gp2.save_to_json(
+gp2.save_as_json(
     os.path.join(os.path.dirname(__file__),
                  '../visualization/policy/json/from_beliefs.json'))
 
