@@ -5,11 +5,10 @@ from htm.task import AbstractAction
 from htm.task import (SequentialCombination, AlternativeCombination,
                       LeafCombination, ParallelCombination)
 from htm.supportive import (SupportivePOMDP, AssembleFoot, AssembleTopJoint,
-                            AssembleLegToTop, BringTop)
+                            AssembleLegToTop, BringTop, NHTMHorizon)
 from htm.lib.pomdp import POMCPPolicyRunner
 
 
-HORIZON = 100
 ITERATIONS = 100
 EXPLORATION = 10  # 1000
 RELATIVE_EXPLO = True  # In this case use smaller exploration
@@ -26,7 +25,8 @@ mount_legs = SequentialCombination([
 htm = SequentialCombination([LeafCombination(BringTop()), mount_legs])
 
 p = SupportivePOMDP(htm)
-pol = POMCPPolicyRunner(p, iterations=ITERATIONS, horizon=HORIZON,
+pol = POMCPPolicyRunner(p, iterations=ITERATIONS,
+                        horizon=NHTMHorizon.generator(p, n=3),
                         exploration=EXPLORATION,
                         relative_exploration=RELATIVE_EXPLO,
                         belief_values=BELIEF_VALUES,

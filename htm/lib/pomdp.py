@@ -3,7 +3,9 @@
 import os
 import math
 import json
+import types
 import subprocess
+from numbers import Integral
 from distutils import spawn
 
 import numpy as np
@@ -587,9 +589,39 @@ class _Aux:
 
 # POMCP
 
+class Horizon(object):
+
+    def is_reached(self):
+        raise NotImplementedError
+
+    def decrement(self, a, s, new_s, o):
+        raise NotImplementedError
+
+    @classmethod
+    def generator(cls, model, **parameters):
+        raise NotImplementedError
+
+
+class NTransitionsHorizon(Horizon):
+
+    def __init__(self, n):
+        self.n = n
+
+    def is_reached(self):
+        return self.n <= 0
+
+    def decrement(self, a, s, new_s, o):
+        self.n -= 1
+
+    @classmethod
+    def generator(cls, model, n=100):
+        while True:
+            yield cls(n)
+
+
 class _SearchTree:
 
-    def __init__(self, model, horizon, exploration,
+    def __init__(self, model, horizon_generator, exploration,
                  relative_exploration=False, belief='array', belief_params={},
                  node_params={}):
         self._belief = belief
@@ -597,7 +629,7 @@ class _SearchTree:
         self.model = model
         self._node_params = node_params
         self.root = self._observation_node_for_belief(self._belief_start())
-        self.horizon = horizon
+        self.horizon_gen = horizon_generator
         self.exploration = exploration
         self.relative_explo = relative_exploration
         # TODO: add option for particle belief (or decide depending on model)
@@ -628,15 +660,16 @@ class _SearchTree:
         return np.random.randint(self.model.n_actions)
 
     def rollout_from_node(self, node, state, horizon):
-        if horizon == 0:
+        if horizon.is_reached():
             return 0
         else:
             full_return = 0.
             gamma = 1.
-            while horizon > 0:
-                horizon -= 1
+            while not horizon.is_reached():
                 a = self.random_action()
-                state, _, r = self.model.sample_transition(a, state)
+                new_state, o, r = self.model.sample_transition(a, state)
+                horizon.decrement(a, state, new_state, o)
+                state = new_state
                 full_return += gamma * r
                 gamma *= self.model.discount
             node.update(full_return)
@@ -644,30 +677,31 @@ class _SearchTree:
 
     def simulate_from_node(self, node):
         state = node.belief.sample()
-        self._simulate_from_node(node, state, self.horizon)
+        self._simulate_from_node(node, state, self.horizon_gen.__next__())
 
     def _observation_node_for_belief(self, b):
         return _SearchObservationNode(b, self.model.n_actions, **self._node_params)
 
     def _simulate_from_node(self, node, state, horizon):
-        if horizon == 0:
+        if horizon.is_reached():
             return node.value
         else:
             a = node.get_best_action(exploration=self.exploration,
                                      relative_exploration=self.relative_explo)
             child = node.safe_get_child(a)
             new_s, o, r = self.model.sample_transition(a, state)
+            horizon.decrement(a, state, new_s, o)
             if o not in child.children:
                 # Create node with updated belief
                 child.children[o] = self._observation_node_for_belief(
                     node.belief.successor(self.model, a, o))
                 # Use rollout
                 partial_return = self.rollout_from_node(
-                    child.children[o], new_s, horizon - 1)
+                    child.children[o], new_s, horizon)
             else:
                 # Continue regular search
                 partial_return = self._simulate_from_node(
-                    child.children[o], new_s, horizon - 1)
+                    child.children[o], new_s, horizon)
             full_return = r + self.model.discount * partial_return
             child.update(full_return)
             node.update(full_return)
@@ -981,7 +1015,13 @@ class POMCPPolicyRunner(object):
             exploration = 1. if relative_exploration else 100
         tree_class = (_ObservationLookupSearchTree if belief_values
                       else _SearchTree)
-        self.tree = tree_class(model, horizon, exploration,
+        if isinstance(horizon, types.GeneratorType):
+            horizon_generator = horizon
+        elif isinstance(horizon, Integral):
+            horizon_generator = NTransitionsHorizon.generator(model, n=horizon)
+        else:
+            raise ValueError('Invalid horizon: ' + str(horizon))
+        self.tree = tree_class(model, horizon_generator, exploration,
                                relative_exploration=relative_exploration,
                                belief=belief, belief_params=belief_params)
         self.iterations = iterations

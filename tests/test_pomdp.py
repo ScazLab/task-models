@@ -9,7 +9,8 @@ from htm.lib.pomdp import (parse_value_function, parse_policy_graph, POMDP,
                            _dump_3d_array, _dump_4d_array, GraphPolicy,
                            _SearchNode, _SearchObservationNode,
                            _SearchActionNode, _SearchTree, ArrayBelief,
-                           ParticleBelief, POMCPPolicyRunner)
+                           ParticleBelief, POMCPPolicyRunner,
+                           NTransitionsHorizon, Horizon)
 
 
 TEST_VF = os.path.join(os.path.dirname(__file__), 'samples/example.alpha')
@@ -624,25 +625,28 @@ class TestSearchTree(TestCase):
             self.tree.get_node([0, 5, 1, 7])
 
     def test_rollout_from_node_with_horizon_0_is_0(self):
-        self.assertEqual(self.tree.rollout_from_node(self.tree.root, 1, 0), 0)
+        h = NTransitionsHorizon(0)
+        self.assertEqual(self.tree.rollout_from_node(self.tree.root, 1, h), 0)
         self.assertEqual(len(self.model.transitions_history), 0)
 
     def test_rollout_from_node_with_horizon_1_is_reward(self):
         r = 3.2
+        h = NTransitionsHorizon(1)
         self.model.transitions = [(1, 0, r)]
-        self.assertEqual(self.tree.rollout_from_node(self.tree.root, 2, 1), r)
+        self.assertEqual(self.tree.rollout_from_node(self.tree.root, 2, h), r)
         self.assertEqual(len(self.model.transitions_history), 1)
         self.assertEqual(self.model.transitions_history[0][1], 2)
 
     def test_rollout_from_node_with_horizon_2(self):
+        h = NTransitionsHorizon(2)
         self.model.transitions = [(1, None, 11.), (2, None, 10.)]
-        self.assertEqual(self.tree.rollout_from_node(self.tree.root, 3, 2), 20)
+        self.assertEqual(self.tree.rollout_from_node(self.tree.root, 3, h), 20)
         self.assertEqual(len(self.model.transitions_history), 2)
         self.assertEqual(self.model.transitions_history[0][1], 3)
         self.assertEqual(self.model.transitions_history[1][1], 1)
 
     def test_simulate_from_node_with_horizon_0(self):
-        self.tree.horizon = 0
+        self.tree.horizon_gen = NTransitionsHorizon.generator(self.model, n=0)
         self.tree.simulate_from_node(self.tree.root)
         self.assertEqual(len(self.model.transitions_history), 0)
         self.assertEqual(str(self.tree.root), "[]")
@@ -653,7 +657,7 @@ class TestSearchTree(TestCase):
         belief2 = np.zeros((10))
         belief2[1] = 1.
         self.model.successors = [belief2]
-        self.tree.horizon = 1
+        self.tree.horizon_gen = NTransitionsHorizon.generator(self.model, n=1)
         self.tree.simulate_from_node(self.tree.root)
         self.assertEqual(len(self.model.transitions_history), 1)
         a = self.model.transitions_history[0][0]
@@ -668,7 +672,7 @@ class TestSearchTree(TestCase):
         def ret_1(exploration=None, relative_exploration=None):
             return 1
 
-        self.tree.horizon = 3
+        self.tree.horizon_gen = NTransitionsHorizon.generator(self.model, n=3)
         # Always use action "1" at first
         self.tree.root.get_best_action = ret_1
         # First run
@@ -738,3 +742,16 @@ class TestPOMCPPolicyRunner(TestCase):
         a = self.pomdp.actions.index(self.policy.get_action())
         self.policy.step(True)
         self.assertEqual(self.policy.history, [0, 1, a, 0])
+
+    def test_horizon_generator_is_one(self):
+        # Default, from int
+        h = self.policy.tree.horizon_gen.__next__()
+        self.assertIsInstance(h, Horizon)
+        self.assertEqual(h.n, 5)
+        # Explicit generator
+        policy = POMCPPolicyRunner(
+            self.pomdp, iterations=20,
+            horizon=NTransitionsHorizon.generator(self.pomdp, 13))
+        h = policy.tree.horizon_gen.__next__()
+        self.assertIsInstance(h, NTransitionsHorizon)
+        self.assertEqual(h.n, 13)

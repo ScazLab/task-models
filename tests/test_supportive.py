@@ -6,7 +6,7 @@ from htm.task import (SequentialCombination, AlternativeCombination,
 from htm.supportive import (_HTMToDAG, unique, SupportivePOMDP, AssembleFoot,
                             AssembleTopJoint, AssembleLegToTop, BringTop,
                             CONSUMES, USES, CONSUMES_SOME,
-                            _SupportivePOMDPState)
+                            _SupportivePOMDPState, NHTMHorizon)
 
 
 class TestHelpers(TestCase):
@@ -263,3 +263,38 @@ class TestSupportivePOMDP(TestCase):
         _s.set_preference(0, 1)
         s, o, r = self.p.sample_transition(self.p.A_HOLD, _s.to_int())
         self.assertEqual(r, - 1.)
+
+
+class TestNHTMHorizon(TestCase):
+
+    def setUp(self):
+        self.bt = LeafCombination(BringTop())
+        self.af = LeafCombination(AssembleFoot('leg-1'))
+        self.htm = SequentialCombination([self.bt, self.af])
+        self.model = SupportivePOMDP(self.htm)
+        self.h = NHTMHorizon(self.model, 1)
+
+    def is_not_reached(self):
+        self.assertFalse(self.h.is_reached())
+
+    def test_no_htm_transition(self):
+        _s = self.model._int_to_state()
+        _new_s = self.model._int_to_state()
+        _new_s.set_object(2, 1)
+        _new_s.set_preference(0, 1)
+        self.h.decrement(1, _s.to_int(), _new_s.to_int(), 0)
+        self.assertFalse(self.h.is_reached())
+
+    def test_htm_transition(self):
+        _s = self.model._int_to_state()
+        _new_s = self.model._int_to_state()
+        _new_s.htm = 1
+        self.h.decrement(1, _s.to_int(), _new_s.to_int(), 0)
+        self.assertTrue(self.h.is_reached())
+
+    def test_reached_on_final(self):
+        _s = self.model._int_to_state()
+        _s.htm = 2
+        s = _s.to_int()
+        self.h.decrement(1, s, s, 0)
+        self.assertTrue(self.h.is_reached())

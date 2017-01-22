@@ -3,6 +3,7 @@ from itertools import chain
 from htm.task import (AbstractAction, SequentialCombination,
                       AlternativeCombination, LeafCombination,
                       ParallelCombination)
+from htm.lib.pomdp import Horizon
 
 
 def unique(l):
@@ -332,3 +333,25 @@ class SupportivePOMDP:
     @property
     def start(self):
         raise NotImplementedError
+
+
+class NHTMHorizon(Horizon):
+
+    def __init__(self, model, n):
+        self.model = model
+        self.n = n
+
+    def is_reached(self):
+        return self.n <= 0
+
+    def decrement(self, a, s, new_s, o):
+        _new_s = self.model._int_to_state(new_s)
+        if self.model._int_to_state(s).htm != _new_s.htm:
+            self.n -= 1
+        if _new_s.is_final():
+            self.n = 0
+
+    @classmethod
+    def generator(cls, model, n=3):
+        while True:
+            yield cls(model, n)
