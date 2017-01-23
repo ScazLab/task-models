@@ -177,8 +177,11 @@ class SupportivePOMDP:
     A_WAIT = 0
     A_HOLD = 1
     O_NONE = 0
+    O_FAIL = 1
+    O_NOT_FOUND = 2
 
     p_consume_all = .5
+    p_fail = .1
     r_subtask = 10.
     r_final = 100.
     r_preference = 5.
@@ -187,7 +190,7 @@ class SupportivePOMDP:
     preferences = ['hold']
     p_preferences = [0.5]
 
-    observations = ['None']
+    observations = ['None', 'Fail', 'Not-found']
     n_observations = 1
 
     def __init__(self, htm, discount=1.):
@@ -312,11 +315,14 @@ class SupportivePOMDP:
                     r += self.r_subtask
         else:
             obj = self._obj_from_action(a)
-            if self._is_bring(a):  # Bring
-                _new_s.set_object(obj, 1)
-                obs = self.O_NONE
-            else:  # Remove
-                _new_s.set_object(obj, 0)
+            is_bring = int(self._is_bring(a))
+            if _s.has_object(obj) == is_bring:
+                # Bring object already there or remove object that's not there
+                obs = self.O_NOT_FOUND
+            elif np.random.random() < self.p_fail:
+                obs = self.O_FAIL
+            else:
+                _new_s.set_object(obj, is_bring)
                 obs = self.O_NONE
             # TODO: add random transitions on other features
             r = -self.intrinsic_cost  # Intrinsic action cost

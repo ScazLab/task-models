@@ -209,6 +209,7 @@ class TestSupportivePOMDP(TestCase):
             self.assertEqual(_s.has_object(i), 0)
 
     def test_sample_transition(self):
+        self.p.p_fail = 0.
         s = 0
         # Bring object
         a = self.p._bring(1)
@@ -232,6 +233,7 @@ class TestSupportivePOMDP(TestCase):
     def test_sample_transition_hold(self):
         htm = SequentialCombination([self.alt, self.af])
         p = SupportivePOMDP(htm)
+        p.p_fail = 0.
         _s = p._int_to_state()
         _s.set_object(p.objects.index('screws'), 1)
         _s.set_object(p.objects.index('screwdriver'), 1)
@@ -263,6 +265,41 @@ class TestSupportivePOMDP(TestCase):
         _s.set_preference(0, 1)
         s, o, r = self.p.sample_transition(self.p.A_HOLD, _s.to_int())
         self.assertEqual(r, - 1.)
+
+    def test_sample_transition_action_failure(self):
+        self.p.p_fail = 1.
+        s = 0
+        # Bring object
+        a = self.p._bring(1)
+        s, o, r = self.p.sample_transition(a, s)
+        _s = self.p._int_to_state(s)
+        self.assertEqual(_s.has_object(1), 0)
+        self.assertEqual(o, self.p.O_FAIL)
+        # Remove object
+        _s = self.p._int_to_state()
+        _s.set_object(1, 1)
+        a = self.p._remove(1)
+        s, o, r = self.p.sample_transition(a, _s.to_int())
+        _s = self.p._int_to_state(s)
+        self.assertEqual(_s.has_object(1), 1)
+        self.assertEqual(o, self.p.O_FAIL)
+
+    def test_sample_transition_not_found(self):
+        s = 0
+        # Remove object
+        a = self.p._remove(1)
+        s, o, r = self.p.sample_transition(a, s)
+        _s = self.p._int_to_state(s)
+        self.assertEqual(_s.has_object(1), 0)
+        self.assertEqual(o, self.p.O_NOT_FOUND)
+        # Remove object
+        _s = self.p._int_to_state()
+        _s.set_object(1, 1)
+        a = self.p._bring(1)
+        s, o, r = self.p.sample_transition(a, _s.to_int())
+        _s = self.p._int_to_state(s)
+        self.assertEqual(_s.has_object(1), 1)
+        self.assertEqual(o, self.p.O_NOT_FOUND)
 
 
 class TestNHTMHorizon(TestCase):
