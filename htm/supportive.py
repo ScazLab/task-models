@@ -100,7 +100,7 @@ class AssembleLegToTop(SupportedAction):
                            ]
 
 
-class _SupportivePOMDPState:
+class _SupportivePOMDPState(object):
     """Enables conversion of states between integers and array representation
     """
 
