@@ -677,7 +677,7 @@ class _SearchTree:
 
     def simulate_from_node(self, node):
         state = node.belief.sample()
-        self._simulate_from_node(node, state, self.horizon_gen.__next__())
+        self._simulate_from_node(node, state, next(self.horizon_gen))
 
     def _observation_node_for_belief(self, b):
         return _SearchObservationNode(b, self.model.n_actions, **self._node_params)

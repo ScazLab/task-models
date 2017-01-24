@@ -64,7 +64,7 @@ def by_two(l):
     # Note: silently ignores last if number of elements is not pair
     it = l.__iter__()
     while True:  # will raise StopIteration on empty
-        yield it.__next__(), it.__next__()
+        yield next(it), next(it)
 
 
 def short_a(action):
