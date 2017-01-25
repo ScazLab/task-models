@@ -1,5 +1,7 @@
 from unittest import TestCase
 
+import numpy as np
+
 from htm.task_to_pomdp import (CollaborativeAction)
 from htm.task import (SequentialCombination, AlternativeCombination,
                       LeafCombination, ParallelCombination)
@@ -141,6 +143,24 @@ class TestSupportivePOMDPState(TestCase):
         self.assertFalse(self._s.is_final())
         self._s.htm = 4
         self.assertTrue(self._s.is_final())
+
+    def test_belief_quotient(self):
+        _s = _SupportivePOMDPState(3, 1, 1, 2)
+        b = np.zeros((3 * 2 ** 4))
+        # bq[0] = .3
+        b[_s.to_int()] = .1
+        _s.set_object(0, 1)
+        b[_s.to_int()] = .1
+        _s.set_object(1, 1)
+        b[_s.to_int()] = .1
+        # bq[2] = .7
+        _s.s = 0
+        _s.htm = 2
+        b[_s.to_int()] = .3
+        _s.set_preference(0, 1)
+        b[_s.to_int()] = .4
+        np.testing.assert_array_almost_equal(_s.belief_quotient(b),
+                                             np.array([.3, 0., .7]))
 
 
 class TestSupportivePOMDP(TestCase):

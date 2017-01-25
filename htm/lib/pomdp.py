@@ -1040,15 +1040,19 @@ class POMCPPolicyRunner(object):
         if belief is not None:
             raise NotImplementedError
         self.history = []
+        self._node = self.tree.root
         self._last_action = None
+
+    @property
+    def belief(self):
+        return self._node.belief
 
     def get_action(self):
         # Note iterations must be greater than the number of actions
         # to guarantee that any action chosen as best_action is explored first
-        node = self.tree.get_node(self.history)
         for _ in range(self.iterations):
-            self.tree.simulate_from_node(node)
-        a = node.get_best_action()
+            self.tree.simulate_from_node(self._node)
+        a = self._node.get_best_action()
         # No exploration during exploitation?
         self._last_action = a
         return self.actions[a]
@@ -1059,6 +1063,8 @@ class POMCPPolicyRunner(object):
             # TODO rethink the design of the PolicyRunner class
         o = self.observations.index(observation)
         self.history.extend([self._last_action, o])
+        # TODO: Make sure that node exists (and explores from previous)
+        self._node = self.tree.get_node(self.history)
 
     def trajectory_trees_from_starts(self, qvalue=False):
         return {"graphs": [self.tree.to_dict(as_policy=not qvalue)]}

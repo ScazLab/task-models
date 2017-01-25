@@ -157,6 +157,12 @@ class _SupportivePOMDPState(object):
     def to_int(self):
         return self.s
 
+    def belief_quotient(self, array):
+        """Assimilates all states that correspond to same HTM node."""
+        n = 2 ** self._shift_htm
+        assert(array.shape[0] % n == 0)
+        return array.reshape((array.shape[0] // n, n)).sum(axis=1)
+
 
 class SupportivePOMDP:
     """
