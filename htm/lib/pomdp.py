@@ -646,14 +646,16 @@ class _SearchTree:
     def get_node(self, history):
         """Raises ValueError if node does not exist or history is invalid."""
         node = self.root
+        last_belief = node.belief
         for i, h in enumerate(history):
-            try:
+            if isinstance(node, _SearchActionNode):  # h is an observation
+                if h not in node.children:
+                    node.children[h] = self._observation_node_for_belief(
+                        last_belief.successor(self.model, history[i - 1], h))
                 node = node.children[h]
-            except KeyError:
-                node = None
-            if node is None:
-                raise ValueError('{} is not a valid child at {} in {}'.format(
-                    h, i, history))
+            else:  # h is an action
+                last_belief = node.belief
+                node = node.safe_get_child(h)
         return node
 
     def random_action(self):

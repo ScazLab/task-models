@@ -621,8 +621,21 @@ class TestSearchTree(TestCase):
                                      self.model.n_actions)
         cca.children[6] = cco
         self.assertIs(self.tree.get_node([0, 5, 1, 6]), cco)
-        with self.assertRaises(ValueError):
-            self.tree.get_node([0, 5, 1, 7])
+
+    def test_get_node_creates_child(self):
+        ca = self.tree.root.safe_get_child(0)
+        co = _SearchObservationNode(ArrayBelief(self.start),
+                                    self.model.n_actions)
+        ca.children[5] = co
+        n = self.tree.get_node([0, 5, 1])
+        self.assertIsInstance(n, _SearchActionNode)
+        b = np.zeros((10,))
+        b[1] = .5
+        b[2] = .5
+        self.model.successors.append(b)
+        n = self.tree.get_node([0, 5, 1, 6])
+        self.assertIsInstance(n, _SearchObservationNode)
+        np.testing.assert_array_equal(n.belief.array, b)
 
     def test_rollout_from_node_with_horizon_0_is_0(self):
         h = NTransitionsHorizon(0)
