@@ -1,6 +1,7 @@
 # encoding: utf-8
 
 import os
+import sys
 import math
 import json
 import types
@@ -628,7 +629,7 @@ class _SearchTree:
 
     def __init__(self, model, horizon_generator, exploration,
                  relative_exploration=False, belief='array', belief_params={},
-                 node_params={}):
+                 node_params={}, logger=None):
         self._belief = belief
         self._belief_params = belief_params
         self.model = model
@@ -637,7 +638,7 @@ class _SearchTree:
         self.horizon_gen = horizon_generator
         self.exploration = exploration
         self.relative_explo = relative_exploration
-        # TODO: add option for particle belief (or decide depending on model)
+        self.log = lambda x: None if logger is None else logger
 
     def _belief_start(self):
         if self._belief == 'array':
@@ -699,12 +700,18 @@ class _SearchTree:
             new_s, o, r = self.model.sample_transition(a, state)
             horizon.decrement(a, state, new_s, o)
             if o not in child.children:
-                # Create node with updated belief
-                child.children[o] = self._observation_node_for_belief(
-                    node.belief.successor(self.model, a, o))
-                # Use rollout
-                partial_return = self.rollout_from_node(
-                    child.children[o], new_s, horizon)
+                try:
+                    # Create node with updated belief
+                    child.children[o] = self._observation_node_for_belief(
+                        node.belief.successor(self.model, a, o))
+                    # Use rollout
+                    partial_return = self.rollout_from_node(
+                        child.children[o], new_s, horizon)
+                except _SuccessorSampler.MaxSamplesReached:
+                    self.log('Maximum number of samples reached, skipping.')
+                    partial_return = 0.
+                    # Note maybe use more relevant value, but since the event is rare
+                    # it should not impact the result
             else:
                 # Continue regular search
                 partial_return = self._simulate_from_node(
@@ -730,7 +737,7 @@ class _ObservationLookupSearchTree(_SearchTree):
 
     def __init__(self, model, horizon, exploration,
                  relative_exploration=False, belief='array', belief_params={},
-                 node_params={}):
+                 node_params={}, logger=None):
         self._obs_nodes = {}  # used in super for root initialization
         if belief == 'particle':
             raise ValueError('_ObservationLookupSearchTree does not support particle belief')
@@ -738,7 +745,7 @@ class _ObservationLookupSearchTree(_SearchTree):
             model, horizon, exploration,
             relative_exploration=relative_exploration,
             belief=belief, belief_params={},
-            node_params=node_params)
+            node_params=node_params, logger=logger)
 
     def _observation_node_for_belief(self, b):
         # Returns node for given belief, creating one if none exists
@@ -994,7 +1001,7 @@ class _SuccessorSampler:
         if self.n_sampled > self.max_samples:
             raise self.MaxSamplesReached(
                 'Impossible to sample enough particles for transition to '
-                + (self.a, self.o))
+                + str((self.a, self.o)))
         return self.belief.sample()
 
     def __call__(self):
@@ -1038,7 +1045,8 @@ class POMCPPolicyRunner(object):
 
     def __init__(self, model, particles=20, iterations=100, horizon=100,
                  exploration=None, relative_exploration=False,
-                 belief_values=False, belief='array', belief_params={}):
+                 belief_values=False, belief='array', belief_params={},
+                 logger=sys.stderr.write):
         if exploration is None:
             exploration = 1. if relative_exploration else 100
         tree_class = (_ObservationLookupSearchTree if belief_values
@@ -1051,7 +1059,8 @@ class POMCPPolicyRunner(object):
             raise ValueError('Invalid horizon: ' + str(horizon))
         self.tree = tree_class(model, horizon_generator, exploration,
                                relative_exploration=relative_exploration,
-                               belief=belief, belief_params=belief_params)
+                               belief=belief, belief_params=belief_params,
+                               logger=logger)
         self.iterations = iterations
         # TODO particles
         self.reset()
