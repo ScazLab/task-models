@@ -163,6 +163,11 @@ class _SupportivePOMDPState(object):
         assert(array.shape[0] % n == 0)
         return array.reshape((array.shape[0] // n, n)).sum(axis=1)
 
+    def random_object_changes(self, p):
+        to_change = np.random.random((self._shift_body)) < p
+        for i in to_change.nonzero()[0]:
+            self._set_bit(i, 1 - self._get_bit(i))
+
 
 class SupportivePOMDP:
     """
@@ -188,6 +193,7 @@ class SupportivePOMDP:
 
     p_consume_all = .5
     p_fail = .1
+    p_changed_by_human = .05
     r_subtask = 10.
     r_final = 100.
     r_preference = 5.
@@ -332,6 +338,8 @@ class SupportivePOMDP:
                 obs = self.O_NONE
             # TODO: add random transitions on other features
             r = -self.intrinsic_cost  # Intrinsic action cost
+        # random transitions
+        _new_s.random_object_changes(self.p_changed_by_human)
         return _new_s.to_int(), obs, r
 
     def sample_start(self):

@@ -162,6 +162,17 @@ class TestSupportivePOMDPState(TestCase):
         np.testing.assert_array_almost_equal(_s.belief_quotient(b),
                                              np.array([.3, 0., .7]))
 
+    def test_random_object_changes(self):
+        self._s.htm = 2
+        self._s.set_object(1, 1)
+        self._s.set_object(3, 1)
+        self._s.set_preference(1, 1)
+        self._s.set_body_feature(0, 1)
+        self._s.random_object_changes(0.)  # p = 0 => No change
+        self.assertEqual(str(self._s)[7:-1], "2 010 10 0101")
+        self._s.random_object_changes(1.)  # p = 1 => XOR
+        self.assertEqual(str(self._s)[7:-1], "2 010 10 1010")
+
 
 class TestSupportivePOMDP(TestCase):
 
@@ -172,6 +183,7 @@ class TestSupportivePOMDP(TestCase):
         self.alt = LeafCombination(AssembleLegToTop('leg-1'))
         self.htm = SequentialCombination([self.bt, self.af])
         self.p = SupportivePOMDP(self.htm)
+        self.p.p_changed_by_human = 0.
 
     def test_populate_conditions(self):
         """Note: for this test we consider a requirement that objects
