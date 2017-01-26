@@ -619,6 +619,11 @@ class NTransitionsHorizon(Horizon):
             yield cls(n)
 
 
+def _children_to_dict(d, children):
+    d['children'] = children
+    return d
+
+
 class _SearchTree:
 
     def __init__(self, model, horizon_generator, exploration,
@@ -713,6 +718,13 @@ class _SearchTree:
     def to_dict(self, as_policy=False):
         return self.root.to_dict(self.model, as_policy=as_policy)
 
+    def map(self, fun, join_children=_children_to_dict):
+        """
+        :param join_children: function(result, children)
+            returns result_with_children
+        """
+        return self.root._map(fun, join_children)
+
 
 class _ObservationLookupSearchTree(_SearchTree):
 
@@ -785,11 +797,21 @@ class _SearchNode(object):
     def update(self, value):
         self._avg.update(value)
 
-    def to_dict(self, model, as_policy=False, exclude_visited=None):
+    def to_dict(self, model, as_policy=False, exclude_visited=None,
+                recursive=True):
         return {"value": self.value,
                 "visits": self.n_simulations,
                 "node": None,
                 }
+
+    def _map(self, fun, join_children):
+        result = fun(self)
+        child_results = [c._map(fun, join_children)
+                         for c in self._iterate_children()]
+        return join_children(result, child_results)
+
+    def _iterate_children(self):
+        return self.children.values()
 
 
 class _SearchObservationNode(_SearchNode):
@@ -842,9 +864,12 @@ class _SearchObservationNode(_SearchNode):
             self.children[a] = _SearchActionNode(alpha=self._children_alpha)
         return self.children[a]
 
+    def _iterate_children(self):
+        return filter(lambda c: c is not None, self.children)
+
     def to_dict(self, model, as_policy=False, observed=None,
-                exclude_visited=None):
-        children = True
+                exclude_visited=None, recursive=True):
+        children = recursive
         if exclude_visited is not None:
             if self.belief in exclude_visited:
                 children = False
@@ -901,7 +926,8 @@ class _SearchActionNode(_SearchNode):
     Children indexed by observation.
     """
 
-    def to_dict(self, model, as_policy=False, exclude_visited=None):
+    def to_dict(self, model, as_policy=False, exclude_visited=None,
+                recursive=True):
         if as_policy:
             raise NotImplemented
         else:
