@@ -348,6 +348,8 @@ class SupportivePOMDP:
         _s.htm = htm_id
         for i, p in enumerate(self.p_preferences):
             _s.set_preference(i, 1 if np.random.random() < p else 0)
+        # random transitions
+        _s.random_object_changes(self.p_changed_by_human)
         return _s.to_int()
 
     @property
