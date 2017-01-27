@@ -52,7 +52,7 @@ class _SuccessorSampler:
     def _sample(self):
         self.n_sampled += 1
         if self.n_sampled > self.max_samples:
-            raise self.MaxSamplesReached(
+            raise MaxSamplesReached(
                 'Impossible to sample enough particles for transition to '
                 + str((self.a, self.o)))
         return self.belief.sample()
