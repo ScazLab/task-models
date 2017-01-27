@@ -87,6 +87,8 @@ def export_policy():
                 child = children[i]
                 d['observations'] = child['observations']
                 d['children'] = child['children']
+                for c, o in zip(d['children'], d['observations']):
+                    c['observed'] = pol.tree.model.observations.index(o)
             return d
 
         dic['graphs'] = [pol.tree.map(to_dict, join_children)]
