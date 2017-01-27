@@ -1105,3 +1105,47 @@ class POMCPPolicyRunner(object):
 
     def trajectory_trees_from_starts(self, qvalue=False):
         return {"graphs": [self.tree.to_dict(as_policy=not qvalue)]}
+
+
+def export_pomcp(policy, destination, belief_as_quotien=False):
+    if belief_as_quotien:
+        dic = {}
+        FLAG = '####'
+        model = policy.tree.model
+
+        def to_dict(node):
+            if isinstance(node, _SearchObservationNode):
+                d = node.to_dict(model, as_policy=True, recursive=False)
+                d['belief'] = list(model._int_to_state().belief_quotient(np.array(d['belief'])))
+                a_i = model.actions.index(d['action'])
+                d['ACTION_IDX'] = sum([c is not None for c in node.children[:a_i]])
+            else:
+                d = {"observations": [model.observations[o]
+                                      for o in node.children]}
+                d[FLAG] = True
+            return d
+
+        def join_children(d, children):
+            if d.get(FLAG, False):  # Action node
+                d.pop(FLAG)
+                d['children'] = children
+            else:  # Observation node
+                i = d.pop('ACTION_IDX')
+                child = children[i]
+                d['observations'] = child['observations']
+                d['children'] = child['children']
+                for c, o in zip(d['children'], d['observations']):
+                    c['observed'] = model.observations.index(o)
+            return d
+
+        dic['graphs'] = [policy.tree.map(to_dict, join_children)]
+        dic['states'] = [n.name for n in model.htm_nodes] + ['final']
+    else:
+        dic = policy.trajectory_trees_from_starts()
+        dic['states'] = model.states
+    dic['actions'] = model.actions
+    dic['exploration'] = policy.tree.exploration
+    dic['relative_exploration'] = policy.tree.relative_explo
+
+    with open(destination, 'w') as f:
+        json.dump(dic, f, indent=2)
