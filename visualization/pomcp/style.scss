@@ -155,6 +155,14 @@ h6,
   stroke: $color-error;
 }
 
+.link.not-found {
+  stroke: $color-error;
+}
+
+.link.fail {
+  stroke: $color-no;
+}
+
 .legend {
   font-size: .8rem;
   font-weight: 300;
@@ -231,7 +239,7 @@ table {
     }
     thead {
       th.legend {
-        width: 4em;
+        width: 5em;
       }
       th:not(.legend) {
         transform: rotate(-45deg);
