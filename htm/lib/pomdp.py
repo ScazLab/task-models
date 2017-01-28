@@ -1108,8 +1108,8 @@ class AsyncPOMCPPolicyRunner(POMCPPolicyRunner):
         super(AsyncPOMCPPolicyRunner, self).__del__()
 
 
-def export_pomcp(policy, destination, belief_as_quotien=False):
-    if belief_as_quotien:
+def export_pomcp(policy, destination, belief_as_quotient=False):
+    if belief_as_quotient:
         dic = {}
         FLAG = '####'
         model = policy.tree.model

@@ -52,7 +52,7 @@ if BELIEF_VALUES:
     print('Found {} distinct beliefs.'.format(len(pol.tree._obs_nodes)))
 
 
-export_pomcp(pol, POMCP_DESTINATION, belief_as_quotien=EXPORT_BELIEF_QUOTIENT)
+export_pomcp(pol, POMCP_DESTINATION, belief_as_quotient=EXPORT_BELIEF_QUOTIENT)
 
 # Play trajectories
 for _ in range(5):
@@ -69,4 +69,4 @@ for _ in range(5):
               format_belief_array(pol.tree.model._int_to_state().belief_quotient(pol.belief.array)))
         s = ns
 
-export_pomcp(pol, POMCP_DESTINATION, belief_as_quotien=EXPORT_BELIEF_QUOTIENT)
+export_pomcp(pol, POMCP_DESTINATION, belief_as_quotient=EXPORT_BELIEF_QUOTIENT)
