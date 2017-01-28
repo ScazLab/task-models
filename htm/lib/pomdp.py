@@ -5,6 +5,7 @@ import sys
 import math
 import json
 import types
+import threading
 import subprocess
 from numbers import Integral
 from distutils import spawn
@@ -679,19 +680,21 @@ class _SearchTree:
             node.update(full_return)
             return full_return
 
-    def simulate_from_node(self, node):
+    def simulate_from_node(self, node, action=None):
         state = node.belief.sample()
-        self._simulate_from_node(node, state, next(self.horizon_gen))
+        self._simulate_from_node(node, state, next(self.horizon_gen), a=action)
 
     def _observation_node_for_belief(self, b):
         return _SearchObservationNode(b, self.model.n_actions, **self._node_params)
 
-    def _simulate_from_node(self, node, state, horizon):
+    def _simulate_from_node(self, node, state, horizon, a=None):
         if horizon.is_reached():
             return node.value
         else:
-            a = node.get_best_action(exploration=self.exploration,
-                                     relative_exploration=self.relative_explo)
+            if a is None:
+                a = node.get_best_action(
+                    exploration=self.exploration,
+                    relative_exploration=self.relative_explo)
             child = node.safe_get_child(a)
             new_s, o, r = self.model.sample_transition(a, state)
             horizon.decrement(a, state, new_s, o)
@@ -706,8 +709,8 @@ class _SearchTree:
                 except MaxSamplesReached:
                     self.log('Maximum number of samples reached, skipping.')
                     partial_return = 0.
-                    # Note maybe use more relevant value, but since the event is rare
-                    # it should not impact the result
+                    # Note maybe use more relevant value, but, since the event
+                    # is rare, it should not impact the result
             else:
                 # Continue regular search
                 partial_return = self._simulate_from_node(
@@ -736,7 +739,8 @@ class _ObservationLookupSearchTree(_SearchTree):
                  node_params={}, logger=None):
         self._obs_nodes = {}  # used in super for root initialization
         if belief == 'particle':
-            raise ValueError('_ObservationLookupSearchTree does not support particle belief')
+            raise ValueError(
+                '_ObservationLookupSearchTree does not support particle belief')
         super(_ObservationLookupSearchTree, self).__init__(
             model, horizon, exploration,
             relative_exploration=relative_exploration,
@@ -975,8 +979,7 @@ class POMCPPolicyRunner(object):
                                belief=belief, belief_params=belief_params,
                                logger=logger)
         self.iterations = iterations
-        # TODO particles
-        self.reset()
+        self._reset()
 
     @property
     def actions(self):
@@ -987,6 +990,12 @@ class POMCPPolicyRunner(object):
         return self.tree.model.observations
 
     def reset(self, belief=None):
+        self._reset(belief=belief)
+
+    # Note the reason for having both _reset and reset
+    # is that in the async subclass the former needs the thread
+    # to be initialized, and __init__ calls _reset before the that.
+    def _reset(self, belief=None):
         if belief is not None:
             raise NotImplementedError
         self.history = []
@@ -997,10 +1006,12 @@ class POMCPPolicyRunner(object):
     def belief(self):
         return self._node.belief
 
-    def get_action(self):
+    def get_action(self, iterations=None):
         # Note iterations must be greater than the number of actions
         # to guarantee that any action chosen as best_action is explored first
-        for _ in range(self.iterations):
+        if iterations is None:
+            iterations = self.iterations
+        for _ in range(iterations):
             self.tree.simulate_from_node(self._node)
         a = self._node.get_best_action()
         # No exploration during exploitation?
@@ -1020,6 +1031,83 @@ class POMCPPolicyRunner(object):
         return {"graphs": [self.tree.to_dict(as_policy=not qvalue)]}
 
 
+class AsyncPOMCPPolicyRunner(POMCPPolicyRunner):
+
+    class _Thread(threading.Thread):
+        """Continuously explores and enable another thread to execute
+        some exploitation in between two explorations.
+        """
+
+        def __init__(self, tree):
+            super(AsyncPOMCPPolicyRunner._Thread, self).__init__()
+            self.tree = tree
+            self._node = tree.root
+            self._action = None
+            self._done = False
+            self._done_exploring = threading.Event()
+            self._done_exploiting = threading.Event()
+            self._done_exploiting.set()
+
+        def stop(self):
+            self._done = True
+
+        def execute(self, fun, *args, **kwargs):
+            """Waits until current exploration is done and execute fun.
+            """
+            self._done_exploring.wait()
+            self._done_exploiting.clear()
+            fun(*args, **kwargs)
+            self._done_exploiting.set()
+
+        def set_node(self, node):
+            self._node = node
+            self._action = None
+
+        def set_action(self, action):
+            self._action = action
+
+        def explore(self):
+            self.tree.simulate_from_node(self._node, action=self._action)
+
+        def run(self):
+            while not self._done:
+                self._done_exploiting.wait()
+                self._done_exploring.clear()
+                self.explore()
+                self._done_exploring.set()
+
+    def __init__(self, *args, **kwargs):
+        super(AsyncPOMCPPolicyRunner, self).__init__(*args, **kwargs)
+        self.thread = self._Thread(self.tree)
+        self.thread.start()
+
+    def step(self, observation):
+        super(AsyncPOMCPPolicyRunner, self).step(observation)
+        self.thread.execute(self.thread.set_node, self._node)
+
+    def reset(self, belief=None):
+        self._reset(belief=belief)
+        self.thread.execute(self.thread.set_node, self._node)
+
+    def get_action(self, iterations=None):
+        # Start with minimal number of iterations to have explored all actions
+        a = super(AsyncPOMCPPolicyRunner,
+                  self).get_action(iterations=len(self.actions))
+        self.thread.execute(self.thread.set_action, self._last_action)
+        return a
+
+    def stop(self):
+        self.thread.stop()
+        self.thread.join()
+
+    def execute(self, *args, **kwargs):
+        self.thread.execute(*args, **kwargs)
+
+    def __del__(self):
+        self.stop()
+        super(AsyncPOMCPPolicyRunner, self).__del__()
+
+
 def export_pomcp(policy, destination, belief_as_quotien=False):
     if belief_as_quotien:
         dic = {}
@@ -1029,9 +1117,11 @@ def export_pomcp(policy, destination, belief_as_quotien=False):
         def to_dict(node):
             if isinstance(node, _SearchObservationNode):
                 d = node.to_dict(model, as_policy=True, recursive=False)
-                d['belief'] = list(model._int_to_state().belief_quotient(np.array(d['belief'])))
+                d['belief'] = list(model._int_to_state().belief_quotient(
+                    np.array(d['belief'])))
                 a_i = model.actions.index(d['action'])
-                d['ACTION_IDX'] = sum([c is not None for c in node.children[:a_i]])
+                d['ACTION_IDX'] = sum([c is not None
+                                       for c in node.children[:a_i]])
             else:
                 d = {"observations": [model.observations[o]
                                       for o in node.children]}
