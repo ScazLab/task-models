@@ -378,11 +378,14 @@ class SupportivePOMDP:
             if _s.is_final():  # Final state
                 obs = self.O_NONE
             else:
+                obs = self.O_NONE
                 if (self.htm_nodes[_s.htm].action.hold and a == self.A_HOLD and
                         _s.has_preference(self.PREF_HOLD)):
                     r += self.r_preference
+                elif a == self.A_HOLD and np.random.random() < .95:
+                    # Undesired hold most likely gets an error
+                    obs = self.O_FAIL
                 r += self._update_for_transition(_new_s, _s.htm)
-                obs = self.O_NONE
                 if _new_s.is_final():
                     r += self.r_final
                 else:
