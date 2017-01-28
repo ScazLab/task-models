@@ -203,9 +203,13 @@ class SupportivePOMDP:
 
     A_WAIT = 0
     A_HOLD = 1
+    A_ASK = 1
     O_NONE = 0
     O_FAIL = 1
     O_NOT_FOUND = 2
+    O_YES = 3
+    O_NO = 4
+    PREF_HOLD = 0
 
     p_consume_all = .5
     p_fail = .1
@@ -214,13 +218,14 @@ class SupportivePOMDP:
     r_subtask = 10.
     r_final = 100.
     r_preference = 5.
-    intrinsic_cost = 1
+    cost_get = 10
+    cost_intrinsic = 1
 
     preferences = ['hold']
-    p_preferences = [0.5]
+    p_preferences = [0.2]
 
-    observations = ['none', 'fail', 'not-found']
-    n_observations = 1
+    observations = ['none', 'fail', 'not-found', 'yes', 'no']
+    n_observations = len(observations)
 
     def __init__(self, htm, discount=1.):
         self.discount = discount
@@ -233,7 +238,7 @@ class SupportivePOMDP:
         self._populate_conditions()
         self.n_states = self.n_htm_states * (
             2 ** (len(self.preferences) + 1 + len(self.objects)))
-        self._skip_to_a_obj = 2
+        self._skip_to_a_obj = 3
         self.n_actions = self._skip_to_a_obj + len(self.objects) + sum(self.clearable)
 
     def _int_to_state(self, s=0):
@@ -284,7 +289,7 @@ class SupportivePOMDP:
 
     @property
     def actions(self):
-        return ['wait', 'hold'] + list(chain(*[
+        return ['wait', 'hold', 'ask hold'] + list(chain(*[
             ['bring ' + o] + (['clear ' + o] if c else [])
             for o, c in zip(self.objects, self.clearable)]))
 
@@ -323,18 +328,18 @@ class SupportivePOMDP:
         return r
 
     def _cost_get(self, o):
-        return -10  # Cost for the human to get the object
+        return self.cost_get  # Cost for the human to get the object
 
     def sample_transition(self, a, s):
         _s = self._int_to_state(s)
         _new_s = self._int_to_state(s)
         if a == self.A_WAIT or a == self.A_HOLD:
-            r = 0 if a == self.A_WAIT else -self.intrinsic_cost
+            r = 0 if a == self.A_WAIT else -self.cost_intrinsic
             if _s.is_final():  # Final state
                 obs = self.O_NONE
             else:
                 if (self.htm_nodes[_s.htm].action.hold and a == self.A_HOLD and
-                        _s.has_preference(self.preferences.index('hold'))):
+                        _s.has_preference(self.PREF_HOLD)):
                     r += self.r_preference
                 r += self._update_for_transition(_new_s, _s.htm)
                 obs = self.O_NONE
@@ -342,6 +347,18 @@ class SupportivePOMDP:
                     r += self.r_final
                 else:
                     r += self.r_subtask
+        elif a == self.A_ASK:
+            r = -self.cost_intrinsic
+            if _s.has_preference(self.PREF_HOLD):
+                if np.random.random() < 0.8:
+                    obs = self.O_YES
+                else:
+                    obs = self.O_NONE
+            else:
+                if np.random.random() < 0.9:
+                    obs = self.O_NO
+                else:
+                    obs = self.O_NONE
         else:
             obj = self._obj_from_action(a)
             is_bring = int(self._is_bring(a))
@@ -354,7 +371,7 @@ class SupportivePOMDP:
                 _new_s.set_object(obj, is_bring)
                 obs = self.O_NONE
             # TODO: add random transitions on other features
-            r = -self.intrinsic_cost  # Intrinsic action cost
+            r = -self.cost_intrinsic  # Intrinsic action cost
         # random transitions
         _new_s.random_object_changes(self.p_changed_by_human)
         _new_s.random_preference_changes(self.p_change_preference)

@@ -226,7 +226,7 @@ class TestSupportivePOMDP(TestCase):
         """Same note as test_populate_conditions."""
         self.assertEqual(len(self.p.actions), self.p.n_actions)
         self.assertEqual(self.p.actions, [
-            'wait', 'hold',
+            'wait', 'hold', 'ask hold',
             'bring top',
             'bring joints', 'clear joints',
             'bring leg',
@@ -234,6 +234,9 @@ class TestSupportivePOMDP(TestCase):
             'bring screws', 'clear screws'])
         self.assertEqual(self.p.actions[self.p.A_WAIT], 'wait')
         self.assertEqual(self.p.actions[self.p.A_HOLD], 'hold')
+
+    def test_observations(self):
+        self.assertEqual(len(self.p.observations), self.p.n_observations)
 
     def test_action_ids(self):
         self.assertTrue(self.p._is_bring(self.p._bring(2)))
