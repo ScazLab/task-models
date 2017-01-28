@@ -204,7 +204,7 @@ class SupportivePOMDP:
     preferences = ['hold']
     p_preferences = [0.5]
 
-    observations = ['None', 'Fail', 'Not-found']
+    observations = ['none', 'fail', 'not-found']
     n_observations = 1
 
     def __init__(self, htm, discount=1.):
