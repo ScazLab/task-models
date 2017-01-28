@@ -319,7 +319,7 @@ class SupportivePOMDP:
     def _update_for_condition(self, _s, c, obj):
         """Computes reward and modifies state according to conditions.
         """
-        r = 0. if _s.has_object(obj) else self._cost_get(obj)
+        r = 0. if _s.has_object(obj) else -self._cost_get(obj)
         # note: all conditions need object to be there
         if c == CONSUMES:
             _s.set_object(obj, 0)
