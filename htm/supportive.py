@@ -203,7 +203,7 @@ class SupportivePOMDP:
 
     A_WAIT = 0
     A_HOLD = 1
-    A_ASK = 1
+    A_ASK = 2
     O_NONE = 0
     O_FAIL = 1
     O_NOT_FOUND = 2
@@ -218,8 +218,8 @@ class SupportivePOMDP:
     r_subtask = 10.
     r_final = 100.
     r_preference = 5.
-    cost_get = 10
-    cost_intrinsic = 1
+    cost_get = 10.
+    cost_intrinsic = 1.
 
     preferences = ['hold']
     p_preferences = [0.2]
@@ -238,7 +238,7 @@ class SupportivePOMDP:
         self._populate_conditions()
         self.n_states = self.n_htm_states * (
             2 ** (len(self.preferences) + 1 + len(self.objects)))
-        self._skip_to_a_obj = 3
+        self._init_object_actions_indices()
         self.n_actions = self._skip_to_a_obj + len(self.objects) + sum(self.clearable)
 
     def _int_to_state(self, s=0):
@@ -304,17 +304,39 @@ class SupportivePOMDP:
         return sum([self._update_for_condition(_s, c, o)
                     for c, o in self.htm_conditions[node]])
 
+    # Action indices manipulation
+
+    def _init_object_actions_indices(self):
+        self._skip_to_a_obj = 3
+        self._a_bring = [None for _ in self.objects]
+        self._a_remove = [None for _ in self.objects]
+        j = self._skip_to_a_obj
+        for (o, c) in enumerate(self.clearable):
+            self._a_bring[o] = j
+            j += 1
+            if c:
+                self._a_remove[o] = j
+                j += 1
+
     def _obj_from_action(self, a):
-        return (a - self._skip_to_a_obj) // 2
+        if a in self._a_bring:
+            return self._a_bring.index(a)
+        elif a in self._a_remove:
+            return self._a_remove.index(a)
+        else:
+            raise ValueError("Not an object action: %s" % a)
 
     def _is_bring(self, a):
-        return (a - self._skip_to_a_obj) % 2 == 0
+        return a in self._a_bring
 
     def _bring(self, obj):
-        return self._skip_to_a_obj + 2 * obj
+        return self._a_bring[obj]
 
     def _remove(self, obj):
-        return self._bring(obj) + 1
+        a = self._a_remove[obj]
+        if a is None:
+            raise ValueError('{} is not cleanable.'.format(obj))
+        return a
 
     def _update_for_condition(self, _s, c, obj):
         """Computes reward and modifies state according to conditions.

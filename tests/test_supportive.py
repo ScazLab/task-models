@@ -234,13 +234,21 @@ class TestSupportivePOMDP(TestCase):
             'bring screws', 'clear screws'])
         self.assertEqual(self.p.actions[self.p.A_WAIT], 'wait')
         self.assertEqual(self.p.actions[self.p.A_HOLD], 'hold')
+        self.assertEqual(self.p.actions[self.p.A_ASK], 'ask hold')
 
     def test_observations(self):
         self.assertEqual(len(self.p.observations), self.p.n_observations)
 
     def test_action_ids(self):
+        self.p._bring(2)
         self.assertTrue(self.p._is_bring(self.p._bring(2)))
-        self.assertFalse(self.p._is_bring(self.p._remove(2)))
+        self.assertFalse(self.p._is_bring(self.p._remove(1)))
+        self.assertEqual(self.p.actions[self.p._bring(2)], 'bring leg')
+        with self.assertRaises(ValueError):
+            self.p.actions[self.p._remove(2)]
+        self.assertEqual(self.p.actions[self.p._remove(1)], 'clear joints')
+        with self.assertRaises(ValueError):
+            self.p._obj_from_action(self.p.A_WAIT)
 
     def test_sample_start_no_hold(self):
         self.p.p_preferences = [0]
