@@ -163,6 +163,7 @@ class _SupportivePOMDPState(object):
         """Assimilates all states that correspond to same HTM node."""
         n = 2 ** self._shift_htm
         assert(array.shape[0] % n == 0)
+        assert(array.shape[0] // n == self._final_htm + 1)
         return array.reshape((array.shape[0] // n, n)).sum(axis=1)
 
     def random_object_changes(self, p):
@@ -217,7 +218,7 @@ class SupportivePOMDP:
         self.htm_init = h2d.init
         self._populate_conditions()
         self.n_states = self.n_htm_states * (
-            2 ** (1 + len(self.preferences) + 1 + len(self.objects)))
+            2 ** (len(self.preferences) + 1 + len(self.objects)))
         self._skip_to_a_obj = 2
         self.n_actions = self._skip_to_a_obj + len(self.objects) + sum(self.clearable)
 

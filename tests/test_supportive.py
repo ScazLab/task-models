@@ -159,6 +159,7 @@ class TestSupportivePOMDPState(TestCase):
         b[_s.to_int()] = .3
         _s.set_preference(0, 1)
         b[_s.to_int()] = .4
+        self.assertEqual(_s.belief_quotient(b).shape, (3,))
         np.testing.assert_array_almost_equal(_s.belief_quotient(b),
                                              np.array([.3, 0., .7]))
 
@@ -199,6 +200,10 @@ class TestSupportivePOMDP(TestCase):
 
     def test_last_actions_lead_to_final_state(self):
         self.assertEqual(self.p.htm_succs, [[1], [2]])
+
+    def test_n_states(self):
+        self.assertEqual(self.p.n_states, 3 * 2 ** (5 + 1 + 1))
+        self.assertEqual(self.p.n_states, len(self.p.states))
 
     def test_features(self):
         self.assertEqual(self.p.features, [
