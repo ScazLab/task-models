@@ -191,7 +191,7 @@ class TestSupportivePOMDP(TestCase):
         This test should be updated to something more accurate
         if the implementation changes.
         """
-        self.assertEqual(self.p.objects, ['top', 'feet', 'leg', 'screwdriver', 'screws'])
+        self.assertEqual(self.p.objects, ['top', 'joints', 'leg', 'screwdriver', 'screws'])
         self.assertEqual(self.p.htm_conditions, [
             [(CONSUMES, 0)],
             [(USES, 1), (CONSUMES, 2),
@@ -202,7 +202,7 @@ class TestSupportivePOMDP(TestCase):
 
     def test_features(self):
         self.assertEqual(self.p.features, [
-            'HTM', 'hold-preference', 'holding', 'top', 'feet', 'leg',
+            'HTM', 'hold-preference', 'holding', 'top', 'joints', 'leg',
             'screwdriver', 'screws'])
 
     def test_actions(self):
@@ -211,7 +211,7 @@ class TestSupportivePOMDP(TestCase):
         self.assertEqual(self.p.actions, [
             'wait', 'hold',
             'bring top',
-            'bring feet', 'clear feet',
+            'bring joints', 'clear joints',
             'bring leg',
             'bring screwdriver', 'clear screwdriver',
             'bring screws', 'clear screws'])
