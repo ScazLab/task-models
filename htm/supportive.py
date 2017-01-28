@@ -70,7 +70,9 @@ class AssembleFoot(SupportedAction):
 
     def __init__(self, leg):
         super(AssembleFoot, self).__init__('Assemble foot on ' + leg)
-        self.conditions = [(USES, 'feet'),
+        self.conditions = [(USES, 'joints'),
+                           # For now feet and joints are in same box
+                           #(USES, 'feet'),
                            (CONSUMES, 'leg'),
                            (USES, 'screwdriver'),
                            (USES, 'screws'),
