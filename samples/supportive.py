@@ -56,6 +56,7 @@ export_pomcp(pol, POMCP_DESTINATION, belief_as_quotient=EXPORT_BELIEF_QUOTIENT)
 
 # Play trajectories
 for _ in range(5):
+    R = 0
     print('New trajectory')
     pol.reset()
     s = p.sample_start()
@@ -72,5 +73,7 @@ for _ in range(5):
               ' | {:.2f}'.format(belief_preferences(pol.belief.array)[0]),
               )
         s = ns
+        R += r
+    print("Total reward: %f" % R)
 
 export_pomcp(pol, POMCP_DESTINATION, belief_as_quotient=EXPORT_BELIEF_QUOTIENT)
