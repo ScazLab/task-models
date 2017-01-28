@@ -133,6 +133,10 @@ class _SupportivePOMDPState(object):
         return self._shift_htm - self._shift_pref
 
     @property
+    def n_htm(self):
+        return self._final_htm + 1
+
+    @property
     def htm(self):
         return self.s >> self._shift_htm
 
@@ -170,9 +174,23 @@ class _SupportivePOMDPState(object):
     def belief_quotient(self, array):
         """Assimilates all states that correspond to same HTM node."""
         n = 2 ** self._shift_htm
-        assert(array.shape[0] % n == 0)
-        assert(array.shape[0] // n == self._final_htm + 1)
-        return array.reshape((array.shape[0] // n, n)).sum(axis=1)
+        assert(array.shape[0] == self.n_htm * n)
+        return array.reshape((self.n_htm, n)).sum(axis=1)
+
+    def belief_preferences(self, array):
+        """Assimilates all states that correspond to same HTM node."""
+        n = 2 ** self._shift_pref
+        n_p = self.n_preferences
+        assert(array.shape[0] == self.n_htm * (2 ** n_p) * n)
+        new_shape = [self.n_htm] + [2 for _ in range(n_p)] + [n]
+        pp = array.reshape(new_shape).sum(axis=-1).sum(axis=0)
+
+        def sum_all_but(arr, axis):
+            iii = [slice(None) for _ in arr.shape]
+            iii[axis] = -1
+            return arr[iii].sum()
+
+        return [sum_all_but(pp, i) for i, _ in enumerate(pp.shape)]
 
     def random_object_changes(self, p):
         to_change = np.random.random((self.n_objects)) < p

@@ -59,6 +59,8 @@ for _ in range(5):
     print('New trajectory')
     pol.reset()
     s = p.sample_start()
+    belief_quotient = pol.tree.model._int_to_state().belief_quotient
+    belief_preferences = pol.tree.model._int_to_state().belief_preferences
     while not p.is_final(s):
         a = pol.get_action()
         ns, o, r = p.sample_transition(p.actions.index(a), s)
@@ -66,7 +68,9 @@ for _ in range(5):
         print('{} -- {} --> {}, {}, {}'.format(
             p._int_to_state(s), a, p._int_to_state(ns), p.observations[o], r))
         print('belief: ',
-              format_belief_array(pol.tree.model._int_to_state().belief_quotient(pol.belief.array)))
+              format_belief_array(belief_quotient(pol.belief.array)),
+              ' | {:.2f}'.format(belief_preferences(pol.belief.array)[0]),
+              )
         s = ns
 
 export_pomcp(pol, POMCP_DESTINATION, belief_as_quotient=EXPORT_BELIEF_QUOTIENT)

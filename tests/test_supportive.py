@@ -163,6 +163,27 @@ class TestSupportivePOMDPState(TestCase):
         np.testing.assert_array_almost_equal(_s.belief_quotient(b),
                                              np.array([.3, 0., .7]))
 
+    def test_belief_preferences(self):
+        _s = _SupportivePOMDPState(3, 2, 1, 2)
+        b = np.zeros((3 * 2 ** 5))
+        # bp[00, 01, 10, 11] = .1 .1 0. .2
+        b[_s.to_int()] = .1
+        _s.set_object(0, 1)
+        _s.set_preference(1, 1)
+        b[_s.to_int()] = .1
+        _s.set_object(1, 1)
+        _s.set_preference(0, 1)
+        b[_s.to_int()] = .2
+        # bp[00, 01, 10, 11] = .3 0. .4 0.
+        _s.s = 0
+        _s.htm = 2
+        b[_s.to_int()] = .3
+        _s.set_preference(0, 1)
+        b[_s.to_int()] = .4
+        self.assertEqual(len(_s.belief_preferences(b)), 2)
+        np.testing.assert_array_almost_equal(_s.belief_preferences(b),
+                                             np.array([.3, .6]))
+
     def test_random_object_changes(self):
         self._s.htm = 2
         self._s.set_object(1, 1)
