@@ -365,6 +365,8 @@ class SupportivePOMDP:
             _s.set_object(obj, 0)
         elif c == CONSUMES_SOME:
             _s.set_object(obj, 0 if np.random.random() < self.p_consume_all else 1)
+        elif c == USES:
+            _s.set_object(obj, 1)
         return r
 
     def _cost_get(self, o):
