@@ -174,6 +174,17 @@ class TestSupportivePOMDPState(TestCase):
         self._s.random_object_changes(1.)  # p = 1 => XOR
         self.assertEqual(str(self._s)[7:-1], "2 010 10 1010")
 
+    def test_random_preference_changes(self):
+        self._s.htm = 2
+        self._s.set_object(1, 1)
+        self._s.set_object(3, 1)
+        self._s.set_preference(1, 1)
+        self._s.set_body_feature(0, 1)
+        self._s.random_preference_changes(0.)  # p = 0 => No change
+        self.assertEqual(str(self._s)[7:-1], "2 010 10 0101")
+        self._s.random_preference_changes(1.)  # p = 1 => XOR
+        self.assertEqual(str(self._s)[7:-1], "2 101 10 0101")
+
 
 class TestSupportivePOMDP(TestCase):
 
@@ -185,6 +196,7 @@ class TestSupportivePOMDP(TestCase):
         self.htm = SequentialCombination([self.bt, self.af])
         self.p = SupportivePOMDP(self.htm)
         self.p.p_changed_by_human = 0.
+        self.p.p_change_preference = 0.
 
     def test_populate_conditions(self):
         """Note: for this test we consider a requirement that objects

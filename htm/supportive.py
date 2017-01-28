@@ -125,6 +125,14 @@ class _SupportivePOMDPState(object):
                      for i in range(self._shift_body)]))
 
     @property
+    def n_objects(self):
+        return self._shift_body
+
+    @property
+    def n_preferences(self):
+        return self._shift_htm - self._shift_pref
+
+    @property
     def htm(self):
         return self.s >> self._shift_htm
 
@@ -167,9 +175,14 @@ class _SupportivePOMDPState(object):
         return array.reshape((array.shape[0] // n, n)).sum(axis=1)
 
     def random_object_changes(self, p):
-        to_change = np.random.random((self._shift_body)) < p
+        to_change = np.random.random((self.n_objects)) < p
         for i in to_change.nonzero()[0]:
             self._set_bit(i, 1 - self._get_bit(i))
+
+    def random_preference_changes(self, p):
+        to_change = np.random.random((self.n_preferences)) < p
+        for i in to_change.nonzero()[0]:
+            self.set_preference(i, 1 - self.has_preference(i))
 
 
 class SupportivePOMDP:
@@ -197,6 +210,7 @@ class SupportivePOMDP:
     p_consume_all = .5
     p_fail = .1
     p_changed_by_human = .05
+    p_change_preference = .01
     r_subtask = 10.
     r_final = 100.
     r_preference = 5.
@@ -343,6 +357,7 @@ class SupportivePOMDP:
             r = -self.intrinsic_cost  # Intrinsic action cost
         # random transitions
         _new_s.random_object_changes(self.p_changed_by_human)
+        _new_s.random_preference_changes(self.p_change_preference)
         return _new_s.to_int(), obs, r
 
     def sample_start(self):
