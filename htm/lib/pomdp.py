@@ -1063,6 +1063,7 @@ class AsyncPOMCPPolicyRunner(POMCPPolicyRunner):
 
         def stop(self):
             self._done = True
+            self._done_exploiting.set()
 
         def execute(self, fun, *args, **kwargs):
             """Waits until current exploration is done and execute fun.
@@ -1085,10 +1086,10 @@ class AsyncPOMCPPolicyRunner(POMCPPolicyRunner):
 
         def run(self):
             while not self._done:
-                self._done_exploiting.wait()
                 self._done_exploring.clear()
                 self.explore()
                 self._done_exploring.set()
+                self._done_exploiting.wait()
 
     def __init__(self, *args, **kwargs):
         super(AsyncPOMCPPolicyRunner, self).__init__(*args, **kwargs)
@@ -1111,7 +1112,8 @@ class AsyncPOMCPPolicyRunner(POMCPPolicyRunner):
 
     def stop(self):
         self.thread.stop()
-        self.thread.join()
+        if self.thread.isAlive():
+            self.thread.join()
 
     def execute(self, *args, **kwargs):
         self.thread.execute(*args, **kwargs)
