@@ -1056,8 +1056,9 @@ class AsyncPOMCPPolicyRunner(POMCPPolicyRunner):
             """
             self._done_exploring.wait()
             self._done_exploiting.clear()
-            fun(*args, **kwargs)
+            result = fun(*args, **kwargs)
             self._done_exploiting.set()
+            return result
 
         def set_node(self, node):
             self._node = node
@@ -1091,8 +1092,7 @@ class AsyncPOMCPPolicyRunner(POMCPPolicyRunner):
 
     def get_action(self, iterations=None):
         # Start with minimal number of iterations to have explored all actions
-        a = super(AsyncPOMCPPolicyRunner,
-                  self).get_action(iterations=len(self.actions))
+        a = self.thread.execute(super(AsyncPOMCPPolicyRunner, self).get_action)
         self.thread.execute(self.thread.set_action, self._last_action)
         return a
 
