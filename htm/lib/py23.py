@@ -20,4 +20,7 @@ else:
             shutil.rmtree(self.name)
 
     from Queue import Queue
-    import cpickle as pickle
+    try:
+        import cpickle as pickle
+    except ImportError:
+        import pickle
