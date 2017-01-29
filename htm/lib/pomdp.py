@@ -1105,7 +1105,6 @@ class AsyncPOMCPPolicyRunner(POMCPPolicyRunner):
 
     def __del__(self):
         self.stop()
-        super(AsyncPOMCPPolicyRunner, self).__del__()
 
 
 def export_pomcp(policy, destination, belief_as_quotient=False):

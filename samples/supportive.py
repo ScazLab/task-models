@@ -16,6 +16,7 @@ BELIEF_VALUES = False
 EXPORT_BELIEF_QUOTIENT = True
 POMCP_DESTINATION = os.path.join(os.path.dirname(__file__),
                                  '../visualization/pomcp/json/pomcp.json')
+HORIZON = 4
 
 
 leg_i = 'leg-{}'.format
@@ -28,7 +29,7 @@ htm = SequentialCombination([LeafCombination(BringTop()), mount_legs])
 
 p = SupportivePOMDP(htm)
 pol = POMCPPolicyRunner(p, iterations=ITERATIONS,
-                        horizon=NHTMHorizon.generator(p, n=3),
+                        horizon=NHTMHorizon.generator(p, n=HORIZON),
                         exploration=EXPLORATION,
                         relative_exploration=RELATIVE_EXPLO,
                         belief_values=BELIEF_VALUES,
