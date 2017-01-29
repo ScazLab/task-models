@@ -244,13 +244,13 @@ class SupportivePOMDP:
     PREF_HOLD = 0
 
     p_consume_all = .5
-    p_fail = .1
+    p_fail = .01
     p_changed_by_human = .05
     p_change_preference = .01
     r_subtask = 10.
     r_final = 100.
     r_preference = 10.
-    cost_get = 10.
+    cost_get = 15.
     cost_intrinsic = 1.
     cost_hold = 2.
 

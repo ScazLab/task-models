@@ -9,16 +9,16 @@ from htm.lib.pomdp import POMCPPolicyRunner, export_pomcp
 from htm.lib.belief import format_belief_array
 
 
-N = 100  # for warm-up
+N = 50  # for warm-up
 ITERATIONS = 200
-EXPLORATION = 10  # 1000
+EXPLORATION = 20  # 1000
 N_PARTICLES = 200
-RELATIVE_EXPLO = True  # In this case use smaller exploration
+RELATIVE_EXPLO = False  # In this case use smaller exploration
 BELIEF_VALUES = False
 EXPORT_BELIEF_QUOTIENT = True
 POMCP_DESTINATION = os.path.join(os.path.dirname(__file__),
                                  '../visualization/pomcp/json/pomcp.json')
-HORIZON = 4
+HORIZON = 2
 
 
 leg_i = 'leg-{}'.format
@@ -29,6 +29,7 @@ htm = SequentialCombination([
     for i in range(4)])
 
 p = SupportivePOMDP(htm)
+p.r_subtask = 0.
 pol = POMCPPolicyRunner(p, iterations=ITERATIONS,
                         horizon=NHTMHorizon.generator(p, n=HORIZON),
                         exploration=EXPLORATION,
