@@ -4,7 +4,7 @@ import tempfile
 if sys.version_info >= (3, 0):
     TemporaryDirectory = tempfile.TemporaryDirectory
     from queue import Queue
-
+    import pickle
 else:
     import shutil
 
@@ -20,3 +20,4 @@ else:
             shutil.rmtree(self.name)
 
     from Queue import Queue
+    import cpickle as pickle

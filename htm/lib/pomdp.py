@@ -589,6 +589,19 @@ class _Aux:
 
 class Horizon(object):
 
+    class _Generator:
+
+        def __init__(self, cls, *args, **kwargs):
+            self.cls = cls
+            self.args = args
+            self.kwargs = kwargs
+
+        def __call__(self):
+            return self.cls(*self.args, **self.kwargs)
+
+        def __next__(self):
+            return self()
+
     def is_reached(self):
         raise NotImplementedError
 
@@ -613,13 +626,16 @@ class NTransitionsHorizon(Horizon):
 
     @classmethod
     def generator(cls, model, n=100):
-        while True:
-            yield cls(n)
+        return cls._Generator(cls, n)
 
 
 def _children_to_dict(d, children):
     d['children'] = children
     return d
+
+
+def _null_logger(*args, **kwargs):
+    pass
 
 
 class _SearchTree:
@@ -635,7 +651,7 @@ class _SearchTree:
         self.horizon_gen = horizon_generator
         self.exploration = exploration
         self.relative_explo = relative_exploration
-        self.log = lambda x: None if logger is None else logger
+        self.log = _null_logger if logger is None else logger
 
     def _belief_start(self):
         if self._belief == 'array':
@@ -968,7 +984,7 @@ class POMCPPolicyRunner(object):
             exploration = 1. if relative_exploration else 100
         tree_class = (_ObservationLookupSearchTree if belief_values
                       else _SearchTree)
-        if isinstance(horizon, types.GeneratorType):
+        if isinstance(horizon, Horizon._Generator):
             horizon_generator = horizon
         elif isinstance(horizon, Integral):
             horizon_generator = NTransitionsHorizon.generator(model, n=horizon)

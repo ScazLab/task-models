@@ -481,5 +481,4 @@ class NHTMHorizon(Horizon):
 
     @classmethod
     def generator(cls, model, n=3):
-        while True:
-            yield cls(model, n)
+        return cls._Generator(cls, model, n)
