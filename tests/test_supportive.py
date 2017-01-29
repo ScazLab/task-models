@@ -331,7 +331,7 @@ class TestSupportivePOMDP(TestCase):
         self.assertEqual(r, 10.)
         # - Hold
         s, o, r = p.sample_transition(p.A_HOLD, _s.to_int())
-        self.assertEqual(r, 10. - 1. + 5.)
+        self.assertEqual(r, 10. - p.cost_hold + 10.)
         # No preference for holding
         _s.set_preference(0, 0)
         # - Wait
@@ -339,19 +339,19 @@ class TestSupportivePOMDP(TestCase):
         self.assertEqual(r, 10.)
         # - Hold
         s, o, r = p.sample_transition(p.A_HOLD, _s.to_int())
-        self.assertEqual(r, 10. - 1.)
+        self.assertEqual(r, 10. - p.cost_hold)
         # Not required in task (Bring-top is first node in self.p)
         _s = self.p._int_to_state()
         _s.set_object(self.p.objects.index('top'), 1)
         _s.set_preference(0, 1)
         s, o, r = self.p.sample_transition(self.p.A_HOLD, _s.to_int())
-        self.assertEqual(r, 10. - 1.)
+        self.assertEqual(r, 10. - p.cost_hold)
         # Does not apply on final node
         _s = self.p._int_to_state()
         _s.htm = self.p.htm_final
         _s.set_preference(0, 1)
         s, o, r = self.p.sample_transition(self.p.A_HOLD, _s.to_int())
-        self.assertEqual(r, - 1.)
+        self.assertEqual(r, -p.cost_hold)
 
     def test_sample_transition_action_failure(self):
         self.p.p_fail = 1.
