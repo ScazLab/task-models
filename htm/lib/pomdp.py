@@ -1141,7 +1141,7 @@ def export_pomcp(policy, destination, belief_as_quotient=False):
             return d
 
         dic['graphs'] = [policy.tree.map(to_dict, join_children)]
-        dic['states'] = [n.name for n in model.htm_nodes] + ['final']
+        dic['states'] = model.htm_names
     else:
         dic = policy.trajectory_trees_from_starts()
         dic['states'] = model.states

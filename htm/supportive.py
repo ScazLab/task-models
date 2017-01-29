@@ -264,7 +264,7 @@ class SupportivePOMDP:
         self.htm_nodes = h2d.nodes
         assert(len(self.htm_nodes) < 128)  # we use dtype=np.int8
         # set final state as successors of last actions in HTM
-        self.htm_succs = [[self.htm_final] if len(s) == 0 else s for s in h2d.succs]
+        self.htm_succs = [[self.htm_clean] if len(s) == 0 else s for s in h2d.succs]
         self.htm_init = h2d.init
         self._populate_conditions()
         self.n_states = self.n_htm_states * (
@@ -298,11 +298,15 @@ class SupportivePOMDP:
     def n_htm_states(self):
         """Number of nodes in the DAG plus 1 for the final state.
         """
-        return len(self.htm_nodes) + 1
+        return len(self.htm_nodes) + 2
+
+    @property
+    def htm_clean(self):
+        return len(self.htm_nodes)
 
     @property
     def htm_final(self):
-        return len(self.htm_nodes)
+        return len(self.htm_nodes) + 1
 
     def is_final(self, s):
         return self._int_to_state(s).is_final()
@@ -317,6 +321,10 @@ class SupportivePOMDP:
     @property
     def states(self):
         return [str(self._int_to_state(i)) for i in range(self.n_states)]
+
+    @property
+    def htm_names(self):
+        return [n.name for n in self.htm_nodes] + ['clean', 'final']
 
     @property
     def actions(self):
@@ -392,6 +400,12 @@ class SupportivePOMDP:
             r = 0 if a == self.A_WAIT else -self.cost_intrinsic
             if _s.is_final():  # Final state
                 obs = self.O_NONE
+            elif _s.htm == self.htm_clean:
+                obs = self.O_NONE
+                for o in enumerate(self.objects):
+                    r += self._cost_get(o)
+                _new_s.htm = self.htm_final
+                r += self.r_final
             else:
                 obs = self.O_NONE
                 if (self.htm_nodes[_s.htm].action.hold and a == self.A_HOLD and
@@ -401,10 +415,7 @@ class SupportivePOMDP:
                     # Undesired hold most likely gets an error
                     obs = self.O_FAIL
                 r += self._update_for_transition(_new_s, _s.htm)
-                if _new_s.is_final():
-                    r += self.r_final
-                else:
-                    r += self.r_subtask
+                r += self.r_subtask
         elif a == self.A_ASK:
             r = -self.cost_intrinsic
             if _s.has_preference(self.PREF_HOLD):

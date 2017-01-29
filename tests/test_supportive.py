@@ -235,8 +235,14 @@ class TestSupportivePOMDP(TestCase):
         self.assertEqual(self.p.htm_succs, [[1], [2]])
 
     def test_n_states(self):
-        self.assertEqual(self.p.n_states, 3 * 2 ** (5 + 1 + 1))
+        self.assertEqual(self.p.n_states, 4 * 2 ** (5 + 1 + 1))
         self.assertEqual(self.p.n_states, len(self.p.states))
+
+    def test_htm_final(self):
+        self.assertEqual(self.p.htm_final, 3)
+
+    def test_htm_clean(self):
+        self.assertEqual(self.p.htm_clean, 2)
 
     def test_features(self):
         self.assertEqual(self.p.features, [
@@ -412,7 +418,7 @@ class TestNHTMHorizon(TestCase):
 
     def test_reached_on_final(self):
         _s = self.model._int_to_state()
-        _s.htm = 2
+        _s.htm = self.model.htm_final
         s = _s.to_int()
         self.h.decrement(1, s, s, 0)
         self.assertTrue(self.h.is_reached())
