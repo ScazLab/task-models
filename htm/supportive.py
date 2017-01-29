@@ -69,7 +69,7 @@ class AssembleLeg(SupportedAction):
     hold = True
 
     def __init__(self, leg):
-        super(AssembleFoot, self).__init__('Assemble ' + leg)
+        super(AssembleLeg, self).__init__('Assemble ' + leg)
         self.conditions = [(USES, 'joints'),
                            (CONSUMES, 'leg'),
                            (USES, 'screwdriver'),
