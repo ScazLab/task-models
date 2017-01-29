@@ -597,9 +597,6 @@ class Horizon(object):
         def __call__(self):
             return self.cls(*self.args, **self.kwargs)
 
-        def __next__(self):
-            return self()
-
     def is_reached(self):
         raise NotImplementedError
 
@@ -696,7 +693,7 @@ class _SearchTree:
 
     def simulate_from_node(self, node, action=None):
         state = node.belief.sample()
-        self._simulate_from_node(node, state, next(self.horizon_gen), a=action)
+        self._simulate_from_node(node, state, self.horizon_gen(), a=action)
 
     def _observation_node_for_belief(self, b):
         return _SearchObservationNode(b, self.model.n_actions, **self._node_params)

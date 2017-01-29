@@ -692,13 +692,13 @@ class TestPOMCPPolicyRunner(TestCase):
 
     def test_horizon_generator_is_one(self):
         # Default, from int
-        h = next(self.policy.tree.horizon_gen)
+        h = self.policy.tree.horizon_gen()
         self.assertIsInstance(h, Horizon)
         self.assertEqual(h.n, 5)
         # Explicit generator
         policy = POMCPPolicyRunner(
             self.pomdp, iterations=20,
             horizon=NTransitionsHorizon.generator(self.pomdp, 13))
-        h = next(policy.tree.horizon_gen)
+        h = policy.tree.horizon_gen()
         self.assertIsInstance(h, NTransitionsHorizon)
         self.assertEqual(h.n, 13)
