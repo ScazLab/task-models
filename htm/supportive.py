@@ -248,9 +248,10 @@ class SupportivePOMDP:
     p_change_preference = .01
     r_subtask = 10.
     r_final = 100.
-    r_preference = 5.
+    r_preference = 10.
     cost_get = 10.
     cost_intrinsic = 1.
+    cost_hold = 2.
 
     preferences = ['hold']
     p_preferences = [0.2]
@@ -397,7 +398,7 @@ class SupportivePOMDP:
         _s = self._int_to_state(s)
         _new_s = self._int_to_state(s)
         if a == self.A_WAIT or a == self.A_HOLD:
-            r = 0 if a == self.A_WAIT else -self.cost_intrinsic
+            r = 0 if a == self.A_WAIT else -self.cost_hold
             if _s.is_final():  # Final state
                 obs = self.O_NONE
             elif _s.htm == self.htm_clean:
