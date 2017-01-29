@@ -108,11 +108,12 @@ class AssembleLegToTop(SupportedAction):
 
     hold = True
 
-    def __init__(self, leg):
+    def __init__(self, leg, bring_top=False):
         super(AssembleLegToTop, self).__init__('Assemble {} to top'.format(leg))
-        self.conditions = [(USES, 'screwdriver'),
-                           (USES, 'screws'),
-                           ]
+        self.conditions = [(CONSUMES, 'top')] if bring_top else []
+        self.conditions.extend([(USES, 'screwdriver'),
+                                (USES, 'screws'),
+                                ])
 
 
 class _SupportivePOMDPState(object):

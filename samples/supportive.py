@@ -4,7 +4,7 @@ import os
 
 from htm.task import SequentialCombination, LeafCombination
 from htm.supportive import (SupportivePOMDP, AssembleLeg, AssembleLegToTop,
-                            BringTop, NHTMHorizon)
+                            NHTMHorizon)
 from htm.lib.pomdp import POMCPPolicyRunner, export_pomcp
 from htm.lib.belief import format_belief_array
 
@@ -22,12 +22,11 @@ HORIZON = 4
 
 
 leg_i = 'leg-{}'.format
-mount_legs = SequentialCombination([
-     SequentialCombination([LeafCombination(AssembleLeg(leg_i(i))),
-                           LeafCombination(AssembleLegToTop(leg_i(i))),
-                           ])
+htm = SequentialCombination([
+    SequentialCombination([
+        LeafCombination(AssembleLeg(leg_i(i))),
+        LeafCombination(AssembleLegToTop(leg_i(i), bring_top=(i == 0)))])
     for i in range(4)])
-htm = SequentialCombination([LeafCombination(BringTop()), mount_legs])
 
 p = SupportivePOMDP(htm)
 pol = POMCPPolicyRunner(p, iterations=ITERATIONS,
