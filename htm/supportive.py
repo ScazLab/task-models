@@ -64,6 +64,19 @@ class BringTop(SupportedAction):
         self.conditions = [(CONSUMES, 'top')]
 
 
+class AssembleLeg(SupportedAction):
+
+    hold = True
+
+    def __init__(self, leg):
+        super(AssembleFoot, self).__init__('Assemble ' + leg)
+        self.conditions = [(USES, 'joints'),
+                           (CONSUMES, 'leg'),
+                           (USES, 'screwdriver'),
+                           (USES, 'screws'),
+                           ]
+
+
 class AssembleFoot(SupportedAction):
 
     hold = True

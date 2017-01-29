@@ -1,8 +1,8 @@
 import os
 
 from htm.task import SequentialCombination, LeafCombination
-from htm.supportive import (SupportivePOMDP, AssembleFoot, AssembleTopJoint,
-                            AssembleLegToTop, BringTop, NHTMHorizon)
+from htm.supportive import (SupportivePOMDP, AssembleLeg, AssembleLegToTop,
+                            BringTop, NHTMHorizon)
 from htm.lib.pomdp import POMCPPolicyRunner, export_pomcp
 from htm.lib.belief import format_belief_array
 
@@ -20,8 +20,7 @@ POMCP_DESTINATION = os.path.join(os.path.dirname(__file__),
 
 leg_i = 'leg-{}'.format
 mount_legs = SequentialCombination([
-    SequentialCombination([LeafCombination(AssembleFoot(leg_i(i))),
-                           LeafCombination(AssembleTopJoint(leg_i(i))),
+     SequentialCombination([LeafCombination(AssembleLeg(leg_i(i))),
                            LeafCombination(AssembleLegToTop(leg_i(i))),
                            ])
     for i in range(4)])
