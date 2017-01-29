@@ -1,10 +1,8 @@
 # encoding: utf-8
 
 import os
-import sys
 import math
 import json
-import types
 import threading
 import subprocess
 from numbers import Integral
@@ -979,7 +977,9 @@ class POMCPPolicyRunner(object):
     def __init__(self, model, particles=20, iterations=100, horizon=100,
                  exploration=None, relative_exploration=False,
                  belief_values=False, belief='array', belief_params={},
-                 logger=sys.stderr.write):
+                 logger=None):
+        if logger is None:
+            from logging import warning as logger
         if exploration is None:
             exploration = 1. if relative_exploration else 100
         tree_class = (_ObservationLookupSearchTree if belief_values
