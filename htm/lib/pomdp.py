@@ -12,8 +12,8 @@ import numpy as np
 
 from .py23 import TemporaryDirectory, Queue
 from .utils import assert_normal
-from .belief import ArrayBelief, ParticleBelief, MaxSamplesReached
-
+from .belief import (ArrayBelief, ParticleBelief, MaxSamplesReached,
+                     format_belief_array)
 
 SOLVER_NAME = 'pomdp-solve'
 
@@ -1042,6 +1042,32 @@ class POMCPPolicyRunner(object):
 
     def trajectory_trees_from_starts(self, qvalue=False):
         return {"graphs": [self.tree.to_dict(as_policy=not qvalue)]}
+
+    def run_trajectory(self, logger=None):
+        if logger is None:
+            from logging import info as logger
+        model = self.tree.model
+        R = 0
+        logger('New trajectory')
+        self.reset()
+        s = model.sample_start()
+        belief_quotient = model._int_to_state().belief_quotient
+        belief_preferences = model._int_to_state().belief_preferences
+        while not model.is_final(s):
+            a = self.get_action()
+            ns, o, r = model.sample_transition(model.actions.index(a), s)
+            self.step(model.observations[o])
+            logger('{} -- {} --> {}, {}, {}'.format(
+                model._int_to_state(s),
+                a,
+                model._int_to_state(ns),
+                model.observations[o], r))
+            logger('belief: {} | {:.2f}'.format(
+                format_belief_array(belief_quotient(self.belief.array)),
+                belief_preferences(self.belief.array)[0]))
+            s = ns
+            R += r
+        logger("Total reward: %f" % R)
 
 
 class AsyncPOMCPPolicyRunner(POMCPPolicyRunner):
