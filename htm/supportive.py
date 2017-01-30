@@ -398,6 +398,9 @@ class SupportivePOMDP:
     def sample_transition(self, a, s):
         _s = self._int_to_state(s)
         _new_s = self._int_to_state(s)
+        # random transitions
+        _s.random_object_changes(self.p_changed_by_human)
+        _s.random_preference_changes(self.p_change_preference)
         if a == self.A_WAIT or a == self.A_HOLD:
             r = 0 if a == self.A_WAIT else -self.cost_hold
             if _s.is_final():  # Final state
@@ -443,9 +446,6 @@ class SupportivePOMDP:
                 obs = self.O_NONE
             # TODO: add random transitions on other features
             r = -self.cost_intrinsic  # Intrinsic action cost
-        # random transitions
-        _new_s.random_object_changes(self.p_changed_by_human)
-        _new_s.random_preference_changes(self.p_change_preference)
         return _new_s.to_int(), obs, r
 
     def sample_start(self):
