@@ -236,26 +236,30 @@ class SupportivePOMDP:
     A_WAIT = 0
     A_HOLD = 1
     A_ASK = 2
+
     O_NONE = 0
     O_FAIL = 1
     O_NOT_FOUND = 2
     O_YES = 3
     O_NO = 4
+
     PREF_HOLD = 0
 
-    p_consume_all = .5
     p_fail = .01
+    p_consume_all = .5
     p_changed_by_human = .05
-    p_change_preference = .01
+    p_change_preference = .05
+
     r_subtask = 10.
     r_final = 100.
     r_preference = 10.
+
     cost_get = 15.
     cost_intrinsic = 1.
     cost_hold = 2.
 
     preferences = ['hold']
-    p_preferences = [0.2]
+    p_preferences = [0.3]
 
     observations = ['none', 'fail', 'not-found', 'yes', 'no']
     n_observations = len(observations)
@@ -273,6 +277,7 @@ class SupportivePOMDP:
             2 ** (len(self.preferences) + 1 + len(self.objects)))
         self._init_object_actions_indices()
         self.n_actions = self._skip_to_a_obj + len(self.objects) + sum(self.clearable)
+        self._random = True
 
     def _int_to_state(self, s=0):
         return _SupportivePOMDPState(self.n_htm_states, len(self.preferences),
@@ -398,9 +403,10 @@ class SupportivePOMDP:
     def sample_transition(self, a, s):
         _s = self._int_to_state(s)
         _new_s = self._int_to_state(s)
-        # random transitions
-        _s.random_object_changes(self.p_changed_by_human)
-        _s.random_preference_changes(self.p_change_preference)
+        if self._random:
+            # random transitions
+            _s.random_object_changes(self.p_changed_by_human)
+            _s.random_preference_changes(self.p_change_preference)
         if a == self.A_WAIT or a == self.A_HOLD:
             r = 0 if a == self.A_WAIT else -self.cost_hold
             if _s.is_final():  # Final state
@@ -416,7 +422,7 @@ class SupportivePOMDP:
                 if (self.htm_nodes[_s.htm].action.hold and a == self.A_HOLD and
                         _s.has_preference(self.PREF_HOLD)):
                     r += self.r_preference
-                elif a == self.A_HOLD and np.random.random() < .95:
+                elif a == self.A_HOLD and ((not self._random) or np.random.random() < .95):
                     # Undesired hold most likely gets an error
                     obs = self.O_FAIL
                 r += self._update_for_transition(_new_s, _s.htm)
@@ -424,12 +430,12 @@ class SupportivePOMDP:
         elif a == self.A_ASK:
             r = -self.cost_intrinsic
             if _s.has_preference(self.PREF_HOLD):
-                if np.random.random() < 0.8:
+                if (not self._random) or np.random.random() < 0.9:
                     obs = self.O_YES
                 else:
                     obs = self.O_NONE
             else:
-                if np.random.random() < 0.9:
+                if (not self._random) or np.random.random() < 0.95:
                     obs = self.O_NO
                 else:
                     obs = self.O_NONE
@@ -439,7 +445,7 @@ class SupportivePOMDP:
             if _s.has_object(obj) == is_bring:
                 # Bring object already there or remove object that's not there
                 obs = self.O_NOT_FOUND
-            elif np.random.random() < self.p_fail:
+            elif self._random and np.random.random() < self.p_fail:
                 obs = self.O_FAIL
             else:
                 _new_s.set_object(obj, is_bring)
@@ -454,8 +460,9 @@ class SupportivePOMDP:
         _s.htm = htm_id
         for i, p in enumerate(self.p_preferences):
             _s.set_preference(i, 1 if np.random.random() < p else 0)
-        # random transitions
-        _s.random_object_changes(self.p_changed_by_human)
+        if self._random:
+            # random transitions
+            _s.random_object_changes(self.p_changed_by_human)
         return _s.to_int()
 
     @property

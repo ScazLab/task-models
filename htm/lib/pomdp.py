@@ -1024,8 +1024,10 @@ class POMCPPolicyRunner(object):
         # to guarantee that any action chosen as best_action is explored first
         if iterations is None:
             iterations = self.iterations
+        self.tree.model._random = False
         for _ in range(iterations):
             self.tree.simulate_from_node(self._node)
+        self.tree.model._random = True
         a = self._node.get_best_action()
         # No exploration during exploitation?
         self._last_action = a
