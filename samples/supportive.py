@@ -13,7 +13,7 @@ logging.getLogger().setLevel(logging.INFO)
 
 N = 10  # for warm-up
 ITERATIONS = 1000
-EXPLORATION = 20  # 1000
+EXPLORATION = 50  # 1000
 N_PARTICLES = 200
 RELATIVE_EXPLO = False  # In this case use smaller exploration
 BELIEF_VALUES = False
