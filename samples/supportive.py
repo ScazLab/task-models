@@ -33,7 +33,7 @@ htm = SequentialCombination([
 p = SupportivePOMDP(htm)
 p.r_subtask = 0.
 p.r_preference = 20.
-p.cost_hold = 5.
+p.cost_hold = 3.
 p.cost_get = 20.
 pol = POMCPPolicyRunner(p, iterations=ITERATIONS,
                         horizon=NHTMHorizon.generator(p, n=HORIZON),
