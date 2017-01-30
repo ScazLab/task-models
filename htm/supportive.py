@@ -57,7 +57,7 @@ class SupportedAction(AbstractAction):
 
 class BringTop(SupportedAction):
 
-    hold = False
+    hold = None
 
     def __init__(self):
         super(BringTop, self).__init__('Bring Top')
@@ -66,7 +66,7 @@ class BringTop(SupportedAction):
 
 class AssembleLeg(SupportedAction):
 
-    hold = True
+    hold = 'h'
 
     def __init__(self, leg):
         super(AssembleLeg, self).__init__('Assemble ' + leg)
@@ -79,7 +79,7 @@ class AssembleLeg(SupportedAction):
 
 class AssembleFoot(SupportedAction):
 
-    hold = True
+    hold = 'h'
 
     def __init__(self, leg):
         super(AssembleFoot, self).__init__('Assemble foot on ' + leg)
@@ -94,7 +94,7 @@ class AssembleFoot(SupportedAction):
 
 class AssembleTopJoint(SupportedAction):
 
-    hold = True
+    hold = 'h'
 
     def __init__(self, leg):
         super(AssembleTopJoint, self).__init__('Assemble joint on ' + leg)
@@ -106,7 +106,7 @@ class AssembleTopJoint(SupportedAction):
 
 class AssembleLegToTop(SupportedAction):
 
-    hold = True
+    hold = 'v'
 
     def __init__(self, leg, bring_top=False):
         super(AssembleLegToTop, self).__init__('Assemble {} to top'.format(leg))
@@ -234,8 +234,9 @@ class SupportivePOMDP:
     """
 
     A_WAIT = 0
-    A_HOLD = 1
-    A_ASK = 2
+    A_HOLD_H = 1
+    A_HOLD_V = 2
+    A_ASK = 3
 
     O_NONE = 0
     O_FAIL = 1
@@ -334,7 +335,7 @@ class SupportivePOMDP:
 
     @property
     def actions(self):
-        return ['wait', 'hold', 'ask hold'] + list(chain(*[
+        return ['wait', 'hold H', 'hold V', 'ask hold'] + list(chain(*[
             ['bring ' + o] + (['clear ' + o] if c else [])
             for o, c in zip(self.objects, self.clearable)]))
 
@@ -352,7 +353,7 @@ class SupportivePOMDP:
     # Action indices manipulation
 
     def _init_object_actions_indices(self):
-        self._skip_to_a_obj = 3
+        self._skip_to_a_obj = 4
         self._a_bring = [None for _ in self.objects]
         self._a_remove = [None for _ in self.objects]
         j = self._skip_to_a_obj
@@ -406,7 +407,7 @@ class SupportivePOMDP:
             # random transitions
             _s.random_object_changes(self.p_changed_by_human)
             _s.random_preference_changes(self.p_change_preference)
-        if a == self.A_WAIT or a == self.A_HOLD:
+        if a in (self.A_WAIT, self.A_HOLD_H, self.A_HOLD_V):
             r = 0 if a == self.A_WAIT else -self.cost_hold
             if _s.is_final():  # Final state
                 obs = self.O_NONE
@@ -418,10 +419,13 @@ class SupportivePOMDP:
                 r += self.r_final
             else:
                 obs = self.O_NONE
-                if (self.htm_nodes[_s.htm].action.hold and a == self.A_HOLD and
-                        _s.has_preference(self.PREF_HOLD)):
+                needs_hold = self.htm_nodes[_s.htm].action.hold
+                if _s.has_preference(self.PREF_HOLD) and (
+                        (needs_hold == 'h' and a == self.A_HOLD_H)
+                        or (needs_hold == 'v' and a == self.A_HOLD_V)):
                     r += self.r_preference
-                elif a == self.A_HOLD and ((not random) or np.random.random() < .95):
+                elif (a in (self.A_HOLD_H, self.A_HOLD_V) and (
+                        (not random) or np.random.random() < .95)):
                     # Undesired hold most likely gets an error
                     obs = self.O_FAIL
                 r += self._update_for_transition(_new_s, _s.htm)
