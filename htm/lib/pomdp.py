@@ -635,6 +635,8 @@ def _null_logger(*args, **kwargs):
 
 class _SearchTree:
 
+    rollout_it = 100
+
     def __init__(self, model, horizon_generator, exploration,
                  relative_exploration=False, belief='array', belief_params={},
                  node_params={}, logger=None):
@@ -675,20 +677,22 @@ class _SearchTree:
     def random_action(self):
         return np.random.randint(self.model.n_actions)
 
-    def rollout_from_node(self, node, state, horizon):
+    def rollout_from_node(self, node, horizon):
         if horizon.is_reached():
             return 0
         else:
             full_return = 0.
             gamma = 1.
-            while not horizon.is_reached():
-                a = self.random_action()
-                new_state, o, r = self.model.sample_transition(a, state, random=False)
-                horizon.decrement(a, state, new_state, o)
-                state = new_state
-                full_return += gamma * r
-                gamma *= self.model.discount
-            node.update(full_return)
+            for _ in range(self.rollout_it):
+                state = node.belief.sample()
+                while not horizon.is_reached():
+                    a = self.random_action()
+                    new_state, o, r = self.model.sample_transition(a, state, random=False)
+                    horizon.decrement(a, state, new_state, o)
+                    state = new_state
+                    full_return += gamma * r
+                    gamma *= self.model.discount
+            node.update(full_return / self.rollout_it)
             return full_return
 
     def simulate_from_node(self, node, action=None):
@@ -715,8 +719,8 @@ class _SearchTree:
                     child.children[o] = self._observation_node_for_belief(
                         node.belief.successor(self.model, a, o))
                     # Use rollout
-                    partial_return = self.rollout_from_node(
-                        child.children[o], new_s, horizon)
+                    partial_return = self.rollout_from_node(child.children[o],
+                                                            horizon)
                 except MaxSamplesReached:
                     self.log('Maximum number of samples reached, skipping.')
                     partial_return = 0.

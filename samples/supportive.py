@@ -11,8 +11,8 @@ from htm.lib.pomdp import POMCPPolicyRunner, export_pomcp
 
 logging.getLogger().setLevel(logging.INFO)
 
-N = 50  # for warm-up
-ITERATIONS = 200
+N = 10  # for warm-up
+ITERATIONS = 1000
 EXPLORATION = 20  # 1000
 N_PARTICLES = 200
 RELATIVE_EXPLO = False  # In this case use smaller exploration
@@ -20,7 +20,7 @@ BELIEF_VALUES = False
 EXPORT_BELIEF_QUOTIENT = True
 POMCP_DESTINATION = os.path.join(os.path.dirname(__file__),
                                  '../visualization/pomcp/json/pomcp.json')
-HORIZON = 2
+HORIZON = 3
 
 
 leg_i = 'leg-{}'.format
