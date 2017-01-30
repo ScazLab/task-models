@@ -1065,7 +1065,8 @@ class POMCPPolicyRunner(object):
                 model._int_to_state(s),
                 a,
                 model._int_to_state(ns),
-                model.observations[o], r))
+                model.observations[o],
+                r))
             logger('belief: {} | {:.2f}'.format(
                 format_belief_array(belief_quotient(self.belief.array)),
                 belief_preferences(self.belief.array)[0]))
