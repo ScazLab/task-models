@@ -412,8 +412,8 @@ class SupportivePOMDP:
                 obs = self.O_NONE
             elif _s.htm == self.htm_clean:
                 obs = self.O_NONE
-                for o in enumerate(self.objects):
-                    r += self._cost_get(o)
+                for o, _ in enumerate(self.objects):
+                    r -= self._cost_get(o) * _s.has_object(o)
                 _new_s.htm = self.htm_final
                 r += self.r_final
             else:
