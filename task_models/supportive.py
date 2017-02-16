@@ -1,9 +1,9 @@
 import numpy as np
 from itertools import chain
-from htm.task import (AbstractAction, SequentialCombination,
-                      AlternativeCombination, LeafCombination,
-                      ParallelCombination)
-from htm.lib.pomdp import Horizon
+from .task import (AbstractAction, SequentialCombination,
+                   AlternativeCombination, LeafCombination,
+                   ParallelCombination)
+from .lib.pomdp import Horizon
 
 
 def unique(l):

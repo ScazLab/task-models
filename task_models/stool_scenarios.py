@@ -1,6 +1,6 @@
-from htm.task import (HierarchicalTask, SequentialCombination,
+from .task import (HierarchicalTask, SequentialCombination,
                       LeafCombination)
-from htm.task_to_pomdp import CollaborativeAction
+from .task_to_pomdp import CollaborativeAction
 
 
 # Costs

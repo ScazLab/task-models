@@ -1,9 +1,9 @@
 import numpy as np
 
-from htm.lib.pomdp import POMDP
-from htm.task import (AbstractAction, SequentialCombination,
-                      AlternativeCombination, LeafCombination,
-                      ParallelCombination)
+from .lib.pomdp import POMDP
+from .task import (AbstractAction, SequentialCombination,
+                   AlternativeCombination, LeafCombination,
+                   ParallelCombination)
 
 
 def concatenate(lists):

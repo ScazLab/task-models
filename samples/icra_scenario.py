@@ -1,7 +1,6 @@
-import json
-
-from htm.task import (HierarchicalTask, AbstractAction, SequentialCombination,
-                      ParallelCombination, AlternativeCombination, LeafCombination)
+from task_models.task import (HierarchicalTask, AbstractAction,
+                              SequentialCombination, ParallelCombination,
+                              AlternativeCombination, LeafCombination)
 
 bench_task = LeafCombination(AbstractAction('Mount Bench'))
 chair_task = LeafCombination(AbstractAction('Mount Chair'))
@@ -16,7 +15,7 @@ mount_leg_combinations = [
          LeafCombination(AbstractAction('Snap {} leg'.format(i)))
          ],
         name='Mount {} leg'.format(i))
-    for i in ['left','right']
+    for i in ['left', 'right']
     ]
 
 mount_top_combination = SequentialCombination(
@@ -42,5 +41,3 @@ workshop_task = HierarchicalTask(
          ],
         name='Available Tasks')
     )
-
-# print(json.dumps(workshop_task.as_dictionary(), indent=2))

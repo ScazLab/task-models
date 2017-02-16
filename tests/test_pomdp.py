@@ -3,7 +3,7 @@ from unittest import TestCase, skip
 
 import numpy as np
 
-from htm.lib.pomdp import (parse_value_function, parse_policy_graph, POMDP,
+from task_models.lib.pomdp import (parse_value_function, parse_policy_graph, POMDP,
                            _dump_list, _dump_1d_array, _dump_2d_array,
                            _dump_3d_array, _dump_4d_array, GraphPolicy,
                            _SearchNode, _SearchObservationNode,

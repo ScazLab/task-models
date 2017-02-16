@@ -2,10 +2,10 @@ from unittest import TestCase
 
 import numpy as np
 
-from htm.task_to_pomdp import (CollaborativeAction)
-from htm.task import (SequentialCombination, AlternativeCombination,
+from task_models.task_to_pomdp import (CollaborativeAction)
+from task_models.task import (SequentialCombination, AlternativeCombination,
                       LeafCombination, ParallelCombination)
-from htm.supportive import (_HTMToDAG, unique, SupportivePOMDP, AssembleFoot,
+from task_models.supportive import (_HTMToDAG, unique, SupportivePOMDP, AssembleFoot,
                             AssembleTopJoint, AssembleLegToTop, BringTop,
                             CONSUMES, USES, CONSUMES_SOME,
                             _SupportivePOMDPState, NHTMHorizon)

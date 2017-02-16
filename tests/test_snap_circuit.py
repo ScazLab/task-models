@@ -1,7 +1,7 @@
 from unittest import TestCase
 import numpy as np
 
-from htm.snap_circuit import (SnapCircuitState, SnapCircuitPart, PlaceAction,
+from task_models.snap_circuit import (SnapCircuitState, SnapCircuitPart, PlaceAction,
                               PartPresenceCondition,
                               NORTH, WEST, EAST, SOUTH, ORIENTATION_NAMES)
 

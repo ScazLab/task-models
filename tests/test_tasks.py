@@ -2,9 +2,9 @@ from unittest import TestCase
 
 import numpy as np
 
-from htm.action import Condition, PrePostConditionAction
-from htm.state import NDimensionalState
-from htm.task import (check_path, split_path, TaskGraph, ConjugateTaskGraph,
+from task_models.action import Condition, PrePostConditionAction
+from task_models.state import NDimensionalState
+from task_models.task import (check_path, split_path, TaskGraph, ConjugateTaskGraph,
                       AbstractAction, ParallelCombination, LeafCombination,
                       AlternativeCombination, SequentialCombination)
 

@@ -10,11 +10,11 @@ def readme():
 
 
 setup(
-    name='htm',
+    name='task_models',
     version='0.0.1',
-    description='Python implementation of hierarchical task models',
+    description='Task models for human robot collabortation',
     long_description=readme(),
-    url='',
+    url='https://github.com/ScazLab/task-models',
     author='Olivier Mangin',
     author_email='olivier.mangin@yale.edu',
     license='BSD',
@@ -27,8 +27,10 @@ setup(
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
     ],
     packages=find_packages(exclude=['tests']),
-    package_data={'htm': ['lib/bundle/pomdp-solve']},
+    package_data={'task_models': ['lib/bundle/pomdp-solve']},
     test_suite="tests.test_suite",
 )

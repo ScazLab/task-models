@@ -2,9 +2,9 @@ from unittest import TestCase
 
 import numpy as np
 
-from htm.task import (HierarchicalTask, LeafCombination, SequentialCombination,
+from task_models.task import (HierarchicalTask, LeafCombination, SequentialCombination,
                       AlternativeCombination)
-from htm.bring_next_to_pomdp import HTMToPOMDP, CollaborativeAction
+from task_models.bring_next_to_pomdp import HTMToPOMDP, CollaborativeAction
 
 
 class TestHTM2POMDP(TestCase):

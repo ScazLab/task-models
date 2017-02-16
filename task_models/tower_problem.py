@@ -1,6 +1,6 @@
-from htm.task import (HierarchicalTask, LeafCombination, SequentialCombination,
-                      AlternativeCombination)
-from htm.bring_next_to_pomdp import CollaborativeAction
+from task_models.task import (HierarchicalTask, LeafCombination,
+                              SequentialCombination, AlternativeCombination)
+from task_models.bring_next_to_pomdp import CollaborativeAction
 
 
 class TowerProblem:

@@ -1,7 +1,7 @@
 import numpy as np
 
-from htm.lib.pomdp import GraphPolicyRunner
-from htm.hold_and_release import hold_and_release_pomdp
+from task_models.lib.pomdp import GraphPolicyRunner
+from task_models.hold_and_release import hold_and_release_pomdp
 
 
 C_WAIT = 1.

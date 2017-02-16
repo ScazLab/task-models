@@ -3,10 +3,10 @@ from __future__ import print_function
 import os
 import logging
 
-from htm.task import SequentialCombination, LeafCombination
-from htm.supportive import (SupportivePOMDP, AssembleLeg, AssembleLegToTop,
-                            NHTMHorizon)
-from htm.lib.pomdp import POMCPPolicyRunner, export_pomcp
+from task_models.task import SequentialCombination, LeafCombination
+from task_models.supportive import (SupportivePOMDP, AssembleLeg,
+                                    AssembleLegToTop, NHTMHorizon)
+from task_models.lib.pomdp import POMCPPolicyRunner, export_pomcp
 
 
 logging.getLogger().setLevel(logging.INFO)

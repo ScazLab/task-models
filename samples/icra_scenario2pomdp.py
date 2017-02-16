@@ -1,8 +1,8 @@
 import os
 
-from htm.task_to_pomdp import HTMToPOMDP
-from htm.stool_scenarios import (stool_task_sequential, T_WAIT, T_ASK, T_TELL,
-                                 C_INTR)
+from task_models.task_to_pomdp import HTMToPOMDP
+from task_models.stool_scenarios import (stool_task_sequential, T_WAIT, T_ASK,
+                                         T_TELL, C_INTR)
 
 
 ## Tested scenarios:
@@ -23,7 +23,7 @@ gp = p.solve(method='grid', n_iterations=500, verbose=True)
 gp.save_as_json(os.path.join(os.path.dirname(__file__),
                              '../visualization/policy/json/test.json'))
 
-from htm.lib.pomdp import GraphPolicyBeliefRunner
+from task_models.lib.pomdp import GraphPolicyBeliefRunner
 
 pol = GraphPolicyBeliefRunner(gp, p)
 pol.save_trajectories_from_starts(
@@ -37,7 +37,7 @@ gp2.save_as_json(os.path.join(
     '../visualization/policy/json/from_beliefs.json'))
 
 
-from htm.plot import plot_beliefs
+from task_models.plot import plot_beliefs
 import matplotlib.pyplot as plt
 
 plt.interactive(True)

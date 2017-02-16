@@ -1,8 +1,8 @@
 from unittest import TestCase
 import numpy as np
 
-from htm.state import NDimensionalState
-from htm.action import Condition, PrePostConditionAction
+from task_models.state import NDimensionalState
+from task_models.action import Condition, PrePostConditionAction
 
 
 class TestCondition(TestCase):

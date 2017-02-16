@@ -1,7 +1,8 @@
 import json
 
-from htm.task import (HierarchicalTask, AbstractAction, SequentialCombination,
-                      ParallelCombination, LeafCombination)
+from task_models.task import (HierarchicalTask, AbstractAction,
+                              SequentialCombination, ParallelCombination,
+                              LeafCombination)
 
 
 take_base = LeafCombination(AbstractAction('Take base'))

@@ -2,10 +2,10 @@ from unittest import TestCase
 
 import numpy as np
 
-from htm.task import (HierarchicalTask, LeafCombination, SequentialCombination,
-                      AlternativeCombination)
-from htm.task_to_pomdp import (HTMToPOMDP, CollaborativeAction, _name_radix,
-                               _NodeToPOMDP)
+from task_models.task import (HierarchicalTask, LeafCombination, SequentialCombination,
+                              AlternativeCombination)
+from task_models.task_to_pomdp import (HTMToPOMDP, CollaborativeAction, _name_radix,
+                                       _NodeToPOMDP)
 
 
 class TestNameRadix(TestCase):

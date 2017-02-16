@@ -2,9 +2,9 @@ import json
 
 import numpy as np
 
-from htm.snap_circuit import (SnapCircuitState, SnapCircuitPart, PlaceAction,
+from task_models.snap_circuit import (SnapCircuitState, SnapCircuitPart, PlaceAction,
                               NORTH, EAST)
-from htm.task import TaskGraph
+from task_models.task import TaskGraph
 
 
 BOARD = (7, 10)

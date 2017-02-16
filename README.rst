@@ -1,15 +1,15 @@
-========================
-Hierarchical task models
-========================
+==========================================
+Task models for human robot collabortation
+==========================================
 
-Tools to manipulate and use hierarchical task models for human robot collaboration.
+Tools to manipulate and use task models for human robot collaboration.
 
-Started as a re-implementation of work from Bradley Hayes:
+Started as a re-implementation of work from Bradley Hayes on hierarchical task models:
 
     [Hayes2014] Hayes, Bradley and Scassellati, Brian **Discovering task constraints through observation and active learning** *Intelligent Robots and Systems (IROS 2014)*, 2014 IEEE/RSJ International Conference on (2014)
 
 Prerequisites
-------
+-------------
 
 This package requires a binary from Anthony Cassandra's POMDP solver. Please visit `<http://www.pomdp.org/>`_ for any matter related to the POMDP solver.
 

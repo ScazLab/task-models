@@ -1,8 +1,8 @@
 import os
 
-from htm.lib.pomdp import GraphPolicyBeliefRunner
-from htm.bring_next_to_pomdp import HTMToPOMDP
-from htm.tower_problem import TowerProblem
+from task_models.lib.pomdp import GraphPolicyBeliefRunner
+from task_models.bring_next_to_pomdp import task_modelsToPOMDP
+from task_models.tower_problem import TowerProblem
 
 
 # 1  3  5
@@ -18,9 +18,10 @@ orders_medium = [
     [2, 3, 0, 1, 4, 5],
     [2, 3, 4, 5, 0, 1],
     ]
+
 task_medium = tp.task_from_orders(
-        orders_medium,
-        names=['-'.join([str(i) for i in o]) for o in orders_medium])
+    orders_medium,
+    names=['-'.join([str(i) for i in o]) for o in orders_medium])
 h2p = HTMToPOMDP(2., 8., 5., tp.parts, end_reward=50., loop=False)
 
 task = task_medium

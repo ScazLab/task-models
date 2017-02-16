@@ -1,9 +1,11 @@
 import os
 
-from htm.task import (HierarchicalTask, SequentialCombination,
+from task_models.task import (HierarchicalTask, SequentialCombination,
                       AlternativeCombination, LeafCombination,
                       ParallelCombination)
-from htm.task_to_pomdp import CollaborativeAction, HTMToPOMDP
+from task_models.task_to_pomdp import CollaborativeAction, HTMToPOMDP
+
+
 # Costs
 T_WAIT = 1.
 T_COMM = 2.
@@ -63,7 +65,7 @@ gp = p.solve(method='grid', n_iterations=500, verbose=True)
 gp.save_as_json(os.path.join(os.path.dirname(__file__),
                              '../visualization/policy/json/test.json'))
 
-from htm.lib.pomdp import GraphPolicyBeliefRunner
+from task_models.lib.pomdp import GraphPolicyBeliefRunner
 
 pol = GraphPolicyBeliefRunner(gp, p)
 pol.save_trajectories_from_starts(
@@ -76,7 +78,7 @@ gp2.save_as_json(
                  '../visualization/policy/json/from_beliefs.json'))
 
 
-from htm.plot import plot_beliefs
+from task_models.plot import plot_beliefs
 import matplotlib.pyplot as plt
 
 plt.interactive(True)

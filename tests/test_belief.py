@@ -3,7 +3,7 @@ from unittest import TestCase
 
 import numpy as np
 
-from htm.lib.belief import ArrayBelief, ParticleBelief
+from task_models.lib.belief import ArrayBelief, ParticleBelief
 
 
 class BeliefBaseTest(object):

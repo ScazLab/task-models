@@ -3,11 +3,11 @@ import os
 import json
 from heapq import heappush, heappop
 
-from htm.lib.pomdp import GraphPolicyBeliefRunner, POMCPPolicyRunner
-from htm.task_to_pomdp import HTMToPOMDP
-from htm.stool_scenarios import (stool_task_sequential, T_WAIT, T_ASK, T_TELL,
-                                 C_INTR)
-from htm.plot import plot_beliefs
+from task_models.lib.pomdp import GraphPolicyBeliefRunner, POMCPPolicyRunner
+from task_models.task_to_pomdp import HTMToPOMDP
+from task_models.stool_scenarios import (stool_task_sequential, T_WAIT, T_ASK,
+                                         T_TELL, C_INTR)
+from task_models.plot import plot_beliefs
 
 
 def push_last(queue, value, x):
