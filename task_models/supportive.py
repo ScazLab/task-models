@@ -488,6 +488,9 @@ class NHTMHorizon(Horizon):
         if _new_s.is_final():
             self.n = 0
 
+    def copy(self):
+        return NHTMHorizon(self.model, self.n)
+
     @classmethod
     def generator(cls, model, n=3):
         return cls._Generator(cls, model, n)

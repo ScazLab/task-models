@@ -603,6 +603,9 @@ class Horizon(object):
     def decrement(self, a, s, new_s, o):
         raise NotImplementedError
 
+    def copy(self):
+        raise NotImplementedError
+
     @classmethod
     def generator(cls, model, **parameters):
         raise NotImplementedError
@@ -618,6 +621,9 @@ class NTransitionsHorizon(Horizon):
 
     def decrement(self, a, s, new_s, o):
         self.n -= 1
+
+    def copy(self):
+        return NTransitionsHorizon(self.n)
 
     @classmethod
     def generator(cls, model, n=100):
@@ -682,18 +688,23 @@ class _SearchTree:
             return 0
         else:
             full_return = 0.
-            gamma = 1.
             for _ in range(self.rollout_it):
                 state = node.belief.sample()
-                while not horizon.is_reached():
-                    a = self.random_action()
-                    new_state, o, r = self.model.sample_transition(a, state, random=False)
-                    horizon.decrement(a, state, new_state, o)
-                    state = new_state
-                    full_return += gamma * r
-                    gamma *= self.model.discount
-            node.update(full_return / self.rollout_it)
+                full_return += self._one_rollout_from_node(state, horizon.copy())
+            node.update(full_return / self.rollout_it)  # Only counts one visit
             return full_return
+
+    def _one_rollout_from_node(self, state, horizon):
+        gamma = 1.
+        full_return = 0.
+        while not horizon.is_reached():
+            a = self.random_action()
+            new_state, o, r = self.model.sample_transition(a, state)
+            horizon.decrement(a, state, new_state, o)
+            state = new_state
+            full_return += gamma * r
+            gamma *= self.model.discount
+        return full_return
 
     def simulate_from_node(self, node, action=None):
         state = node.belief.sample()
@@ -711,7 +722,7 @@ class _SearchTree:
                     exploration=self.exploration,
                     relative_exploration=self.relative_explo)
             child = node.safe_get_child(a)
-            new_s, o, r = self.model.sample_transition(a, state, random=False)
+            new_s, o, r = self.model.sample_transition(a, state)
             horizon.decrement(a, state, new_s, o)
             if o not in child.children:
                 try:

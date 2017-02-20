@@ -535,6 +535,7 @@ class TestSearchTree(TestCase):
         self.start[-1] = 1.
         self.model = _FakeModel(self.start, 3, 2)
         self.tree = _SearchTree(self.model, 3, 1., node_params={'alpha': 0.})
+        self.tree.rollout_it = 1
 
     def test_belief_type(self):
         tree = _SearchTree(self.model, 3, 1., belief='array')
@@ -573,21 +574,21 @@ class TestSearchTree(TestCase):
 
     def test_rollout_from_node_with_horizon_0_is_0(self):
         h = NTransitionsHorizon(0)
-        self.assertEqual(self.tree.rollout_from_node(self.tree.root, 1, h), 0)
+        self.assertEqual(self.tree._one_rollout_from_node(1, h), 0)
         self.assertEqual(len(self.model.transitions_history), 0)
 
     def test_rollout_from_node_with_horizon_1_is_reward(self):
         r = 3.2
         h = NTransitionsHorizon(1)
         self.model.transitions = [(1, 0, r)]
-        self.assertEqual(self.tree.rollout_from_node(self.tree.root, 2, h), r)
+        self.assertEqual(self.tree._one_rollout_from_node(2, h), r)
         self.assertEqual(len(self.model.transitions_history), 1)
         self.assertEqual(self.model.transitions_history[0][1], 2)
 
     def test_rollout_from_node_with_horizon_2(self):
         h = NTransitionsHorizon(2)
         self.model.transitions = [(1, None, 11.), (2, None, 10.)]
-        self.assertEqual(self.tree.rollout_from_node(self.tree.root, 3, h), 20)
+        self.assertEqual(self.tree._one_rollout_from_node(3, h), 20)
         self.assertEqual(len(self.model.transitions_history), 2)
         self.assertEqual(self.model.transitions_history[0][1], 3)
         self.assertEqual(self.model.transitions_history[1][1], 1)
@@ -663,6 +664,16 @@ class TestSearchTree(TestCase):
         self.assertEqual(self.tree.get_node([1, 1, a1, 0])._avg.total_value, 5.)
         self.assertEqual(self.tree.get_node([1, 0])._avg.total_value, 7.)
 
+    def test_rollout_from_node_multiple_rollouts(self):
+        self.tree.rollout_it = 10
+        self.model.transitions = [(1, 1, 11.)] * 10
+        belief2 = np.zeros((10))
+        belief2[1] = 1.
+        self.tree.rollout_from_node(self.tree.root,
+                                    NTransitionsHorizon(n=1))
+        self.assertEqual(len(self.model.transitions_history), 10)
+        self.assertEqual(self.tree.root.n_simulations, 1)
+
 
 class TestPOMCPPolicyRunner(TestCase):
 
@@ -678,6 +689,7 @@ class TestPOMCPPolicyRunner(TestCase):
                            actions=set(['a', 'b', 'c']),
                            observations=[True, False])
         self.policy = POMCPPolicyRunner(self.pomdp, iterations=20, horizon=5)
+        self.policy.tree.rollout_it = 10
 
     def test_get_action_is_action(self):
         a = self.policy.get_action()

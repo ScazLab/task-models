@@ -253,14 +253,15 @@ class TestSupportivePOMDP(TestCase):
         """Same note as test_populate_conditions."""
         self.assertEqual(len(self.p.actions), self.p.n_actions)
         self.assertEqual(self.p.actions, [
-            'wait', 'hold', 'ask hold',
+            'wait', 'hold H', 'hold V', 'ask hold',
             'bring top',
             'bring joints', 'clear joints',
             'bring leg',
             'bring screwdriver', 'clear screwdriver',
             'bring screws', 'clear screws'])
         self.assertEqual(self.p.actions[self.p.A_WAIT], 'wait')
-        self.assertEqual(self.p.actions[self.p.A_HOLD], 'hold')
+        self.assertEqual(self.p.actions[self.p.A_HOLD_H], 'hold H')
+        self.assertEqual(self.p.actions[self.p.A_HOLD_V], 'hold V')
         self.assertEqual(self.p.actions[self.p.A_ASK], 'ask hold')
 
     def test_observations(self):
@@ -330,27 +331,30 @@ class TestSupportivePOMDP(TestCase):
         s, o, r = p.sample_transition(p.A_WAIT, _s.to_int())
         self.assertEqual(r, 10.)
         # - Hold
-        s, o, r = p.sample_transition(p.A_HOLD, _s.to_int())
+        s, o, r = p.sample_transition(p.A_HOLD_V, _s.to_int())
         self.assertEqual(r, 10. - p.cost_hold + 10.)
+        # - Wrong Hold
+        s, o, r = p.sample_transition(p.A_HOLD_H, _s.to_int())
+        self.assertEqual(r, 10. - p.cost_hold)
         # No preference for holding
         _s.set_preference(0, 0)
         # - Wait
         s, o, r = p.sample_transition(p.A_WAIT, _s.to_int())
         self.assertEqual(r, 10.)
         # - Hold
-        s, o, r = p.sample_transition(p.A_HOLD, _s.to_int())
+        s, o, r = p.sample_transition(p.A_HOLD_V, _s.to_int())
         self.assertEqual(r, 10. - p.cost_hold)
         # Not required in task (Bring-top is first node in self.p)
         _s = self.p._int_to_state()
         _s.set_object(self.p.objects.index('top'), 1)
         _s.set_preference(0, 1)
-        s, o, r = self.p.sample_transition(self.p.A_HOLD, _s.to_int())
+        s, o, r = self.p.sample_transition(self.p.A_HOLD_V, _s.to_int())
         self.assertEqual(r, 10. - p.cost_hold)
         # Does not apply on final node
         _s = self.p._int_to_state()
         _s.htm = self.p.htm_final
         _s.set_preference(0, 1)
-        s, o, r = self.p.sample_transition(self.p.A_HOLD, _s.to_int())
+        s, o, r = self.p.sample_transition(self.p.A_HOLD_V, _s.to_int())
         self.assertEqual(r, -p.cost_hold)
 
     def test_sample_transition_action_failure(self):
