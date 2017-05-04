@@ -687,12 +687,13 @@ class _SearchTree:
         if horizon.is_reached():
             return 0
         else:
-            full_return = 0.
+            returns = 0.
             for _ in range(self.rollout_it):
                 state = node.belief.sample()
-                full_return += self._one_rollout_from_node(state, horizon.copy())
-            node.update(full_return / self.rollout_it)  # Only counts one visit
-            return full_return
+                returns += self._one_rollout_from_node(state, horizon.copy())
+            returns /= self.rollout_it  # Avg over rollouts
+            node.update(returns)  # Only counts one visit
+            return returns
 
     def _one_rollout_from_node(self, state, horizon):
         gamma = 1.
