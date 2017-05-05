@@ -803,7 +803,7 @@ class _ValueAverage(object):
 
     def update(self, value):
         self.total_value = ((self.total_value + value) * (1 - self.alpha)
-                            + self.alpha * self.n_simulations * value)
+                            + self.alpha * (self.n_simulations + 1) * value)
         self.n_simulations += 1
 
 

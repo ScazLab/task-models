@@ -713,3 +713,40 @@ class TestPOMCPPolicyRunner(TestCase):
         h = policy.tree.horizon_gen()
         self.assertIsInstance(h, NTransitionsHorizon)
         self.assertEqual(h.n, 13)
+
+
+class Test_ValueAverage(TestCase):
+
+    def setUp(self):
+        self.avg = _ValueAverage(alpha=.1)
+
+    def test_n_simulations(self):
+        self.assertEqual(self.avg.n_simulations, 0)
+        self.avg.update(3)
+        self.assertEqual(self.avg.n_simulations, 1)
+        self.avg.update(2)
+        self.assertEqual(self.avg.n_simulations, 2)
+        self.avg.update(1)
+        self.assertEqual(self.avg.n_simulations, 3)
+
+    def test_is_average_for_alpha_equal_zero(self):
+        avg = _ValueAverage(0.)
+        a = np.random.random(10)
+        for i, x in enumerate(a):
+            avg.update(x)
+            self.assertAlmostEqual(avg.value, np.average(a[:i + 1]))
+
+    def test_is_last_for_alpha_equal_one(self):
+        avg = _ValueAverage(1.)
+        a = np.random.random(10)
+        for x in a:
+            avg.update(x)
+            self.assertAlmostEqual(avg.value, x)
+
+    def test_increment_moves_towards_value(self):
+        a = np.random.random(10)
+        for x in a:
+            self.avg.update(x)
+        val = self.avg.value
+        self.avg.update(5)
+        self.assertLessEqual(np.abs(self.avg.value - 5), np.abs(val - 5))
