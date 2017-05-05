@@ -3,13 +3,12 @@ from unittest import TestCase, skip
 
 import numpy as np
 
-from task_models.lib.pomdp import (parse_value_function, parse_policy_graph, POMDP,
-                           _dump_list, _dump_1d_array, _dump_2d_array,
-                           _dump_3d_array, _dump_4d_array, GraphPolicy,
-                           _SearchNode, _SearchObservationNode,
-                           _SearchActionNode, _SearchTree, ArrayBelief,
-                           ParticleBelief, POMCPPolicyRunner,
-                           NTransitionsHorizon, Horizon)
+from task_models.lib.pomdp import (
+    parse_value_function, parse_policy_graph, POMDP, GraphPolicy,
+    _dump_list, _dump_1d_array, _dump_2d_array, _dump_3d_array, _dump_4d_array,
+    _SearchNode, _SearchObservationNode, _SearchActionNode, _SearchTree,
+    ArrayBelief, ParticleBelief, POMCPPolicyRunner, NTransitionsHorizon,
+    Horizon, _ValueAverage)
 
 
 TEST_VF = os.path.join(os.path.dirname(__file__), 'samples/example.alpha')
@@ -480,21 +479,21 @@ class TestSearchObservationNode(TestCase):
                           'node': None,
                           'observations': ['a', 'c'],
                           'children': [
-                                {'belief': [],
-                                 'action': 'z',
-                                 'actions': model.actions,
-                                 'node': None,
-                                 'observations': [],
-                                 'children': [],
-                                 },
-                                {'belief': [],
-                                 'action': 'x',
-                                 'actions': model.actions,
-                                 'node': None,
-                                 'observations': [],
-                                 'children': [],
-                                 },
-                              ],
+                            {'belief': [],
+                             'action': 'z',
+                             'actions': model.actions,
+                             'node': None,
+                             'observations': [],
+                             'children': [],
+                             },
+                            {'belief': [],
+                             'action': 'x',
+                             'actions': model.actions,
+                             'node': None,
+                             'observations': [],
+                             'children': [],
+                             },
+                            ],
                           })
 
 
