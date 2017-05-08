@@ -105,6 +105,11 @@ class TestDumpArrays(TestCase):
 
 class TestPOMDP(TestCase):
 
+    seed = 0  # Use a seed for the pomdp-solve executable to get deterministic
+    # results. Otherwise the binary sometime returns malformed policy graphs.
+    # This is not ideal but the goal is to test the interface to the binary,
+    # not its reliability to find a solution.
+
     def setUp(self):
         s = 3
         a = 4
@@ -230,11 +235,11 @@ class TestPOMDP(TestCase):
 
     def test_solver_runs(self):
         p = POMDP(self.T, self.O, self.R, self.start, .8)
-        p.solve(n_iterations=5, timeout=1)
+        p.solve(n_iterations=5, timeout=1, seed=self.seed)
 
     def test_solver_runs_grid(self):
         p = POMDP(self.T, self.O, self.R, self.start, .8)
-        p.solve(n_iterations=5, timeout=1, method='grid')
+        p.solve(n_iterations=5, timeout=1, method='grid', seed=self.seed)
 
     def test_belief_update_is_proba(self):
         p = POMDP(self.T, self.O, self.R, self.start, .8)

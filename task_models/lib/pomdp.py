@@ -375,9 +375,10 @@ class POMDP:
             actions, vf = parse_value_function(vf)
         with open(policy_graph_file, 'r') as pf:
             actions2, pg = parse_policy_graph(pf)
-        assert(actions == actions2)
-        assert(max(actions) < len(self.actions))
+        assert(actions == actions2)  # policy and value function share actions
+        assert(max(actions) < len(self.actions))  # actions are well-formed
         assert(max([t for ts in pg for t in ts if t is not None]) <= len(pg))
+        # (transitions are well-formed)
         action_names = [self.actions[a] for a in actions]
         return GraphPolicy(action_names, self.observations, pg, vf,
                            start=self.start)
