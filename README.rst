@@ -1,7 +1,8 @@
 ==========================================
-Task models for human robot collaboration .. image:: https://travis-ci.org/ScazLab/task-models.svg?branch=master
-    :target: https://travis-ci.org/ScazLab/task-models
+Task models for human robot collaboration
 ==========================================
+.. image:: https://travis-ci.org/ScazLab/task-models.svg?branch=master
+    :target: https://travis-ci.org/ScazLab/task-models
 
 Tools to manipulate and use task models for human robot collaboration.
 
