@@ -6,9 +6,9 @@ Task models for human robot collaboration
 
 Tools to manipulate and use task models for human robot collaboration.
 
-Started as a re-implementation of work from Bradley Hayes on hierarchical task models:
+For more information and citations, please use:
 
-    [Hayes2014] Hayes, Bradley and Scassellati, Brian **Discovering task constraints through observation and active learning** *Intelligent Robots and Systems (IROS 2014)*, 2014 IEEE/RSJ International Conference on (2014)
+    [Roncone2017] Roncone Alessandro, Mangin Olivier, Scassellati Brian **Transparent Role Assignment and Task Allocation in Human Robot Collaboration** *IEEE International Conference on Robotics and Automation (ICRA 2017)*, Singapore.
 
 Prerequisites
 -------------
