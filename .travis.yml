@@ -1,14 +1,19 @@
 language: python
 python:
-  - "2.7"
-  - "3.3"
-  - "3.4"
-  - "3.5"
-  - "3.6"
+- '2.7'
+- '3.3'
+- '3.4'
+- '3.5'
+- '3.6'
+- '3.7'
 cache: pip
 install:
-  - git clone https://github.com/cmansley/pomdp-solve.git
-  - pushd pomdp-solve && ./configure --prefix=/usr && make && sudo make install && popd
-  - pip install -r requirements.txt
+- git clone https://github.com/cmansley/pomdp-solve.git
+- pushd pomdp-solve && ./configure --prefix=/usr && make && sudo make install && popd
+- pip install -r requirements.txt
 script:
-  - python setup.py test
+- python setup.py test
+notifications:
+  email: false
+  slack:
+    secure: qafjjNMpaqFLC1SUfsCdQqGfsx8Ya+q3zIndgLwHhrfNgkC2Po1vq6wiZtnaCZ6OR49AxHlDQQC4HHzpCRWapbRC1qsBSJ/PkW/lsz8LmJgsXL5JhFfcGOq2oGwH+N4dRki5zeWJVvjAvr0RE2x9T4f2f8EgCUXevbg6+tTPotLUPr+gMZn8YdXb/yyBNWTiVgX1jrgI8Rnd5ubhB1GnzJUofQiCpFJ2XOOIsy67Lwk3JCZgu2nWOq0lCwla/qVLtGohbsSFe01wMIhp5cjvppkAT7aszL3oA3ZS1To60trpVhfoss7aphb5JxkPjVR1DclFPnMxhli72Tj+f8VnhVkGUozIkl+KqkWYdbEfKNC1DnTqFSktns5LoKlxa0f3HD0nctPjo5L2zEmuXiI91KfN6n4Ft78eGQBrXjxTU4cvaAw//502xcXIkHjgk7ZUdgNKf2VBTlIpDjjrel7I/VM/f4Zr9zaHWgomwVxlE6VZMW5BZk9bBjx4tgPJhBSYO4WO3CNvOaEGRFksSrXyyp1hZzBPtHXwrpabeilkBqAmnZbJBof3ccgENaC7XHZBWjxD1ZMdenpEQErvXwbwd3CBEZLHvBwII22kH5udP0S2adBc8OuXJkUBcsccHTvuiH0XAOxTJQTAOQQF/S5S4A+t/lLitAe01DKs6cnNzvM=
