@@ -6,7 +6,7 @@ Task models for human robot collaboration
 
 Tools to manipulate and use task models for human robot collaboration.
 
-For more information and citations, please use:
+If you are using this software and or one of its components, we warmly recommend you cite the following paper:
 
     [Roncone2017] Roncone Alessandro, Mangin Olivier, Scassellati Brian **Transparent Role Assignment and Task Allocation in Human Robot Collaboration** *IEEE International Conference on Robotics and Automation (ICRA 2017)*, Singapore.
 
