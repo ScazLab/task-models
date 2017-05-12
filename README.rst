@@ -4,7 +4,8 @@ Task models for human robot collaboration
 .. image:: https://travis-ci.org/ScazLab/task-models.svg?branch=master
     :target: https://travis-ci.org/ScazLab/task-models
 
-.. image:: https://api.codacy.com/project/badge/Grade/7625ee80663049fd8cb8727c98f6aecc    :target: https://www.codacy.com/app/Baxter-collaboration/task-models?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ScazLab/task-models&amp;utm_campaign=Badge_Grade
+.. image:: https://api.codacy.com/project/badge/Grade/7625ee80663049fd8cb8727c98f6aecc
+    :target: https://www.codacy.com/app/Baxter-collaboration/task-models?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ScazLab/task-models&amp;utm_campaign=Badge_Grade
 
 Tools to manipulate and use task models for human robot collaboration.
 
