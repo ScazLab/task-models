@@ -32,3 +32,8 @@ Here are some instructions on how to compile and install the solver properly (as
 
 
 Now you should have :code:`pomdp-solve` installed in your local path, and it should be available for the python package to be used.
+
+ICRA 2017
+---------
+
+To generate the policy from the experiment in [Roncone2017], please use the script :code:`samples/icra_scenario2pomdp.py`. The script will generate the corresponding POMDP model, solve it with Anthony Cassandra's POMDP solver and store the corresponding policy under :code:`visualization/policy/json/icra.json`. To run the full experiment on the baxter robot, please refer to `[github.com/ScazLab/baxter_collaboration] <https://github.com/ScazLab/baxter_collaboration>`_.

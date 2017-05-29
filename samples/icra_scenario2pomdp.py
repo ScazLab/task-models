@@ -12,6 +12,7 @@ LOOP = False
 # 2. with full sequence of sequential actions
 # R_END = 100
 # LOOP = True
+PLOT = False
 
 ## Convert the task into a POMDP
 
@@ -21,7 +22,7 @@ p = h2p.task_to_pomdp(stool_task_sequential)
 
 gp = p.solve(method='grid', n_iterations=500, verbose=True)
 gp.save_as_json(os.path.join(os.path.dirname(__file__),
-                             '../visualization/policy/json/test.json'))
+                             '../visualization/policy/json/icra.json'))
 
 from task_models.lib.pomdp import GraphPolicyBeliefRunner
 
@@ -37,13 +38,6 @@ gp2.save_as_json(os.path.join(
     '../visualization/policy/json/from_beliefs.json'))
 
 
-from task_models.plot import plot_beliefs
-import matplotlib.pyplot as plt
-
-plt.interactive(True)
-plt.close('all')
-
-
 def plot_values(values, actions, p):
     b = values - values.min()
     b /= b.max(-1)[:, None]
@@ -53,10 +47,20 @@ def plot_values(values, actions, p):
     plt.colorbar(plot)
 
 
-plt.figure()
-plot_values(gp.values, gp.actions, p)
-plt.title('Policy values')
+if PLOT:
+    from task_models.plot import plot_beliefs
+    import matplotlib.pyplot as plt
 
-plt.figure()
-plot_values(gp2.values, gp2.actions, p)
-plt.title('Belief trajectory')
+    plt.interactive(True)
+    plt.close('all')
+
+
+
+
+    plt.figure()
+    plot_values(gp.values, gp.actions, p)
+    plt.title('Policy values')
+
+    plt.figure()
+    plot_values(gp2.values, gp2.actions, p)
+    plt.title('Belief trajectory')
