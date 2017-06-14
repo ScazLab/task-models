@@ -16,14 +16,13 @@ If you are using this software and or one of its components, we warmly recommend
 Prerequisites
 -------------
 
-This package requires a binary from Anthony Cassandra's POMDP solver. Please visit `pomdp.org <http://www.pomdp.org/>`_ for any matter related to the POMDP solver.
+This package requires a binary from Anthony Cassandra's POMDP solver. Please visit `pomdp.org <http://www.pomdp.org/>`_ for any matter related to the POMDP solver. In order to be using the _simplex_ finite grid method, the version from `cmansley <https://github.com/cmansley/pomdp-solve>`_ needs to be installed that contains a fix to the original code.
 
 Here are some instructions on how to compile and install the solver properly (assuming that :code:`~/src` is the directory in which you usually place your code)::
 
    cd ~/src
-   wget www.pomdp.org/code/pomdp-solve-5.4.tar.gz
-   tar -xvzf pomdp-solve-5.4.tar.gz
-   cd pomdp-solve-5.4/
+   git clone https://github.com/cmansley/pomdp-solve
+   cd pomdp-solve
    mkdir build
    cd build/
    ../configure --prefix=$HOME/.local
