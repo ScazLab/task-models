@@ -3,7 +3,7 @@ from itertools import chain
 from .task import (AbstractAction, SequentialCombination,
                    AlternativeCombination, LeafCombination,
                    ParallelCombination)
-from .lib.pomdp import Horizon
+from .lib.pomcp import Horizon
 
 
 def unique(l):
