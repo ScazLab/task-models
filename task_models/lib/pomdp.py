@@ -800,11 +800,11 @@ class _ValueAverage(object):
     @property
     def value(self):
         return 0. if self.n_simulations == 0 \
-                else self.total_value / self.n_simulations
+            else self.total_value / self.n_simulations
 
     def update(self, value):
-        self.total_value = ((self.total_value + value) * (1 - self.alpha)
-                            + self.alpha * (self.n_simulations + 1) * value)
+        self.total_value = ((self.total_value + value) * (1 - self.alpha) +
+                            self.alpha * (self.n_simulations + 1) * value)
         self.n_simulations += 1
 
 
