@@ -1101,22 +1101,19 @@ class AsyncPOMCPPolicyRunner(POMCPPolicyRunner):
             self._node = tree.root
             self._action = None
             self._done = False
-            self._done_exploring = threading.Event()
-            self._done_exploiting = threading.Event()
-            self._done_exploiting.set()
+            self._lock = threading.Lock()
+
+        def _stop(self):
+            self._done = True
 
         def stop(self):
-            self._done = True
-            self._done_exploiting.set()
+            self.execute(self._stop)
 
         def execute(self, fun, *args, **kwargs):
             """Waits until current exploration is done and execute fun.
             """
-            self._done_exploring.wait()
-            self._done_exploiting.clear()
-            result = fun(*args, **kwargs)
-            self._done_exploiting.set()
-            return result
+            with self._lock:
+                return fun(*args, **kwargs)
 
         def set_node(self, node):
             self._node = node
@@ -1129,11 +1126,11 @@ class AsyncPOMCPPolicyRunner(POMCPPolicyRunner):
             self.tree.simulate_from_node(self._node, action=self._action)
 
         def run(self):
-            while not self._done:
-                self._done_exploring.clear()
-                self.explore()
-                self._done_exploring.set()
-                self._done_exploiting.wait()
+            done = False
+            while not done:
+                with self._lock:
+                    self.explore()
+                    done = self._done
 
     def __init__(self, *args, **kwargs):
         super(AsyncPOMCPPolicyRunner, self).__init__(*args, **kwargs)
