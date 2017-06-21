@@ -587,10 +587,10 @@ class AsyncPOMCPPolicyRunner(POMCPPolicyRunner):
 
 
 def export_pomcp(policy, destination, belief_as_quotient=False):
+    model = policy.tree.model
     if belief_as_quotient:
         dic = {}
         FLAG = '####'
-        model = policy.tree.model
 
         def to_dict(node):
             if isinstance(node, _SearchObservationNode):
