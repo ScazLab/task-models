@@ -8,6 +8,7 @@ import numpy as np
 
 from .belief import (ArrayBelief, ParticleBelief, MaxSamplesReached,
                      format_belief_array)
+from .multiprocess import repeat
 
 
 class Horizon(object):
@@ -64,13 +65,13 @@ def _null_logger(*args, **kwargs):
     pass
 
 
-class _SearchTree:
+class _SearchTree(object):
 
     rollout_it = 100
 
     def __init__(self, model, horizon_generator, exploration,
                  relative_exploration=False, belief='array', belief_params={},
-                 node_params={}, logger=None):
+                 node_params={}, logger=None, multiprocess=False):
         self._belief = belief
         self._belief_params = belief_params
         self.model = model
@@ -80,6 +81,7 @@ class _SearchTree:
         self.exploration = exploration
         self.relative_explo = relative_exploration
         self.log = _null_logger if logger is None else logger
+        self.multiprocess = multiprocess
 
     def _belief_start(self):
         if self._belief == 'array':
@@ -112,15 +114,23 @@ class _SearchTree:
         if horizon.is_reached():
             return 0
         else:
-            returns = 0.
-            for _ in range(self.rollout_it):
-                state = node.belief.sample()
-                returns += self._one_rollout_from_node(state, horizon.copy())
-            returns /= self.rollout_it  # Avg over rollouts
-            node.update(returns)  # Only counts one visit
-            return returns
 
-    def _one_rollout_from_node(self, state, horizon):
+            def one_rollout():
+                return self._one_rollout_from_belief(node.belief,
+                                                     horizon.copy())
+
+            if self.multiprocess:
+                returns = repeat(one_rollout, self.rollout_it)
+            else:
+                returns = [one_rollout() for _ in range(self.rollout_it)]
+            avg_return = sum(returns) / self.rollout_it  # Avg over rollouts
+            node.update(avg_return)  # Only counts one visit
+            return avg_return
+
+    def _one_rollout_from_belief(self, belief, horizon):
+        return self._one_rollout_from_state(belief.sample(), horizon)
+
+    def _one_rollout_from_state(self, state, horizon):
         gamma = 1.
         full_return = 0.
         while not horizon.is_reached():
@@ -188,7 +198,7 @@ class _ObservationLookupSearchTree(_SearchTree):
 
     def __init__(self, model, horizon, exploration,
                  relative_exploration=False, belief='array', belief_params={},
-                 node_params={}, logger=None):
+                 node_params={}, logger=None, multiprocess=False):
         self._obs_nodes = {}  # used in super for root initialization
         if belief == 'particle':
             raise ValueError(
@@ -197,7 +207,7 @@ class _ObservationLookupSearchTree(_SearchTree):
             model, horizon, exploration,
             relative_exploration=relative_exploration,
             belief=belief, belief_params={},
-            node_params=node_params, logger=logger)
+            node_params=node_params, logger=logger, multiprocess=multiprocess)
 
     def _observation_node_for_belief(self, b):
         # Returns node for given belief, creating one if none exists
@@ -415,7 +425,7 @@ class POMCPPolicyRunner(object):
     def __init__(self, model, particles=20, iterations=100, horizon=100,
                  exploration=None, relative_exploration=False,
                  belief_values=False, belief='array', belief_params={},
-                 logger=None):
+                 logger=None, multiprocess_rollouts=True):
         if logger is None:
             from logging import warning as logger
         if exploration is None:
@@ -431,7 +441,8 @@ class POMCPPolicyRunner(object):
         self.tree = tree_class(model, horizon_generator, exploration,
                                relative_exploration=relative_exploration,
                                belief=belief, belief_params=belief_params,
-                               logger=logger)
+                               logger=logger,
+                               multiprocess=multiprocess_rollouts)
         self.iterations = iterations
         self._reset()
 

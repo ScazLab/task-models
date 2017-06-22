@@ -265,23 +265,23 @@ class TestSearchTree(TestCase):
         self.assertIsInstance(n, _SearchObservationNode)
         np.testing.assert_array_equal(n.belief.array, b)
 
-    def test_rollout_from_node_with_horizon_0_is_0(self):
+    def test_rollout_from_state_with_horizon_0_is_0(self):
         h = NTransitionsHorizon(0)
-        self.assertEqual(self.tree._one_rollout_from_node(1, h), 0)
+        self.assertEqual(self.tree._one_rollout_from_state(1, h), 0)
         self.assertEqual(len(self.model.transitions_history), 0)
 
-    def test_rollout_from_node_with_horizon_1_is_reward(self):
+    def test_rollout_from_state_with_horizon_1_is_reward(self):
         r = 3.2
         h = NTransitionsHorizon(1)
         self.model.transitions = [(1, 0, r)]
-        self.assertEqual(self.tree._one_rollout_from_node(2, h), r)
+        self.assertEqual(self.tree._one_rollout_from_state(2, h), r)
         self.assertEqual(len(self.model.transitions_history), 1)
         self.assertEqual(self.model.transitions_history[0][1], 2)
 
-    def test_rollout_from_node_with_horizon_2(self):
+    def test_rollout_from_state_with_horizon_2(self):
         h = NTransitionsHorizon(2)
         self.model.transitions = [(1, None, 11.), (2, None, 10.)]
-        self.assertEqual(self.tree._one_rollout_from_node(3, h), 20)
+        self.assertEqual(self.tree._one_rollout_from_state(3, h), 20)
         self.assertEqual(len(self.model.transitions_history), 2)
         self.assertEqual(self.model.transitions_history[0][1], 3)
         self.assertEqual(self.model.transitions_history[1][1], 1)
@@ -367,8 +367,20 @@ class TestSearchTree(TestCase):
         self.assertEqual(len(self.model.transitions_history), 10)
         self.assertEqual(self.tree.root.n_simulations, 1)
 
+    def test_rollout_from_node_multiple_rollouts_multiprocess(self):
+        self.tree.multiprocess = True
+        self.tree.rollout_it = 10
+        self.model.transitions = [(1, 1, 11.)] * 10
+        belief2 = np.zeros((10))
+        belief2[1] = 1.
+        self.tree.rollout_from_node(self.tree.root,
+                                    NTransitionsHorizon(n=1))
+        self.assertEqual(self.tree.root.n_simulations, 1)
+
 
 class TestPOMCPPolicyRunner(TestCase):
+
+    multiprocess = False
 
     def setUp(self):
         s = 4
@@ -381,7 +393,8 @@ class TestPOMCPPolicyRunner(TestCase):
         self.pomdp = POMDP(T, O, R, start, 1, states=range(4),
                            actions=set(['a', 'b', 'c']),
                            observations=[True, False])
-        self.policy = POMCPPolicyRunner(self.pomdp, iterations=20, horizon=5)
+        self.policy = POMCPPolicyRunner(self.pomdp, iterations=20, horizon=5,
+                                        multiprocess_rollouts=self.multiprocess)
         self.policy.tree.rollout_it = 10
 
     def test_get_action_is_action(self):
@@ -403,10 +416,16 @@ class TestPOMCPPolicyRunner(TestCase):
         # Explicit generator
         policy = POMCPPolicyRunner(
             self.pomdp, iterations=20,
-            horizon=NTransitionsHorizon.generator(self.pomdp, 13))
+            horizon=NTransitionsHorizon.generator(self.pomdp, 13),
+            multiprocess_rollouts=self.multiprocess)
         h = policy.tree.horizon_gen()
         self.assertIsInstance(h, NTransitionsHorizon)
         self.assertEqual(h.n, 13)
+
+
+class TestPOMCPPolicyRunnerMultiprocess(TestPOMCPPolicyRunner):
+
+    multiprocess = True
 
 
 class Test_ValueAverage(TestCase):
