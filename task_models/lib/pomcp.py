@@ -1,3 +1,4 @@
+import time
 import math
 import json
 import threading
@@ -554,6 +555,7 @@ class AsyncPOMCPPolicyRunner(POMCPPolicyRunner):
                 with self._lock:
                     self.explore()
                     done = self._done
+                time.sleep(.01)
 
     def __init__(self, *args, **kwargs):
         super(AsyncPOMCPPolicyRunner, self).__init__(*args, **kwargs)
