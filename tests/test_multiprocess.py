@@ -17,3 +17,13 @@ class TestRepeat(TestCase):
         repeated = repeat(self.target, 5)
         self.assertEqual(len(repeated), 5)
         self.assertTrue(all([x == 42 for x in repeated]))
+
+
+class TestRandomness(TestCase):
+
+    def get_random(self):
+        return np.random.randint(10)
+
+    def test_subprocess_get_different_randoms(self):
+        randoms = repeat(self.get_random, 10)
+        self.assertTrue(len(set(randoms)) > 1)

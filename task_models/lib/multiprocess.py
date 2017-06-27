@@ -1,6 +1,14 @@
 import time
 from multiprocessing import Process, cpu_count, Queue
 
+import numpy as np
+
+
+"""Implements repeating several times the same function through processes
+and returning the list of results. Takes care of using a different numpy
+random state in each process.
+"""
+
 
 class RepeatPool:
 
@@ -10,7 +18,8 @@ class RepeatPool:
         self.n_processes = cpu_count()
         self.target = target
 
-    def work(self):
+    def work(self, seed):
+        np.random.seed(seed)
         result = self.target()
         self.result_queue.put(result)
 
@@ -30,7 +39,7 @@ class RepeatPool:
     def _start_or_None(self):
         if self.to_go > 0:
             self.to_go -= 1
-            p = Process(target=self.work)
+            p = Process(target=self.work, args=(np.random.randint(2**32),))
             p.start()
             return p
         else:
