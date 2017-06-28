@@ -61,10 +61,11 @@ def simulate_one_evaluation(model, pol, max_horizon=50):
                 pol.step(model.observations[o])
                 break
             except MaxSamplesReached:
-                pol.tree.logger("Max samples reached in policy step "
-                                "({}: {} -> {} with {}.".format(
-                                    model.actions[a], s, new_s,
-                                    model.observations[o]))
+                pol.tree.log("Max samples reached in policy step "
+                             "({}: {} -> {} with {}.".format(
+                                 model.actions[a], model.states[state],
+                                 model.states[new_s], model.observations[o]))
+                sys.stdout.flush()
         state = new_s
         full_return = r + model.discount * full_return
     return full_return
@@ -138,7 +139,7 @@ for i in range(N_EP_EXPLO):
     pol.get_action(iterations=N_ITER_EXPLO)
     pol_norandom.get_action(iterations=N_ITER_EXPLO, norandom=True)
     # Some evaluation
-    print("Evaluating", end='\r')
+    print("Evaluating... [{:2.0f}%]".format(i * 100 / N_EP_EXPLO), end='\r')
     evals_random.append(evaluate(p, pol, N_EVALUATIONS))
     evals_norandom.append(evaluate(p, pol_norandom, N_EVALUATIONS))
 print('Running... [done]')
