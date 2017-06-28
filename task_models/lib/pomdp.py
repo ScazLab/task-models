@@ -263,7 +263,7 @@ class POMDP:
             raise Impossible('Impossible observation: ' + str(o))
         return new_b / s
 
-    def sample_transition(self, a, s):
+    def sample_transition(self, a, s, **kwargs):
         new_s = np.random.choice(self.n_states, p=self.T[a, s, :])
         o = np.random.choice(self.n_observations, p=self.O[a, new_s, :])
         r = self.R[a, s, new_s, o]

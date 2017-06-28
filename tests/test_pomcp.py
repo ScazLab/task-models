@@ -206,8 +206,8 @@ class _FakeModel:
     def sample_start(self):
         return np.random.choice(self.n_states, p=self.start)
 
-    def sample_transition(self, action, state):
-        self.transitions_history.append((action, state))
+    def sample_transition(self, action, state, random=True):
+        self.transitions_history.append((action, state, random))
         return self.transitions.pop(0)
 
     def belief_update(self, action, observation, belief):
@@ -277,6 +277,7 @@ class TestSearchTree(TestCase):
         self.assertEqual(self.tree._one_rollout_from_node(2, h), r)
         self.assertEqual(len(self.model.transitions_history), 1)
         self.assertEqual(self.model.transitions_history[0][1], 2)
+        self.assertEqual(self.model.transitions_history[0][2], True)
 
     def test_rollout_from_node_with_horizon_2(self):
         h = NTransitionsHorizon(2)
@@ -285,6 +286,18 @@ class TestSearchTree(TestCase):
         self.assertEqual(len(self.model.transitions_history), 2)
         self.assertEqual(self.model.transitions_history[0][1], 3)
         self.assertEqual(self.model.transitions_history[1][1], 1)
+        self.assertEqual(self.model.transitions_history[0][2], True)
+        self.assertEqual(self.model.transitions_history[1][2], True)
+
+    def test_rollout_from_node_with_norandom(self):
+        h = NTransitionsHorizon(2)
+        self.model.transitions = [(1, None, 11.), (2, None, 10.)]
+        self.assertEqual(self.tree._one_rollout_from_node(3, h, norandom=True), 20)
+        self.assertEqual(len(self.model.transitions_history), 2)
+        self.assertEqual(self.model.transitions_history[0][1], 3)
+        self.assertEqual(self.model.transitions_history[1][1], 1)
+        self.assertEqual(self.model.transitions_history[0][2], False)
+        self.assertEqual(self.model.transitions_history[1][2], False)
 
     def test_simulate_from_node_with_horizon_0(self):
         self.tree.horizon_gen = NTransitionsHorizon.generator(self.model, n=0)
@@ -304,6 +317,17 @@ class TestSearchTree(TestCase):
         a = self.model.transitions_history[0][0]
         self.assertEqual(str(self.tree.root), "[{}: [1: []]]".format(a))
         self.assertEqual(self.tree.root.n_simulations, 1)
+        self.assertEqual(self.model.transitions_history[0][2], True)  # uses random
+
+    def test_simulate_from_node_norandom(self):
+        self.model.transitions = [(1, 1, 11.)]
+        belief2 = np.zeros((10))
+        belief2[1] = 1.
+        self.model.successors = [belief2]
+        self.tree.horizon_gen = NTransitionsHorizon.generator(self.model, n=1)
+        self.tree.simulate_from_node(self.tree.root, norandom=True)
+        self.assertEqual(len(self.model.transitions_history), 1)
+        self.assertEqual(self.model.transitions_history[0][2], False)  # norandom
 
     def test_simulate_from_node_with_horizon_3(self):
         self.model.discount = 1.

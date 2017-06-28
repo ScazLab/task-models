@@ -108,38 +108,41 @@ class _SearchTree:
     def random_action(self):
         return np.random.randint(self.model.n_actions)
 
-    def rollout_from_node(self, node, horizon):
+    def rollout_from_node(self, node, horizon, norandom=False):
         if horizon.is_reached():
             return 0
         else:
             returns = 0.
             for _ in range(self.rollout_it):
                 state = node.belief.sample()
-                returns += self._one_rollout_from_node(state, horizon.copy())
+                returns += self._one_rollout_from_node(
+                    state, horizon.copy(), norandom=norandom)
             returns /= self.rollout_it  # Avg over rollouts
             node.update(returns)  # Only counts one visit
             return returns
 
-    def _one_rollout_from_node(self, state, horizon):
+    def _one_rollout_from_node(self, state, horizon, norandom=False):
         gamma = 1.
         full_return = 0.
         while not horizon.is_reached():
             a = self.random_action()
-            new_state, o, r = self.model.sample_transition(a, state)
+            new_state, o, r = self.model.sample_transition(
+                a, state, random=(not norandom))
             horizon.decrement(a, state, new_state, o)
             state = new_state
             full_return += gamma * r
             gamma *= self.model.discount
         return full_return
 
-    def simulate_from_node(self, node, action=None):
+    def simulate_from_node(self, node, action=None, norandom=False):
         state = node.belief.sample()
-        self._simulate_from_node(node, state, self.horizon_gen(), a=action)
+        return self._simulate_from_node(
+            node, state, self.horizon_gen(), a=action, norandom=norandom)
 
     def _observation_node_for_belief(self, b):
         return _SearchObservationNode(b, self.model.n_actions, **self._node_params)
 
-    def _simulate_from_node(self, node, state, horizon, a=None):
+    def _simulate_from_node(self, node, state, horizon, a=None, norandom=False):
         if horizon.is_reached():
             return node.value
         else:
@@ -148,7 +151,8 @@ class _SearchTree:
                     exploration=self.exploration,
                     relative_exploration=self.relative_explo)
             child = node.safe_get_child(a)
-            new_s, o, r = self.model.sample_transition(a, state)
+            new_s, o, r = self.model.sample_transition(a, state,
+                                                       random=(not norandom))
             horizon.decrement(a, state, new_s, o)
             if o not in child.children:
                 try:
@@ -156,8 +160,8 @@ class _SearchTree:
                     child.children[o] = self._observation_node_for_belief(
                         node.belief.successor(self.model, a, o))
                     # Use rollout
-                    partial_return = self.rollout_from_node(child.children[o],
-                                                            horizon)
+                    partial_return = self.rollout_from_node(
+                        child.children[o], horizon, norandom=norandom)
                 except MaxSamplesReached:
                     self.log('Maximum number of samples reached, skipping.')
                     partial_return = 0.
@@ -166,7 +170,7 @@ class _SearchTree:
             else:
                 # Continue regular search
                 partial_return = self._simulate_from_node(
-                    child.children[o], new_s, horizon)
+                    child.children[o], new_s, horizon, norandom=norandom)
             full_return = r + self.model.discount * partial_return
             child.update(full_return)
             node.update(full_return)
@@ -460,13 +464,13 @@ class POMCPPolicyRunner(object):
     def belief(self):
         return self._node.belief
 
-    def get_action(self, iterations=None):
+    def get_action(self, iterations=None, norandom=False):
         # Note iterations must be greater than the number of actions
         # to guarantee that any action chosen as best_action is explored first
         if iterations is None:
             iterations = self.iterations
         for _ in range(iterations):
-            self.tree.simulate_from_node(self._node)
+            self.tree.simulate_from_node(self._node, norandom=norandom)
         a = self._node.get_best_action()
         # No exploration during exploitation?
         self._last_action = a
@@ -486,7 +490,7 @@ class POMCPPolicyRunner(object):
     def trajectory_trees_from_starts(self, qvalue=False):
         return {"graphs": [self.tree.to_dict(as_policy=not qvalue)]}
 
-    def run_trajectory(self, logger=None):
+    def run_trajectory(self, logger=None, norandom=False):
         if logger is None:
             from logging import info as logger
         model = self.tree.model
@@ -498,7 +502,8 @@ class POMCPPolicyRunner(object):
         belief_preferences = model._int_to_state().belief_preferences
         while not model.is_final(s):
             a = self.get_action()
-            ns, o, r = model.sample_transition(model.actions.index(a), s)
+            ns, o, r = model.sample_transition(
+                model.actions.index(a), s, random=(not norandom))
             self.step(model.observations[o])
             logger('{} -- {} --> {}, {}, {}'.format(
                 model._int_to_state(s),
@@ -521,12 +526,13 @@ class AsyncPOMCPPolicyRunner(POMCPPolicyRunner):
         some exploitation in between two explorations.
         """
 
-        def __init__(self, tree):
+        def __init__(self, tree, norandom_exploration=False):
             super(AsyncPOMCPPolicyRunner._Thread, self).__init__()
             self.tree = tree
             self._node = tree.root
             self._action = None
             self._done = False
+            self.norandom = norandom_exploration
             self._lock = threading.Lock()
 
         def _stop(self):
@@ -548,8 +554,11 @@ class AsyncPOMCPPolicyRunner(POMCPPolicyRunner):
         def set_action(self, action):
             self._action = action
 
-        def explore(self):
-            self.tree.simulate_from_node(self._node, action=self._action)
+        def explore(self, norandom=None):
+            if norandom is None:
+                norandom = self.norandom
+            self.tree.simulate_from_node(self._node, action=self._action,
+                                         norandom=norandom)
 
         def run(self):
             done = False
