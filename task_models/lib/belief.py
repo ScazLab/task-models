@@ -25,8 +25,8 @@ class ArrayBelief(BaseBelief):
         return hash(self.array.tostring())
 
     def __eq__(self, other):
-        return (isinstance(other, ArrayBelief)
-                and (self.array == other.array).all())
+        return (isinstance(other, ArrayBelief) and
+                (self.array == other.array).all())
 
     def sample(self):
         return np.random.choice(self.array.shape[0], p=self.array)
@@ -53,8 +53,8 @@ class _SuccessorSampler:
         self.n_sampled += 1
         if self.n_sampled > self.max_samples:
             raise MaxSamplesReached(
-                'Impossible to sample enough particles for transition to '
-                + str((self.a, self.o)))
+                'Impossible to sample enough particles for transition to ' +
+                str((self.a, self.o)))
         return self.belief.sample()
 
     def __call__(self):

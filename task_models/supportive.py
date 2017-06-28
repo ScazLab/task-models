@@ -421,8 +421,8 @@ class SupportivePOMDP:
                 obs = self.O_NONE
                 needs_hold = self.htm_nodes[_s.htm].action.hold
                 if _s.has_preference(self.PREF_HOLD) and (
-                        (needs_hold == 'h' and a == self.A_HOLD_H)
-                        or (needs_hold == 'v' and a == self.A_HOLD_V)):
+                        (needs_hold == 'h' and a == self.A_HOLD_H) or
+                        (needs_hold == 'v' and a == self.A_HOLD_V)):
                     r += self.r_preference
                 elif (a in (self.A_HOLD_H, self.A_HOLD_V) and (
                         (not random) or np.random.random() < .95)):
