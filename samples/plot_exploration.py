@@ -56,16 +56,7 @@ def simulate_one_evaluation(model, pol, max_horizon=50):
         a = model.actions.index(pol.get_action())
         new_s, o, r = model.sample_transition(a, state)  # real transition
         horizon.decrement(a, state, new_s, o)
-        while True:
-            try:
-                pol.step(model.observations[o])
-                break
-            except MaxSamplesReached:
-                pol.tree.log("Max samples reached in policy step "
-                             "({}: {} -> {} with {}.".format(
-                                 model.actions[a], model.states[state],
-                                 model.states[new_s], model.observations[o]))
-                sys.stdout.flush()
+        pol.step(model.observations[o])
         state = new_s
         full_return = r + model.discount * full_return
     return full_return
