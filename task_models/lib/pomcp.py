@@ -477,9 +477,11 @@ class POMCPPolicyRunner(object):
             raise ValueError('Unknown last action')
             # TODO rethink the design of the PolicyRunner class
         o = self.observations.index(observation)
-        self.history.extend([self._last_action, o])
-        # TODO: Make sure that node exists (and explores from previous)
-        self._node = self.tree.get_node(self.history)
+        new_history = self.history + [self._last_action, o]
+        # TODO: Eventually switch to random policy on failure to get or create
+        # the node for the new history (would raise MaxSamplesReached)
+        self._node = self.tree.get_node(new_history)
+        self.history = new_history  # updates only after get_node has succeeded
 
     def trajectory_trees_from_starts(self, qvalue=False):
         return {"graphs": [self.tree.to_dict(as_policy=not qvalue)]}
