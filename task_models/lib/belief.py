@@ -36,12 +36,23 @@ class ArrayBelief(BaseBelief):
 
 
 class MaxSamplesReached(RuntimeError):
-    pass
+
+    default_msg = "Impossible to sample enough particles."
+
+    def __init__(self, a, o, b, msg=None):
+        self.belief = b
+        self.action = a
+        self.observation = o
+        self.msg = self.default_msg if msg is None else msg
+
+    def __str__(self):
+        return "{} (transition with action {} and observation {})".format(
+            self.msg, self.action, self.observation)
 
 
 class _SuccessorSampler:
 
-    def __init__(self, model, belief, a, o, max_samples=100000):
+    def __init__(self, model, belief, a, o, max_samples=1000):
         self.n_sampled = 0
         self.model = model
         self.belief = belief
@@ -52,9 +63,7 @@ class _SuccessorSampler:
     def _sample(self):
         self.n_sampled += 1
         if self.n_sampled > self.max_samples:
-            raise MaxSamplesReached(
-                'Impossible to sample enough particles for transition to ' +
-                str((self.a, self.o)))
+            raise MaxSamplesReached(self.a, self.o, self.belief)
         return self.belief.sample()
 
     def __call__(self):
@@ -69,14 +78,34 @@ class ParticleBelief(BaseBelief):
     def __init__(self, sampler, n_states, n_particles=100):
         self.n_states = n_states
         self.n_particles = n_particles
-        self.part_states = [sampler() for _ in range(self.n_particles)]
+        self.part_states = []
+        self._populate(sampler)
 
-    def sample(self):
-        return self.part_states[np.random.choice(self.n_particles)]
+    def _populate(self, sampler):
+        try:
+            while len(self.part_states) < self.n_particles:
+                self.part_states.append(sampler())
+        except MaxSamplesReached as e:
+            if len(self.part_states) > 0:
+                # duplicate found particles
+                n_part = len(self.part_states)
+
+                def self_sampler():
+                    return self.sample(_max_index=n_part)
+
+                self._populate(self_sampler)
+            else:
+                e.msg = "Impossible to sample any particle."
+                raise e
+
+    def sample(self, _max_index=None):
+        if _max_index is None:
+            _max_index = self.n_particles
+        return self.part_states[np.random.choice(_max_index)]
 
     def successor(self, model, a, o):
         sampler = _SuccessorSampler(model, self, a, o,
-                                    max_samples=1000 * self.n_particles)
+                                    max_samples=100 * self.n_particles)
         return ParticleBelief(sampler, self.n_states, self.n_particles)
 
     @property

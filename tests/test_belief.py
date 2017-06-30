@@ -3,7 +3,8 @@ from unittest import TestCase
 
 import numpy as np
 
-from task_models.lib.belief import ArrayBelief, ParticleBelief
+from task_models.lib.belief import (ArrayBelief, ParticleBelief,
+                                    MaxSamplesReached)
 
 
 class BeliefBaseTest(object):
@@ -69,3 +70,22 @@ class TestParticleBelief(BeliefBaseTest, TestCase):
         self.assertTrue(all([a == 2 for (a, _) in model.sampled_on]))
         self.assertTrue(all([s in self.belief.part_states
                              for (_, s) in model.sampled_on]))
+
+    def test_raises_MaxSamplesReached(self):
+        def failing_sampler():
+            raise MaxSamplesReached(0, 0, 0)
+        with self.assertRaises(MaxSamplesReached):
+            ParticleBelief(failing_sampler, 10, 10)
+
+    def test_do_not_fail_with_one_particle_sampled(self):
+        states = [3]
+
+        def sampler_once():
+            if len(states) > 0:
+                return states.pop()
+            else:
+                raise MaxSamplesReached(0, 0, 0)
+
+        p = ParticleBelief(sampler_once, 10, 99)
+        self.assertEqual(len(p.part_states), 99)
+        self.assertEqual(p.part_states, [3] * 99)
