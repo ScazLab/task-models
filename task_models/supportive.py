@@ -402,11 +402,11 @@ class SupportivePOMDP:
 
     def sample_transition(self, a, s, random=True):
         _s = self._int_to_state(s)
-        _new_s = self._int_to_state(s)
         if random:
             # random transitions
             _s.random_object_changes(self.p_changed_by_human)
             _s.random_preference_changes(self.p_change_preference)
+        _new_s = self._int_to_state(_s.to_int())
         if a in (self.A_WAIT, self.A_HOLD_H, self.A_HOLD_V):
             r = 0 if a == self.A_WAIT else -self.cost_hold
             if _s.is_final():  # Final state
