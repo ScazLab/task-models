@@ -2,15 +2,19 @@
 
 from __future__ import print_function
 
+import os
 import sys
+import time
+import json
 import argparse
 
 import numpy as np
+from matplotlib import pyplot as plt
 
+from task_models.utils.plot import plot_var
 from task_models.task import (SequentialCombination, LeafCombination)
 from task_models.supportive import (SupportivePOMDP, AssembleLeg, AssembleLegToTop,
                                     NHTMHorizon)
-from task_models.lib.belief import MaxSamplesReached
 from task_models.lib.multiprocess import repeat
 from task_models.lib.pomcp import POMCPPolicyRunner, NTransitionsHorizon
 
@@ -19,10 +23,11 @@ from task_models.lib.pomcp import POMCPPolicyRunner, NTransitionsHorizon
 parser = argparse.ArgumentParser(
     description="Script to generate plot on exploration in the supportive "
                 "POMDP")
-parser.add_argument('path', help='path where to write the figure',
+parser.add_argument('path', help='path where to write the figure', nargs='?',
                     default=None)
 
 args = parser.parse_args(sys.argv[1:])
+INTERACTIVE = args.path is None
 
 
 class FinishedOrNTransitionsHorizon(NTransitionsHorizon):
@@ -115,6 +120,8 @@ pol_norandom = POMCPPolicyRunner(
 
 # Explore and evaluate
 maxl = 0
+timer = []
+t_0 = time.time()
 evals_random = []
 evals_norandom = []
 for i in range(N_EP_EXPLO):
@@ -129,8 +136,31 @@ for i in range(N_EP_EXPLO):
     # Some exploration
     pol.get_action(iterations=N_ITER_EXPLO)
     pol_norandom.get_action(iterations=N_ITER_EXPLO, norandom=True)
+    t_exploration = time.time() - t_0
     # Some evaluation
     print("Evaluating... [{:2.0f}%]".format(i * 100 / N_EP_EXPLO), end='\r')
     evals_random.append(evaluate(p, pol, N_EVALUATIONS))
     evals_norandom.append(evaluate(p, pol_norandom, N_EVALUATIONS))
+    t_evaluation = time.time() - t_0
+    timer.append((t_evaluation, t_evaluation))
 print('Running... [done]')
+
+tostore = {'evaluations': {'random': evals_random, 'no-random': evals_norandom},
+           'timer': timer,
+           }
+if not INTERACTIVE:
+    with open(os.path.join(args.path, 'results.json'), 'w') as f:
+        json.dump(tostore, f)
+
+
+xs = np.arange(N_ITER_EXPLO, (1 + N_EP_EXPLO) * N_ITER_EXPLO, N_ITER_EXPLO)
+if INTERACTIVE:
+    plt.interactive(True)
+plt.figure()
+plot_var(evals_random, x=xs, label="random")
+plot_var(evals_norandom, x=xs, label="norandom")
+plt.xlabel('Exploration episodes')
+plt.ylabel('Average return for policy')
+plt.legend()
+if not INTERACTIVE:
+    plt.savefig(os.path.join(args.path, 'policy-values.svg'))
