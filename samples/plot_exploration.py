@@ -126,6 +126,20 @@ timer = []
 t_0 = time.time()
 evals_random = []
 evals_norandom = []
+tostore = {'evaluations': {'random': evals_random, 'no-random': evals_norandom},
+           'timer': timer,
+           'parameters': {'n_ep_explo': N_EP_EXPLO,
+                          'n_iter_explo': N_ITER_EXPLO,
+                          'n_evaluations': N_EVALUATIONS,
+                          'iterations': ITERATIONS,
+                          'exploration': EXPLORATION,
+                          'relative_explo': RELATIVE_EXPLO,
+                          'belief_values': BELIEF_VALUES,
+                          'n_particles': N_PARTICLES,
+                          'horizon': HORIZON,
+                          'full_norandom': FULL_NORANDOM,
+                          },
+           }
 for i in range(N_EP_EXPLO):
     s = "Exploring.... [{:2.0f}%] ({:.1f} [random], {:.1f} [norandom])".format(
         i * 100. / N_EP_EXPLO,
@@ -147,9 +161,6 @@ for i in range(N_EP_EXPLO):
     t_evaluation = time.time() - t_0
     timer.append((t_evaluation, t_evaluation))
     # Storing current status
-    tostore = {'evaluations': {'random': evals_random, 'no-random': evals_norandom},
-               'timer': timer,
-               }
     if not INTERACTIVE:
         with open(os.path.join(args.path, 'results.json'), 'w') as f:
             json.dump(tostore, f)
