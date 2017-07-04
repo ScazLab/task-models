@@ -52,13 +52,13 @@ class FinishedOrNTransitionsHorizon(NTransitionsHorizon):
         return cls._Generator(cls, model, n)
 
 
-def simulate_one_evaluation(model, pol, max_horizon=50):
+def simulate_one_evaluation(model, pol, max_horizon=50, norandom=False):
     pol.reset()
     state = model.sample_start()
     horizon = FinishedOrNTransitionsHorizon(model, max_horizon)
     full_return = 0
     while not horizon.is_reached():
-        a = model.actions.index(pol.get_action())
+        a = model.actions.index(pol.get_action(norandom=norandom))
         new_s, o, r = model.sample_transition(a, state)  # real transition
         horizon.decrement(a, state, new_s, o)
         pol.step(model.observations[o])
@@ -85,6 +85,8 @@ RELATIVE_EXPLO = False  # In this case use smaller exploration
 BELIEF_VALUES = False
 N_PARTICLES = 150
 HORIZON = 3
+FULL_NORANDOM = True  # Also use norandom during get_action in evaluation
+
 
 # Problem definition
 leg_i = 'leg-{}'.format
@@ -140,7 +142,8 @@ for i in range(N_EP_EXPLO):
     # Some evaluation
     print("Evaluating... [{:2.0f}%]".format(i * 100 / N_EP_EXPLO), end='\r')
     evals_random.append(evaluate(p, pol, N_EVALUATIONS))
-    evals_norandom.append(evaluate(p, pol_norandom, N_EVALUATIONS))
+    evals_norandom.append(evaluate(p, pol_norandom, N_EVALUATIONS),
+                          norandom=FULL_NORANDOM)
     t_evaluation = time.time() - t_0
     timer.append((t_evaluation, t_evaluation))
     # Storing current status
