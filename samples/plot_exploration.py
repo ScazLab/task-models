@@ -143,14 +143,15 @@ for i in range(N_EP_EXPLO):
     evals_norandom.append(evaluate(p, pol_norandom, N_EVALUATIONS))
     t_evaluation = time.time() - t_0
     timer.append((t_evaluation, t_evaluation))
-print('Running... [done]')
+    # Storing current status
+    tostore = {'evaluations': {'random': evals_random, 'no-random': evals_norandom},
+               'timer': timer,
+               }
+    if not INTERACTIVE:
+        with open(os.path.join(args.path, 'results.json'), 'w') as f:
+            json.dump(tostore, f)
 
-tostore = {'evaluations': {'random': evals_random, 'no-random': evals_norandom},
-           'timer': timer,
-           }
-if not INTERACTIVE:
-    with open(os.path.join(args.path, 'results.json'), 'w') as f:
-        json.dump(tostore, f)
+print('Running... [done]')
 
 
 xs = np.arange(N_ITER_EXPLO, (1 + N_EP_EXPLO) * N_ITER_EXPLO, N_ITER_EXPLO)
