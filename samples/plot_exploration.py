@@ -67,10 +67,10 @@ def simulate_one_evaluation(model, pol, max_horizon=50, norandom=False):
     return full_return
 
 
-def evaluate(model, pol, n_evaluation):
+def evaluate(model, pol, n_evaluation, norandom=False):
 
     def func():
-        return simulate_one_evaluation(model, pol)
+        return simulate_one_evaluation(model, pol, norandom=norandom)
 
     return repeat(func, n_evaluation)
 
@@ -142,8 +142,8 @@ for i in range(N_EP_EXPLO):
     # Some evaluation
     print("Evaluating... [{:2.0f}%]".format(i * 100 / N_EP_EXPLO), end='\r')
     evals_random.append(evaluate(p, pol, N_EVALUATIONS))
-    evals_norandom.append(evaluate(p, pol_norandom, N_EVALUATIONS),
-                          norandom=FULL_NORANDOM)
+    evals_norandom.append(evaluate(p, pol_norandom, N_EVALUATIONS,
+                                   norandom=FULL_NORANDOM))
     t_evaluation = time.time() - t_0
     timer.append((t_evaluation, t_evaluation))
     # Storing current status
