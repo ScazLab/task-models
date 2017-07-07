@@ -71,10 +71,24 @@ class FinishedOrNTransitionsHorizon(NTransitionsHorizon):
         return cls._Generator(cls, model, n)
 
 
-def episode_summary(model, full_return, h_s, h_a, h_o, h_r, elapsed=None):
+class CountingSupportivePOMDP(SupportivePOMDP):
+    """Adds a counter of calls to sample_transition"""
+
+    def __init__(self, *args, **kwargs):
+        super(CountingSupportivePOMDP, self).__init__(*args, **kwargs)
+        self._calls = 0
+
+    def sample_transition(self, a, s, random=True):
+        self._calls += 1
+        return super(CountingSupportivePOMDP, self).sample_transition(
+            a, s, random=random)
+
+
+def episode_summary(model, full_return, h_s, h_a, h_o, h_r, n_calls,
+                    elapsed=None):
     indent = 4 * " "
-    return ("Evaluation: {} transitions, return: {:4.0f} [in {}]\n"
-            "".format(len(h_a), full_return, elapsed) +
+    return ("Evaluation: {} transitions, return: {:4.0f} [{} calls in {}]\n"
+            "".format(len(h_a), full_return, n_calls, elapsed) +
             "".join(["{ind}{}: {} → {} [{}]\n".format(model._int_to_state(s),
                                                       model.actions[a],
                                                       model.observations[o],
@@ -84,6 +98,7 @@ def episode_summary(model, full_return, h_s, h_a, h_o, h_r, elapsed=None):
 
 
 def simulate_one_evaluation(model, pol, max_horizon=50, logger=None):
+    init_calls = model._calls
     pol.reset()
     # History init
     h_s = [model.sample_start()]
@@ -103,9 +118,18 @@ def simulate_one_evaluation(model, pol, max_horizon=50, logger=None):
         h_s.append(s)
         full_return = r + model.discount * full_return
     elapsed = get_process_elapsed_time()
+    n_calls = model._calls - init_calls
     if logger is not None:
-        logger(episode_summary(model, full_return, h_s, h_a, h_o, h_r, elapsed))
-    return full_return, h_s, h_a, h_o, h_r, elapsed
+        logger(episode_summary(model, full_return, h_s, h_a, h_o, h_r, n_calls,
+                               elapsed=elapsed))
+    return {'return': full_return,
+            'states': h_s,
+            'actions': h_a,
+            'observations': h_o,
+            'rewards': h_r,
+            'elapsed-time': elapsed,
+            'simulator-calls': n_calls,
+            }
 
 
 def evaluate(model, pol, n_evaluation, logger=None):
@@ -123,7 +147,7 @@ htm = SequentialCombination([
         LeafCombination(AssembleLegToTop(leg_i(i), bring_top=(i == 0)))])
     for i in range(4)])
 
-p = SupportivePOMDP(htm)
+p = CountingSupportivePOMDP(htm)
 # TODO put as default
 p.r_subtask = 0.
 pol = POMCPPolicyRunner(p, iterations=PARAM['iterations'],
