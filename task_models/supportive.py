@@ -128,7 +128,7 @@ class _SupportivePOMDPState(object):
         self.s = s
 
     def __str__(self):
-        return "<{}: {} {} {} {}>".format(
+        return "<{: >{w}}: {} {} {} {}>".format(
             self.s,
             self.htm,
             "".join([str(self.has_preference(i))
@@ -136,7 +136,8 @@ class _SupportivePOMDPState(object):
             "".join([str(self.has_body_feature(i))
                      for i in range(self._shift_pref - self._shift_body)]),
             "".join([str(self.has_object(i))
-                     for i in range(self._shift_body)]))
+                     for i in range(self._shift_body)]),
+            w=len(str(self.n_states - 1)))
 
     @property
     def n_objects(self):
@@ -157,6 +158,10 @@ class _SupportivePOMDPState(object):
     @htm.setter
     def htm(self, n):
         self.s += (n << self._shift_htm) - (self.htm << self._shift_htm)
+
+    @property
+    def n_states(self):
+        return (self._final_htm + 1) * 2 ** (self._shift_htm)
 
     def is_final(self):
         return self.htm == self._final_htm

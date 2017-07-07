@@ -138,6 +138,13 @@ class TestSupportivePOMDPState(TestCase):
             self._s.set_object(i, (i + 1) % 2)
         self.assertEqual(str(self._s), "<1701: 3 010 01 1010>")
 
+    def test_str_aligned(self):
+        self._s = _SupportivePOMDPState(5, 3, 2, 4)
+        self.assertEqual(str(self._s), "<   0: 0 000 00 0000>")
+
+    def test_n_states(self):
+        self.assertEqual(self._s.n_states, 2560)
+
     def test_is_final(self):
         self._s.htm = 3
         self.assertFalse(self._s.is_final())
