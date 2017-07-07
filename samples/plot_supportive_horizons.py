@@ -8,7 +8,7 @@ import json
 import logging
 import argparse
 
-from task_models.lib.multiprocess import repeat
+from task_models.lib.multiprocess import repeat, get_process_elapsed_time
 from task_models.lib.pomcp import POMCPPolicyRunner, NTransitionsHorizon
 from task_models.task import SequentialCombination, LeafCombination
 from task_models.supportive import (SupportivePOMDP, AssembleLeg, AssembleLegToTop,
@@ -71,10 +71,10 @@ class FinishedOrNTransitionsHorizon(NTransitionsHorizon):
         return cls._Generator(cls, model, n)
 
 
-def episode_summary(model, full_return, h_s, h_a, h_o, h_r):
+def episode_summary(model, full_return, h_s, h_a, h_o, h_r, elapsed=None):
     indent = 4 * " "
-    return ("Evaluation: [{} transitions, return: {:4.0f}]\n"
-            "".format(len(h_a), full_return) +
+    return ("Evaluation: {} transitions, return: {:4.0f} [in {}]\n"
+            "".format(len(h_a), full_return, elapsed) +
             "".join(["{ind}{}: {} → {} [{}]\n".format(model._int_to_state(s),
                                                       model.actions[a],
                                                       model.observations[o],
@@ -102,9 +102,10 @@ def simulate_one_evaluation(model, pol, max_horizon=50, logger=None):
         pol.step(model.observations[o])
         h_s.append(s)
         full_return = r + model.discount * full_return
+    elapsed = get_process_elapsed_time()
     if logger is not None:
-        logger(episode_summary(model, full_return, h_s, h_a, h_o, h_r))
-    return full_return, h_s, h_a, h_o, h_r
+        logger(episode_summary(model, full_return, h_s, h_a, h_o, h_r, elapsed))
+    return full_return, h_s, h_a, h_o, h_r, elapsed
 
 
 def evaluate(model, pol, n_evaluation, logger=None):

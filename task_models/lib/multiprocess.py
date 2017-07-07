@@ -1,4 +1,7 @@
+import os
 import time
+import subprocess
+from datetime import timedelta
 from multiprocessing import Process, cpu_count, Queue
 
 import numpy as np
@@ -63,3 +66,15 @@ class RepeatPool:
 def repeat(func, n):
     p = RepeatPool(func)
     return p.run(n)
+
+
+def get_process_elapsed_time(pid=None):
+    """Return process CPU time from the system."""
+    if pid is None:
+        pid = os.getpid()
+    t = subprocess.check_output(["ps", "-o", "etime=", "-p", str(pid)])
+    # Decode from b"[[%d-]%h]:%m:%s"
+    t = t.decode().strip().replace('-', ':').split(':')[::-1]  # also reverse
+    t += ["0"] * (4 - len(t))  # fill missing optional fields (%d, %h)
+    return timedelta(seconds=float(t[0]), minutes=int(t[1]),
+                     hours=int(t[2]), days=int(t[3]))
