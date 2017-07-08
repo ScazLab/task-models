@@ -8,6 +8,8 @@ import json
 import logging
 import argparse
 
+import numpy as np
+
 from task_models.lib.multiprocess import repeat, get_process_elapsed_time
 from task_models.lib.pomcp import POMCPPolicyRunner, NTransitionsHorizon
 from task_models.task import SequentialCombination, LeafCombination
@@ -84,6 +86,19 @@ class CountingSupportivePOMDP(SupportivePOMDP):
             a, s, random=random)
 
 
+class NPEncoder(json.JSONEncoder):
+
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        else:
+            return super(NPEncoder, self).default(obj)
+
+
 def episode_summary(model, full_return, h_s, h_a, h_o, h_r, n_calls,
                     elapsed=None):
     indent = 4 * " "
@@ -127,7 +142,7 @@ def simulate_one_evaluation(model, pol, max_horizon=50, logger=None):
             'actions': h_a,
             'observations': h_o,
             'rewards': h_r,
-            'elapsed-time': elapsed,
+            'elapsed-time': elapsed.total_seconds(),
             'simulator-calls': n_calls,
             }
 
@@ -175,5 +190,6 @@ tostore['evaluations'] = evaluate(p, pol, PARAM['n_evaluations'], logger=info)
 
 # Storing current status
 if args.path is not None:
-    with open(os.path.join(args.path, args.name + '.json'), 'w') as f:
-        json.dump(tostore, f)
+    assert(args.name is not None)
+    with io.open(os.path.join(args.path, args.name + '.json'), 'w') as f:
+        json.dump(tostore, f, cls=NPEncoder)
