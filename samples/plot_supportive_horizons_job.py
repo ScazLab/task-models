@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-
+import io
 import os
 import sys
 import time
@@ -19,13 +19,13 @@ from task_models.supportive import (SupportivePOMDP, AssembleLeg, AssembleLegToT
 
 # Arguments
 parser = argparse.ArgumentParser(
-    description="Script to run evaluation of the supportive policy")
+    description="Script to run evaluation job of the supportive policy")
+parser.add_argument('config', nargs='?', default=None,
+                    help='json file containing experiment parameters')
 parser.add_argument('path', nargs='?', default=None,
                     help='working path')
 parser.add_argument('name', nargs='?', default=None,
                     help='experiment name')
-parser.add_argument('parameters', nargs='?', default=None,
-                    help='json file containing experiment parameters')
 parser.add_argument('--debug', action='store_true',
                     help='quick interactive run with dummy parameters')
 args = parser.parse_args(sys.argv[1:])
@@ -44,6 +44,13 @@ PARAM = {
     'horizon-length': 3,
     }
 
+if args.config is not None:
+    # Load configuration parameters on top of default values
+    with io.open(args.config) as f:
+        new_params = json.load(f)
+    PARAM.update(new_params)
+
+args.debug=True
 if args.debug:
     PARAM['n_warmup'] = 2
     PARAM['n_evaluations'] = 2
