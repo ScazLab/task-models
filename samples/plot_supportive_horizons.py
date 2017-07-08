@@ -18,17 +18,16 @@ parser.add_argument('--name', default='eval-horizons', help='experiment name')
 
 subparsers = parser.add_subparsers(dest='action')
 prepare = subparsers.add_parser('prepare', help='generate configuration files')
-
 run = subparsers.add_parser('run', help='run the experiments')
-run.add_argument('-l', '--launcher', default='process',
-                 choices=['process', 'torque'])
-
 status = subparsers.add_parser('status', help='print overall status')
+plot = subparsers.add_parser('plot', help='generate figures')
 
+for p in (run, prepare, status):
+    p.add_argument('-l', '--launcher', default='process',
+                   choices=['process', 'torque'])
 for p in (run, status):
     p.add_argument('-w', '--watch', action='store_true')
 
-plot = subparsers.add_parser('plot', help='generate figures')
 
 args = parser.parse_args(sys.argv[1:])
 
