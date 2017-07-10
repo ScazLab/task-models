@@ -94,10 +94,10 @@ def plot_var(y, x=None, color=None, var=True, var_style='fill', **kwargs):
     std = np.std(y, axis=1)
     if x is None:
         x = np.arange(y.shape[0])
-    plot_fun = plt.plot
+    plot_fun = ax.plot
     if var and var_style in ('bar', 'both'):
         kwargs['yerr'] = std
-        plot_fun = plt.errorbar
+        plot_fun = ax.errorbar
     if color is not None:
         kwargs['color'] = color
         kwargs['markeredgecolor'] = color
@@ -106,7 +106,7 @@ def plot_var(y, x=None, color=None, var=True, var_style='fill', **kwargs):
         color = lines[0].get_color()
     x = lines[0].get_xdata()
     if var and var_style in ('fill', 'both'):
-        plt.fill_between(x, mean - std, mean + std, alpha=.3, color=color)
+        ax.fill_between(x, mean - std, mean + std, alpha=.3, color=color)
     remove_chartjunk(ax, ['top', 'right'])
     return lines
 
