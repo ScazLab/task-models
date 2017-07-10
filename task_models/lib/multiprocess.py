@@ -34,7 +34,7 @@ class RepeatPool:
             self._clean()
             self._fill()
             time.sleep(self.refresh_period)
-        return [self.result_queue.get() for _ in range(n)]
+        return [self.result_queue.get_nowait() for _ in range(n)]
 
     def _still_working(self):
         return self.to_go > 0 or any([w is not None for w in self.workers])
@@ -53,7 +53,7 @@ class RepeatPool:
                         for w in self.workers]
 
     def _clean_job(self, w):
-        if w.exitcode < 0:
+        if w.exitcode > 0:
             raise RuntimeError("A subprocess has failed.")
         w.join()
         return None
