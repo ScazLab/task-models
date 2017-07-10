@@ -354,28 +354,38 @@ class TestSupportivePOMDP(TestCase):
         _s.set_preference(0, 1)
         # - Wait
         s, o, r = p.sample_transition(p.A_WAIT, _s.to_int(), random=False)
+        self.assertEqual(p._int_to_state(s).htm, 1)
+        self.assertEqual(o, p.O_NONE)
         self.assertEqual(r, 10.)
         # - Hold
         s, o, r = p.sample_transition(p.A_HOLD_V, _s.to_int(), random=False)
+        self.assertEqual(p._int_to_state(s).htm, 1)
+        self.assertEqual(o, p.O_NONE)
         self.assertEqual(r, 10. - p.cost_hold + 10.)
         # - Wrong Hold
         s, o, r = p.sample_transition(p.A_HOLD_H, _s.to_int(), random=False)
-        self.assertEqual(r, 10. - p.cost_hold)
+        self.assertEqual(p._int_to_state(s).htm, 0)
+        self.assertEqual(o, p.O_FAIL)
+        self.assertEqual(r, -p.cost_hold)
         # No preference for holding
         _s.set_preference(0, 0)
         # - Wait
         s, o, r = p.sample_transition(p.A_WAIT, _s.to_int(), random=False)
+        self.assertEqual(p._int_to_state(s).htm, 1)
+        self.assertEqual(o, p.O_NONE)
         self.assertEqual(r, 10.)
         # - Hold
         s, o, r = p.sample_transition(p.A_HOLD_V, _s.to_int(), random=False)
-        self.assertEqual(r, 10. - p.cost_hold)
+        self.assertEqual(p._int_to_state(s).htm, 0)
+        self.assertEqual(o, p.O_FAIL)
+        self.assertEqual(r, -p.cost_hold)
         # Not required in task (Bring-top is first node in self.p)
         _s = self.p._int_to_state()
         _s.set_object(self.p.objects.index('top'), 1)
         _s.set_preference(0, 1)
         s, o, r = self.p.sample_transition(self.p.A_HOLD_V, _s.to_int(),
                                            random=False)
-        self.assertEqual(r, 10. - p.cost_hold)
+        self.assertEqual(r, -p.cost_hold)
         # Does not apply on final node
         _s = self.p._int_to_state()
         _s.htm = self.p.htm_final

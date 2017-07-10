@@ -424,7 +424,7 @@ class SupportivePOMDP:
             r = 0 if a == self.A_WAIT else -self.cost_hold
             if _s.is_final():  # Final state
                 obs = self.O_NONE
-            elif _s.htm == self.htm_clean:
+            elif _s.htm == self.htm_clean:  # Cleaning state
                 obs = self.O_NONE
                 for o, _ in enumerate(self.objects):
                     r -= self._cost_get(o) * _s.has_object(o)
@@ -441,8 +441,9 @@ class SupportivePOMDP:
                         (not random) or np.random.random() < .95)):
                     # Undesired hold most likely gets an error
                     obs = self.O_FAIL
-                r += self._update_for_transition(_new_s, _s.htm)
-                r += self.r_subtask
+                if obs != self.O_FAIL:  # Ask or righ correct hold
+                    r += self._update_for_transition(_new_s, _s.htm)
+                    r += self.r_subtask
         elif a == self.A_ASK:
             r = -self.cost_intrinsic
             if _s.has_preference(self.PREF_HOLD):
