@@ -8,7 +8,7 @@ import argparse
 
 from expjobs.job import Job
 from expjobs.pool import Pool
-from expjobs.torque import TorquePool
+from expjobs.torque import TorquePool, has_qsub
 from expjobs.process import MultiprocessPool
 
 parser = argparse.ArgumentParser(
@@ -23,7 +23,7 @@ status = subparsers.add_parser('status', help='print overall status')
 plot = subparsers.add_parser('plot', help='generate figures')
 
 for p in (run, prepare, status):
-    p.add_argument('-l', '--launcher', default='process',
+    p.add_argument('-l', '--launcher', default='torque' if has_qsub() else 'process',
                    choices=['process', 'torque'])
 for p in (run, status):
     p.add_argument('-w', '--watch', action='store_true')
@@ -44,7 +44,8 @@ exps = [('{}-{}'.format(t, l), {'horizon-type': t, 'horizon-length': l})
 jobs = {name: Job(args.path, name, SCRIPT) for name, exp in exps}
 exps = dict(exps)
 
-if args.action in ('run', 'status'):
+
+if args.action in ('prepare', 'run', 'status'):
     if args.launcher == 'process':
         pool = MultiprocessPool()
     elif args.launcher == 'torque':
