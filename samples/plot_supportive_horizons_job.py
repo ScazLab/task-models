@@ -10,7 +10,7 @@ import argparse
 
 import numpy as np
 
-from task_models.lib.multiprocess import repeat, get_process_elapsed_time
+from task_models.utils.multiprocess import repeat, get_process_elapsed_time
 from task_models.lib.pomcp import POMCPPolicyRunner, NTransitionsHorizon
 from task_models.task import SequentialCombination, LeafCombination
 from task_models.supportive import (SupportivePOMDP, AssembleLeg, AssembleLegToTop,
