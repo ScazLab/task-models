@@ -6,10 +6,15 @@ import sys
 import json
 import argparse
 
+from matplotlib import pyplot as plt
+
 from expjobs.job import Job
 from expjobs.pool import Pool
 from expjobs.torque import TorquePool, has_qsub
 from expjobs.process import MultiprocessPool
+
+from task_models.utils.plot import plot_var
+
 
 parser = argparse.ArgumentParser(
     description="Script to run and plot evaluation of the supportive policy")
@@ -74,6 +79,32 @@ class RefreshedPrint:
         self._print(s)
 
 
+# Plot helpers
+
+def get_results_from_one(job):
+    with io.open(os.path.join(job.path, job.name + '.json'), 'r') as f:
+        results = json.load(f)['evaluations']
+    return ([r['return'] for r in results],
+            [r['elapsed-time'] for r in results],
+            [r['simulator-calls'] for r in results])
+
+
+def plot_results():
+    plots = plt.subplots(1, 2, sharey=True)[1]
+    plots[0].set_ylabel('Average_return')
+    results = {j: get_results_from_one(jobs[j]) for j in jobs}
+    returns_transititions = [results['transitions-{}'.format(h)][0]
+                             for h in horizon_length_transitions]
+    returns_htm = [results['htm-{}'.format(h)][0]
+                   for h in horizon_length_htm]
+    plot_var(returns_transititions, x=horizon_length_transitions, ax=plots[0])
+    plots[0].set_title('N Transitions Horizon')
+    plots[0].set_xlabel('Number of Transitions')
+    plot_var(returns_htm, x=horizon_length_htm, ax=plots[1])
+    plots[1].set_title('N HTM Horizon')
+    plots[1].set_xlabel('Number of HTM Transitions')
+
+
 if args.action == 'prepare':
     # Generate config files
     for name in exps:
@@ -92,4 +123,5 @@ elif args.action == 'status':
         print(pool.get_stats())
 
 elif args.action == 'plot':
-    raise NotImplementedError
+    plot_results()
+    plt.show()
