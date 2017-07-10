@@ -71,6 +71,12 @@ class TestSupportivePOMDPState(TestCase):
     def setUp(self):
         self._s = _SupportivePOMDPState(5, 3, 2, 4)
 
+    def properties_return_arguments(self):
+        self.assertEqual(self._s.n_htm, 5)
+        self.assertEqual(self._s.n_preferences, 3)
+        self.assertEqual(self._s.n_body_features, 2)
+        self.assertEqual(self._s.n_objects, 4)
+
     def test_set_get_htm(self):
         self.assertEqual(self._s.htm, 0)
         for i in range(3):
@@ -151,6 +157,12 @@ class TestSupportivePOMDPState(TestCase):
         self._s.htm = 4
         self.assertTrue(self._s.is_final())
 
+    def test_copy(self):
+        self._s.s = np.random.randint(self._s.n_states)
+        copy = self._s.copy()
+        self.assertEqual(self._s.s, copy.s)
+        self.assertEqual(str(self._s), str(copy))
+
     def test_belief_quotient(self):
         _s = _SupportivePOMDPState(3, 1, 1, 2)
         b = np.zeros((3 * 2 ** 4))
@@ -212,6 +224,12 @@ class TestSupportivePOMDPState(TestCase):
         self.assertEqual(str(self._s)[7:-1], "2 010 10 0101")
         self._s.random_preference_changes(1.)  # p = 1 => XOR
         self.assertEqual(str(self._s)[7:-1], "2 101 10 0101")
+        # Test average
+        states = [self._s.copy() for _ in range(200)]
+        for s in states:
+            s.random_preference_changes(.7)
+        self.assertAlmostEqual(
+            np.average([s.has_preference(1) for s in states]), .7, delta=.1)
 
 
 class TestSupportivePOMDP(TestCase):

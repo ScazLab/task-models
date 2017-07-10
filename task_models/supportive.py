@@ -144,6 +144,10 @@ class _SupportivePOMDPState(object):
         return self._shift_body
 
     @property
+    def n_body_features(self):
+        return self._shift_pref - self._shift_body
+
+    @property
     def n_preferences(self):
         return self._shift_htm - self._shift_pref
 
@@ -220,6 +224,10 @@ class _SupportivePOMDPState(object):
         to_change = np.random.random((self.n_preferences)) < p
         for i in to_change.nonzero()[0]:
             self.set_preference(i, 1 - self.has_preference(i))
+
+    def copy(self):
+        return type(self)(self.n_htm + 1, self.n_preferences,
+                          self.n_body_features, self.n_objects, s=self.s)
 
 
 class SupportivePOMDP:
