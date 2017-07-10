@@ -50,7 +50,6 @@ if args.config is not None:
         new_params = json.load(f)
     PARAM.update(new_params)
 
-args.debug=True
 if args.debug:
     PARAM['n_warmup'] = 2
     PARAM['n_evaluations'] = 2
