@@ -4,11 +4,12 @@ import numpy as np
 
 from task_models.task_to_pomdp import (CollaborativeAction)
 from task_models.task import (SequentialCombination, AlternativeCombination,
-                      LeafCombination, ParallelCombination)
-from task_models.supportive import (_HTMToDAG, unique, SupportivePOMDP, AssembleFoot,
-                            AssembleTopJoint, AssembleLegToTop, BringTop,
-                            CONSUMES, USES, CONSUMES_SOME,
-                            _SupportivePOMDPState, NHTMHorizon)
+                              LeafCombination, ParallelCombination)
+from task_models.supportive import (_HTMToDAG, unique, SupportivePOMDP,
+                                    AssembleFoot, AssembleTopJoint,
+                                    AssembleLegToTop, BringTop,
+                                    CONSUMES, USES, _SupportivePOMDPState,
+                                    NHTMHorizon)
 
 
 class TestHelpers(TestCase):
