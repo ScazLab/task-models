@@ -54,7 +54,7 @@ if args.action in ('prepare', 'run', 'status'):
     if args.launcher == 'process':
         pool = MultiprocessPool()
     elif args.launcher == 'torque':
-        pool = TorquePool(default_walltime=240)
+        pool = TorquePool(default_walltime=720)
 else:
     pool = Pool()
 pool.extend(jobs.values())
