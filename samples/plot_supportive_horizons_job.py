@@ -11,7 +11,8 @@ import argparse
 import numpy as np
 
 from task_models.utils.multiprocess import repeat, get_process_elapsed_time
-from task_models.lib.pomcp import POMCPPolicyRunner, NTransitionsHorizon
+from task_models.lib.pomcp import (POMCPPolicyRunner, NTransitionsHorizon,
+                                   export_pomcp)
 from task_models.task import SequentialCombination, LeafCombination
 from task_models.supportive import (SupportivePOMDP, AssembleLeg, AssembleLegToTop,
                                     NHTMHorizon)
@@ -42,7 +43,7 @@ PARAM = {
     'n_particles': 150,
     'horizon-type': 'transitions',  # or htm
     'horizon-length': 3,
-    }
+}
 
 if args.config is not None:
     # Load configuration parameters on top of default values
@@ -190,12 +191,16 @@ info('Starting warmup')
 t_0 = time.time()
 pol.get_action(iterations=PARAM['n_warmup'])
 tostore['t_warmup'] = time.time() - t_0
-info('Warmup done in: {}s'.format(tostore['t_warmup']))
+info('Warmup done in {}s.'.format(tostore['t_warmup']))
+if args.path is not None:
+    assert(args.name is not None)
+    export_pomcp(pol, os.path.join(args.path, args.name + '.tree.json'),
+                 belief_as_quotient=True)
+    info('Tree stored in {}s.'.format(time.time() - tostore['t_warmup']))
 # Evaluation
 tostore['evaluations'] = evaluate(p, pol, PARAM['n_evaluations'], logger=info)
 
 # Storing current status
 if args.path is not None:
-    assert(args.name is not None)
     with io.open(os.path.join(args.path, args.name + '.json'), 'w') as f:
         json.dump(tostore, f, cls=NPEncoder)
