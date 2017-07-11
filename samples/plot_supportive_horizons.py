@@ -90,9 +90,11 @@ def get_results_from_one(job):
 
 
 def plot_results():
-    plots = plt.subplots(1, 2, sharey=True)[1]
-    plots[0].set_ylabel('Average_return')
+    # Load results
     results = {j: get_results_from_one(jobs[j]) for j in jobs}
+    # Plot returns
+    plots = plt.subplots(1, 2, sharey=True)[1]
+    plots[0].set_ylabel('Average return')
     returns_transititions = [results['transitions-{}'.format(h)][0]
                              for h in horizon_length_transitions]
     returns_htm = [results['htm-{}'.format(h)][0]
@@ -101,6 +103,19 @@ def plot_results():
     plots[0].set_title('N Transitions Horizon')
     plots[0].set_xlabel('Number of Transitions')
     plot_var(returns_htm, x=horizon_length_htm, ax=plots[1])
+    plots[1].set_title('N HTM Horizon')
+    plots[1].set_xlabel('Number of HTM Transitions')
+    # Plot simulator calls
+    plots = plt.subplots(1, 2, sharey=True)[1]
+    plots[0].set_ylabel('Average number of calls to simulator')
+    calls_transititions = [results['transitions-{}'.format(h)][2]
+                           for h in horizon_length_transitions]
+    calls_htm = [results['htm-{}'.format(h)][2]
+                 for h in horizon_length_htm]
+    plot_var(calls_transititions, x=horizon_length_transitions, ax=plots[0])
+    plots[0].set_title('N Transitions Horizon')
+    plots[0].set_xlabel('Number of Transitions')
+    plot_var(calls_htm, x=horizon_length_htm, ax=plots[1])
     plots[1].set_title('N HTM Horizon')
     plots[1].set_xlabel('Number of HTM Transitions')
 
