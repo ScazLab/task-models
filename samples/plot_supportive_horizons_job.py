@@ -196,7 +196,7 @@ if args.path is not None:
     assert(args.name is not None)
     export_pomcp(pol, os.path.join(args.path, args.name + '.tree.json'),
                  belief_as_quotient=True)
-    info('Tree stored in {}s.'.format(tostore['t_warmup'] - time.time()))
+    info('Tree stored in {}s.'.format(time.time() - t_0 - tostore['t_warmup']))
 # Evaluation
 tostore['evaluations'] = evaluate(p, pol, PARAM['n_evaluations'], logger=info)
 
