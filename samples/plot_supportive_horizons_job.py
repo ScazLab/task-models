@@ -36,7 +36,7 @@ PARAM = {
     # Algorithm parameters
     'n_warmup': 5000,         # initial warmup exploration
     'n_evaluations': 100,     # number of evaluations
-    'iterations': 10,         # iterations for the policy (in get_action)
+    'iterations': 100,        # iterations for the policy (in get_action)
     'exploration': 50,
     'relative_explo': False,  # In this case use smaller exploration
     'belief_values': False,
@@ -109,7 +109,7 @@ class NPEncoder(json.JSONEncoder):
 def episode_summary(model, full_return, h_s, h_a, h_o, h_r, n_calls,
                     elapsed=None):
     indent = 4 * " "
-    return ("Evaluation: {} transitions, return: {:4.0f} [{} calls in {}]\n"
+    return ("Evaluation: {} transitions, return: {:4.0f} [{:,} calls in {}]\n"
             "".format(len(h_a), full_return, n_calls, elapsed) +
             "".join(["{ind}{}: {} → {} [{}]\n".format(model._int_to_state(s),
                                                       model.actions[a],
@@ -119,7 +119,7 @@ def episode_summary(model, full_return, h_s, h_a, h_o, h_r, n_calls,
             "{ind}{}".format(model._int_to_state(h_s[-1]), ind=indent))
 
 
-def simulate_one_evaluation(model, pol, max_horizon=50, logger=None):
+def simulate_one_evaluation(model, pol, max_horizon=200, logger=None):
     init_calls = model._calls
     pol.reset()
     # History init
