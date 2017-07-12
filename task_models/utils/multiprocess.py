@@ -1,21 +1,18 @@
 import os
-import time
 import subprocess
+from queue import Empty
 from datetime import timedelta
 from multiprocessing import Process, cpu_count, Queue
 
 import numpy as np
 
 
-"""Implements repeating several times the same function through processes
-and returning the list of results. Takes care of using a different numpy
-random state in each process.
-"""
-
-
 class RepeatPool:
 
-    refresh_period = .01
+    """Implements repeating several times the same function through processes
+    and returning the list of results. Takes care of using a different numpy
+    random state in each process.
+    """
 
     def __init__(self, target):
         self.n_processes = cpu_count()
@@ -28,13 +25,20 @@ class RepeatPool:
 
     def run(self, n):
         self.workers = [None] * self.n_processes
-        self.to_go = n
+        self.to_go = n  # Number of repetitions still to be run
         self.result_queue = Queue()
+        results = []
         while self._still_working():
             self._clean()
             self._fill()
-            time.sleep(self.refresh_period)
-        return [self.result_queue.get_nowait() for _ in range(n)]
+            try:  # Waits for at least one job to push results.
+                results.append(self.result_queue.get(False, 1))
+            except Empty:  # The timeout prevents blocking if jobs fail to push
+                pass
+        # Collect remaining results just in case
+        results.extend([self.result_queue.get_nowait()
+                        for _ in range(n - len(results))])
+        return results
 
     def _still_working(self):
         return self.to_go > 0 or any([w is not None for w in self.workers])
@@ -64,6 +68,10 @@ class RepeatPool:
 
 
 def repeat(func, n):
+    """Repeats calls to func n times in separate process.
+
+    See RepeatPool for implementation.
+    """
     p = RepeatPool(func)
     return p.run(n)
 
