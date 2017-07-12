@@ -39,12 +39,15 @@ args = parser.parse_args(sys.argv[1:])
 SCRIPT = os.path.join(os.path.dirname(__file__),
                       'plot_supportive_horizons_job.py')
 
-horizon_types = ['transitions'] * 10 + ['htm'] * 9
-horizon_length_transitions = list(range(10, 101, 10))
+horizon_length_transitions = [3, 5, 7, 10, 15, 20, 25, 30, 35, 40, 60, 80, 100]
 horizon_length_htm = list(range(1, 10))
+horizon_types = (['transitions'] * len(horizon_length_transitions) +
+                 ['htm'] * len(horizon_length_htm))
 horizon_lengths = horizon_length_transitions + horizon_length_htm
-exps = [('{}-{}'.format(t, l), {'horizon-type': t, 'horizon-length': l})
-        for t, l in zip(horizon_types, horizon_lengths)]
+exps = [('{}-{}-{}'.format(t, l, 's' if s else 'ns'),
+         {'horizon-type': t, 'horizon-length': l, 'intermediate-rewards': s})
+        for t, l in zip(horizon_types, horizon_lengths)
+        for s in (True, False)]  # intermediate rewards (for subtasks)
 
 jobs = {name: Job(args.path, name, SCRIPT) for name, exp in exps}
 exps = dict(exps)
@@ -95,29 +98,49 @@ def plot_results():
     # Plot returns
     plots = plt.subplots(1, 2, sharey=True)[1]
     plots[0].set_ylabel('Average return')
-    returns_transititions = [results['transitions-{}'.format(h)][0]
-                             for h in horizon_length_transitions]
-    returns_htm = [results['htm-{}'.format(h)][0]
-                   for h in horizon_length_htm]
-    plot_var(returns_transititions, x=horizon_length_transitions, ax=plots[0])
+    returns_transititions = [[results['transitions-{}-{}'.format(h, s)][0]
+                              for h in horizon_length_transitions]
+                             for s in ('ns', 's')]
+    returns_htm = [[results['htm-{}-{}'.format(h, s)][0]
+                    for h in horizon_length_htm]
+                   for s in ('ns', 's')]
+    plot_var(returns_transititions[0], x=horizon_length_transitions,
+             ax=plots[0], label='final rewards only')
+    plot_var(returns_transititions[1], x=horizon_length_transitions,
+             ax=plots[0], label='subtask rewards')
     plots[0].set_title('N Transitions Horizon')
     plots[0].set_xlabel('Number of Transitions')
-    plot_var(returns_htm, x=horizon_length_htm, ax=plots[1])
+    plot_var(returns_htm[0], x=horizon_length_htm, ax=plots[1],
+             label='final rewards only')
+    plot_var(returns_htm[1], x=horizon_length_htm, ax=plots[1],
+             label='subtask rewards')
     plots[1].set_title('N HTM Horizon')
     plots[1].set_xlabel('Number of HTM Transitions')
+    plots[1].legend()
+    plt.title('Average returns for various horizons')
     # Plot simulator calls
     plots = plt.subplots(1, 2, sharey=True)[1]
     plots[0].set_ylabel('Average number of calls to simulator')
-    calls_transititions = [results['transitions-{}'.format(h)][2]
-                           for h in horizon_length_transitions]
-    calls_htm = [results['htm-{}'.format(h)][2]
-                 for h in horizon_length_htm]
-    plot_var(calls_transititions, x=horizon_length_transitions, ax=plots[0])
+    calls_transititions = [[results['transitions-{}-{}'.format(h, s)][2]
+                            for h in horizon_length_transitions]
+                           for s in ('ns', 's')]
+    calls_htm = [[results['htm-{}-{}'.format(h, s)][2]
+                  for h in horizon_length_htm]
+                 for s in ('ns', 's')]
+    plot_var(calls_transititions[0], x=horizon_length_transitions, ax=plots[0],
+             label='final rewards only')
+    plot_var(calls_transititions[1], x=horizon_length_transitions, ax=plots[0],
+             label='subtask rewards')
     plots[0].set_title('N Transitions Horizon')
     plots[0].set_xlabel('Number of Transitions')
-    plot_var(calls_htm, x=horizon_length_htm, ax=plots[1])
+    plot_var(calls_htm[0], x=horizon_length_htm, ax=plots[1],
+             label='final rewards only')
+    plot_var(calls_htm[1], x=horizon_length_htm, ax=plots[1],
+             label='subtask rewards')
     plots[1].set_title('N HTM Horizon')
     plots[1].set_xlabel('Number of HTM Transitions')
+    plots[1].legend()
+    plt.title('Simulator calls for various horizons')
 
 
 if args.action == 'prepare':

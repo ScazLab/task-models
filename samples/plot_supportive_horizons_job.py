@@ -55,7 +55,8 @@ if args.debug:
     PARAM['n_warmup'] = 2
     PARAM['n_evaluations'] = 2
     PARAM['iterations'] = 3
-    PARAM['n_particles'] = 50
+    PARAM['n_particles'] = 20
+    PARAM['horizon-length'] = 2
 
 
 class FinishedOrNTransitionsHorizon(NTransitionsHorizon):
@@ -170,8 +171,12 @@ htm = SequentialCombination([
     for i in range(4)])
 
 p = CountingSupportivePOMDP(htm)
-# TODO put as default
-p.r_subtask = 0.
+if PARAM['intermediate-rewards']:
+    p.r_subtask = 10
+    p.r_final = 110
+else:
+    p.r_subtask = 0
+    p.r_final = 200
 pol = POMCPPolicyRunner(p, iterations=PARAM['iterations'],
                         horizon=(NHTMHorizon if PARAM['horizon-type'] == 'htm'
                                  else FinishedOrNTransitionsHorizon
