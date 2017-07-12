@@ -42,7 +42,8 @@ PARAM = {
     'belief_values': False,
     'n_particles': 150,
     'horizon-type': 'transitions',  # or htm
-    'horizon-length': 3,
+    'horizon-length': 20,
+    'intermediate-rewards': False,
 }
 
 if args.config is not None:

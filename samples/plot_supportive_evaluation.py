@@ -48,6 +48,11 @@ exps = [('{}-{}-{}'.format(t, l, 's' if s else 'ns'),
          {'horizon-type': t, 'horizon-length': l, 'intermediate-rewards': s})
         for t, l in zip(horizon_types, horizon_lengths)
         for s in (True, False)]  # intermediate rewards (for subtasks)
+n_iterations = [1, 2, 5] + list(range(10, 101, 5))
+n_particles = [100, 150]
+exps.extend([('iterations-{}-{}'.format(i, p),
+              {'iterations': i, 'n_particles': p})
+             for i in n_iterations for p in n_particles])
 
 jobs = {name: Job(args.path, name, SCRIPT) for name, exp in exps}
 exps = dict(exps)
@@ -95,6 +100,7 @@ def get_results_from_one(job):
 def plot_results():
     # Load results
     results = {j: get_results_from_one(jobs[j]) for j in jobs}
+    # Horizon evaluation
     # Plot returns
     plots = plt.subplots(1, 2, sharey=True)[1]
     plots[0].set_ylabel('Average return')
@@ -141,6 +147,19 @@ def plot_results():
     plots[1].set_xlabel('Number of HTM Transitions')
     plots[1].legend()
     plt.title('Simulator calls for various horizons')
+    # N iterations evaluation
+    # Plot returns for
+    plt.figure()
+    cplot = plt.gca()
+    cplot.set_ylabel('Average return')
+    cplot.set_xlabel('Number of iterations')
+    for p in n_particles:
+        returns_iterations = [results['iterations-{}-{}'.format(i, p)][0]
+                              for i in n_iterations]
+        plot_var(returns_iterations, x=n_iterations,
+                 label='{} particles'.format(p))
+    plt.legend()
+    plt.title('Average returns for various numbers of iterations')
 
 
 if args.action == 'prepare':
