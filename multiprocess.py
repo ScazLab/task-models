@@ -7,13 +7,12 @@ from multiprocessing import Process, cpu_count, Queue
 import numpy as np
 
 
-"""Implements repeating several times the same function through processes
-and returning the list of results. Takes care of using a different numpy
-random state in each process.
-"""
-
-
 class RepeatPool:
+
+    """Implements repeating several times the same function through processes
+    and returning the list of results. Takes care of using a different numpy
+    random state in each process.
+    """
 
     def __init__(self, target):
         self.n_processes = cpu_count()
@@ -69,6 +68,10 @@ class RepeatPool:
 
 
 def repeat(func, n):
+    """Repeats calls to func n times in separate process.
+
+    See RepeatPool for implementation.
+    """
     p = RepeatPool(func)
     return p.run(n)
 
