@@ -24,19 +24,6 @@ class FinishedOrNTransitionsHorizon(NTransitionsHorizon):
         return cls._Generator(cls, model, n)
 
 
-class CountingSupportivePOMDP(SupportivePOMDP):
-    """Adds a counter of calls to sample_transition"""
-
-    def __init__(self, *args, **kwargs):
-        super(CountingSupportivePOMDP, self).__init__(*args, **kwargs)
-        self._calls = 0
-
-    def sample_transition(self, a, s, random=True):
-        self._calls += 1
-        return super(CountingSupportivePOMDP, self).sample_transition(
-            a, s, random=random)
-
-
 def episode_summary(model, full_return, h_s, h_a, h_o, h_r, n_calls,
                     elapsed=None):
     indent = 4 * " "

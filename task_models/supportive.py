@@ -291,6 +291,7 @@ class SupportivePOMDP:
             2 ** (len(self.preferences) + 1 + len(self.objects)))
         self._init_object_actions_indices()
         self.n_actions = self._skip_to_a_obj + len(self.objects) + sum(self.clearable)
+        self.n_simulator_calls = 0  # Counter for simulator calls
 
     def _int_to_state(self, s=0):
         return _SupportivePOMDPState(self.n_htm_states, len(self.preferences),
@@ -414,6 +415,7 @@ class SupportivePOMDP:
         return self.cost_get  # Cost for the human to get the object
 
     def sample_transition(self, a, s, random=True):
+        self.n_simulator_calls += 1
         _s = self._int_to_state(s)
         if random:
             # random transitions

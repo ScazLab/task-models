@@ -14,8 +14,7 @@ from task_models.lib.pomcp import POMCPPolicyRunner, export_pomcp
 from task_models.task import SequentialCombination, LeafCombination
 from task_models.supportive import (SupportivePOMDP, AssembleLeg, AssembleLegToTop,
                                     NHTMHorizon)
-from task_models.evaluation import (FinishedOrNTransitionsHorizon, evaluate,
-                                    CountingSupportivePOMDP)
+from task_models.evaluation import FinishedOrNTransitionsHorizon, evaluate
 
 
 # Arguments
@@ -81,7 +80,7 @@ htm = SequentialCombination([
         LeafCombination(AssembleLegToTop(leg_i(i), bring_top=(i == 0)))])
     for i in range(4)])
 
-p = CountingSupportivePOMDP(htm)
+p = SupportivePOMDP(htm)
 if PARAM['intermediate-rewards']:
     p.r_subtask = 10
     p.r_final = 110
