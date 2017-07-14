@@ -33,12 +33,13 @@ args = parser.parse_args(sys.argv[1:])
 
 PARAM = {
     # Algorithm parameters
-    'n_warmup': 5000,         # initial warmup exploration
-    'n_evaluations': 100,     # number of evaluations
-    'iterations': 100,        # iterations for the policy (in get_action)
+    'n_warmup': 5000,           # initial warmup exploration
+    'n_evaluations': 100,       # number of evaluations
+    'iterations': 100,          # iterations for the policy (in get_action)
+    'rollout-iterations': 100,  # iterations for rollouts
     'exploration': 50,
-    'relative_explo': False,  # In this case use smaller exploration
-    'belief_values': False,
+    'relative-explo': False,    # In this case use smaller exploration
+    'belief-values': False,
     'n_particles': 150,
     'horizon-type': 'transitions',  # or htm
     'horizon-length': 20,
@@ -92,8 +93,8 @@ pol = POMCPPolicyRunner(p, iterations=PARAM['iterations'],
                                  else FinishedOrNTransitionsHorizon
                                  ).generator(p, n=PARAM['horizon-length']),
                         exploration=PARAM['exploration'],
-                        relative_exploration=PARAM['relative_explo'],
-                        belief_values=PARAM['belief_values'],
+                        relative_exploration=PARAM['relative-explo'],
+                        belief_values=PARAM['belief-values'],
                         belief='particle',
                         belief_params={'n_particles': PARAM['n_particles']})
 

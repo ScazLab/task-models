@@ -66,11 +66,9 @@ def _null_logger(*args, **kwargs):
 
 class _SearchTree:
 
-    rollout_it = 100
-
     def __init__(self, model, horizon_generator, exploration,
-                 relative_exploration=False, belief='array', belief_params={},
-                 node_params={}, logger=None):
+                 relative_exploration=False, belief='array', rollout_it=100,
+                 belief_params={}, node_params={}, logger=None):
         self._belief = belief
         self._belief_params = belief_params
         self.model = model
@@ -187,8 +185,8 @@ class _SearchTree:
 class _ObservationLookupSearchTree(_SearchTree):
 
     def __init__(self, model, horizon, exploration,
-                 relative_exploration=False, belief='array', belief_params={},
-                 node_params={}, logger=None):
+                 relative_exploration=False, belief='array', rollout_it=100,
+                 belief_params={}, node_params={}, logger=None):
         self._obs_nodes = {}  # used in super for root initialization
         if belief == 'particle':
             raise ValueError(
@@ -413,7 +411,7 @@ class POMCPPolicyRunner(object):
     """
 
     def __init__(self, model, particles=20, iterations=100, horizon=100,
-                 exploration=None, relative_exploration=False,
+                 exploration=None, relative_exploration=False, rollout_it=100,
                  belief_values=False, belief='array', belief_params={},
                  logger=None):
         if logger is None:
@@ -430,8 +428,12 @@ class POMCPPolicyRunner(object):
             raise ValueError('Invalid horizon: ' + str(horizon))
         self.tree = tree_class(model, horizon_generator, exploration,
                                relative_exploration=relative_exploration,
-                               belief=belief, belief_params=belief_params,
+                               rollout_it=rollout_it, belief=belief,
+                               belief_params=belief_params,
                                logger=logger)
+        if iterations < model.n_actions:
+            logger('{} iterations is smaller than the number of actions'.format(
+                iterations))
         self.iterations = iterations
         self._reset()
 
