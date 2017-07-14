@@ -67,7 +67,7 @@ def _null_logger(*args, **kwargs):
 class _SearchTree:
 
     def __init__(self, model, horizon_generator, exploration,
-                 relative_exploration=False, belief='array', rollout_it=100,
+                 relative_exploration=False, rollout_it=100, belief='array',
                  belief_params={}, node_params={}, logger=None):
         self._belief = belief
         self._belief_params = belief_params
@@ -77,6 +77,7 @@ class _SearchTree:
         self.horizon_gen = horizon_generator
         self.exploration = exploration
         self.relative_explo = relative_exploration
+        self.rollout_it = rollout_it
         self.log = _null_logger if logger is None else logger
 
     def _belief_start(self):
