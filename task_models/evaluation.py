@@ -24,17 +24,21 @@ class FinishedOrNTransitionsHorizon(NTransitionsHorizon):
         return cls._Generator(cls, model, n)
 
 
+def transition_summary(model, s, a, o, r, indent=""):
+    return "{ind}{}: {} → {} [{}]\n".format(model._int_to_state(s),
+                                            model.actions[a],
+                                            model.observations[o],
+                                            r, ind=indent)
+
+
 def episode_summary(model, full_return, h_s, h_a, h_o, h_r, n_calls,
                     elapsed=None):
     indent = 4 * " "
     return ("Evaluation: {} transitions, return: {:4.0f} [{:,} calls in {}]\n"
             "".format(len(h_a), full_return, n_calls, elapsed) +
-            "".join(["{ind}{}: {} → {} [{}]\n".format(model._int_to_state(s),
-                                                      model.actions[a],
-                                                      model.observations[o],
-                                                      r, ind=indent)
+            "".join([transition_summary(s, a, o, r, ind=indent)
                      for s, a, o, r in zip(h_s, h_a, h_o, h_r)]) +
-            "{ind}{}".format(model._int_to_state(h_s[-1]), ind=indent))
+            "{ind}{}".format(model._int_to_state(h_s[-1]), indent=indent))
 
 
 def simulate_one_evaluation(model, pol, max_horizon=200, logger=None):
