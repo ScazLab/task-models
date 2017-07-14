@@ -36,9 +36,9 @@ def episode_summary(model, full_return, h_s, h_a, h_o, h_r, n_calls,
     indent = 4 * " "
     return ("Evaluation: {} transitions, return: {:4.0f} [{:,} calls in {}]\n"
             "".format(len(h_a), full_return, n_calls, elapsed) +
-            "".join([transition_summary(s, a, o, r, ind=indent)
+            "".join([transition_summary(model, s, a, o, r, indent=indent)
                      for s, a, o, r in zip(h_s, h_a, h_o, h_r)]) +
-            "{ind}{}".format(model._int_to_state(h_s[-1]), indent=indent))
+            "{ind}{}".format(model._int_to_state(h_s[-1]), ind=indent))
 
 
 def simulate_one_evaluation(model, pol, max_horizon=200, logger=None):
