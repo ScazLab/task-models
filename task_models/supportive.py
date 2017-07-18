@@ -261,8 +261,8 @@ class SupportivePOMDP:
 
     p_fail = .01
     p_consume_all = .5
-    p_changed_by_human = .05
-    p_change_preference = .05
+    p_changed_by_human = .01
+    p_change_preference = .01
 
     r_subtask = 10.
     r_final = 100.
