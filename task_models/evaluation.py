@@ -41,7 +41,12 @@ def episode_summary(model, full_return, h_s, h_a, h_o, h_r, n_calls,
             "{ind}{}".format(model._int_to_state(h_s[-1]), ind=indent))
 
 
-def simulate_one_evaluation(model, pol, max_horizon=200, logger=None):
+def simulate_one_evaluation(model, pol, max_horizon=200, logger=None,
+                            discount=True):
+    if discount:
+        gamma = model.discount
+    else:
+        gamma = 1.
     init_calls = model.n_simulator_calls
     pol.reset()
     # History init
@@ -60,7 +65,7 @@ def simulate_one_evaluation(model, pol, max_horizon=200, logger=None):
         horizon.decrement(a, h_s[-1], s, o)
         pol.step(model.observations[o])
         h_s.append(s)
-        full_return = r + model.discount * full_return
+        full_return = r + gamma * full_return
     elapsed = get_process_elapsed_time()
     n_calls = model.n_simulator_calls - init_calls
     if logger is not None:
