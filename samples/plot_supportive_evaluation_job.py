@@ -12,6 +12,7 @@ import numpy as np
 
 from task_models.lib.pomcp import POMCPPolicyRunner, export_pomcp
 from task_models.task import SequentialCombination, LeafCombination
+from task_models.policy import PolicyLongSupportiveSequence
 from task_models.supportive import (SupportivePOMDP, AssembleLeg, AssembleLegToTop,
                                     NHTMHorizon)
 from task_models.evaluation import FinishedOrNTransitionsHorizon, evaluate
