@@ -8,8 +8,7 @@ import json
 import logging
 import argparse
 
-import numpy as np
-
+from task_models.lib.utils import NPEncoder
 from task_models.lib.pomcp import POMCPPolicyRunner, export_pomcp
 from task_models.task import SequentialCombination, LeafCombination
 from task_models.policy import PolicyLongSupportiveSequence
@@ -61,19 +60,6 @@ if args.debug:
     PARAM['iterations'] = 10
     PARAM['n_particles'] = 20
     PARAM['horizon-length'] = 2
-
-
-class NPEncoder(json.JSONEncoder):
-
-    def default(self, obj):
-        if isinstance(obj, np.integer):
-            return int(obj)
-        elif isinstance(obj, np.floating):
-            return float(obj)
-        elif isinstance(obj, np.ndarray):
-            return obj.tolist()
-        else:
-            return super(NPEncoder, self).default(obj)
 
 
 # Problem definition
