@@ -48,11 +48,12 @@ exps = [('{}-{}-{}'.format(t, l, 's' if s else 'ns'),
          {'horizon-type': t, 'horizon-length': l, 'intermediate-rewards': s})
         for t, l in zip(horizon_types, horizon_lengths)
         for s in (True, False)]  # intermediate rewards (for subtasks)
-n_iterations = [1, 2, 5] + list(range(10, 101, 5))
-n_particles = [100, 150]
-exps.extend([('iterations-{}-{}'.format(i, p),
-              {'iterations': i, 'n_particles': p})
-             for i in n_iterations for p in n_particles])
+exps = []
+n_iterations = [15, 20, 30] + list(range(50, 1001, 50))
+n_rollout_it = [10, 100, 500, 1000]
+exps.extend([('iterations-{}-{}'.format(i, r),
+              {'iterations': i, 'rollout-iterations': r})
+             for i in n_iterations for r in n_rollout_it])
 
 jobs = {name: Job(args.path, name, SCRIPT) for name, exp in exps}
 exps = dict(exps)
@@ -153,11 +154,11 @@ def plot_results():
     cplot = plt.gca()
     cplot.set_ylabel('Average return')
     cplot.set_xlabel('Number of iterations')
-    for p in n_particles:
-        returns_iterations = [results['iterations-{}-{}'.format(i, p)][0]
+    for r in n_rollout_it:
+        returns_iterations = [results['iterations-{}-{}'.format(i, r)][0]
                               for i in n_iterations]
         plot_var(returns_iterations, x=n_iterations,
-                 label='{} particles'.format(p))
+                 label='{} rollout iterations'.format(r))
     plt.legend()
     plt.title('Average returns for various numbers of iterations')
 
