@@ -122,6 +122,7 @@ elif args.action == 'run':
     pool.run()
     if args.launcher == 'process' or args.watch:
         pool.log_refreshed_stats(RefreshedPrint())
+    print(pool.get_stats())
 
 elif args.action == 'status':
     if args.watch:

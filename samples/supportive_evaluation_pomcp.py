@@ -37,7 +37,7 @@ for p in (run, status):
 args = parser.parse_args(sys.argv[1:])
 
 SCRIPT = os.path.join(os.path.dirname(__file__),
-                      'plot_supportive_evaluation_job.py')
+                      'supportive_evaluation_pomcp_job.py')
 
 horizon_length_transitions = [3, 5, 7, 10, 15, 20, 25, 30, 35, 40, 60, 80, 100]
 horizon_length_htm = list(range(1, 10))
