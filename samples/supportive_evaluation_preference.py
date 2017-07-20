@@ -50,7 +50,7 @@ SCRIPT = os.path.join(os.path.dirname(__file__),
 p_preference = list(np.arange(0, 1.001, .05))
 policies = ['pomcp', 'always-hold', 'never-hold']
 exps = [('preferences-{}-{}'.format(p, pol),
-         {'p_preference': p, 'policy': pol, 'p_change_preference': 0.})
+         {'p_preference': p, 'policy': pol})
         for p in p_preference for pol in policies]
 
 jobs = {name: Job(args.path, name, SCRIPT) for name, exp in exps}

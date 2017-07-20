@@ -21,6 +21,8 @@ class Experiment(SupportiveExperiment):
         self.model.r_final = 10
         if 'p_change_preference' in self.parameters:
             self.model.p_change_preference = self.parameters['p_change_preference']
+        else:
+            self.model.p_change_preference = 0.
         # Policy
         if self.parameters['policy'] == 'pomcp':
             self.init_pomcp_policy()
