@@ -265,6 +265,10 @@ class SupportivePOMDP:
     r_subtask = 10.
     r_final = 100.
     r_preference = 10.
+    reward_independent_preference = False  # give the same total reward on
+    # subtask whether the preference is there or not (i.e. in the
+    # non-preference case, add (r_preference - cost_hold) to r_subtask so
+    # that the expectation is the same regardless of the preference)
 
     cost_get = 15.
     cost_intrinsic = 1.
@@ -447,6 +451,10 @@ class SupportivePOMDP:
                 if obs != self.O_FAIL:  # Ask or righ correct hold
                     r += self._update_for_transition(_new_s, _s.htm)
                     r += self.r_subtask
+                    if (self.reward_independent_preference and
+                            not _s.has_preference(self.PREF_HOLD)):
+                        r += self.r_preference - self.cost_hold
+
         elif a == self.A_ASK:
             r = -self.cost_intrinsic
             if _s.has_preference(self.PREF_HOLD):

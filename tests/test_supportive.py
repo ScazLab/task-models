@@ -442,6 +442,34 @@ class TestSupportivePOMDP(TestCase):
         self.assertEqual(_s.has_object(1), 1)
         self.assertEqual(o, self.p.O_NOT_FOUND)
 
+    def test_reward_independent_preference(self):
+        htm = SequentialCombination([self.alt, self.af])
+        p = SupportivePOMDP(htm)
+        p.reward_independent_preference = True
+        _s = p._int_to_state()
+        _s.set_object(p.objects.index('screws'), 1)
+        _s.set_object(p.objects.index('screwdriver'), 1)
+        _s.set_object(p.objects.index('joints'), 1)
+        _s.set_object(p.objects.index('leg'), 1)
+        # Preference for holding
+        _s.set_preference(0, 1)
+        # - Wait on preference
+        s, o, r = p.sample_transition(p.A_WAIT, _s.to_int(), random=False)
+        self.assertEqual(p._int_to_state(s).htm, 1)
+        self.assertEqual(o, p.O_NONE)
+        self.assertEqual(r, 10.)
+        # - Hold on preference
+        s, o, r = p.sample_transition(p.A_HOLD_V, _s.to_int(), random=False)
+        self.assertEqual(p._int_to_state(s).htm, 1)
+        self.assertEqual(o, p.O_NONE)
+        self.assertEqual(r, 10. - p.cost_hold + 10.)
+        # - Wait on no preference
+        _s.set_preference(0, 0)
+        s, o, r = p.sample_transition(p.A_WAIT, _s.to_int(), random=False)
+        self.assertEqual(p._int_to_state(s).htm, 1)
+        self.assertEqual(o, p.O_NONE)
+        self.assertEqual(r, 10. - p.cost_hold + 10.)
+
 
 class TestNHTMHorizon(TestCase):
 
