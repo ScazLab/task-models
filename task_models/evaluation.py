@@ -130,8 +130,9 @@ class SupportiveExperiment(object):
         self.results = {}
         self.path = None
 
-    def run(self, debug=True):
+    def run(self, debug=False):
         if debug:
+            self.log('DEBUG mode is on')
             self.parameters['n_warmup'] = 2
             self.parameters['n_evaluations'] = 2
             self.parameters['iterations'] = 10
