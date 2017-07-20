@@ -84,8 +84,6 @@ class AssembleFoot(SupportedAction):
     def __init__(self, leg):
         super(AssembleFoot, self).__init__('Assemble foot on ' + leg)
         self.conditions = [(USES, 'joints'),
-                           # For now feet and joints are in same box
-                           #(USES, 'feet'),
                            (CONSUMES, 'leg'),
                            (USES, 'screwdriver'),
                            (USES, 'screws'),
@@ -427,11 +425,14 @@ class SupportivePOMDP:
             if _s.is_final():  # Final state
                 obs = self.O_NONE
             elif _s.htm == self.htm_clean:  # Cleaning state
-                obs = self.O_NONE
-                for o, _ in enumerate(self.objects):
-                    r -= self._cost_get(o) * _s.has_object(o)
-                _new_s.htm = self.htm_final
-                r += self.r_final
+                if a == self.A_WAIT:
+                    obs = self.O_NONE
+                    for o, _ in enumerate(self.objects):
+                        r -= self._cost_get(o) * _s.has_object(o)
+                    _new_s.htm = self.htm_final
+                    r += self.r_final
+                else:  # Only WAIT finishes the task
+                    obs = self.O_FAIL
             else:
                 obs = self.O_NONE
                 needs_hold = self.htm_nodes[_s.htm].action.hold
@@ -441,7 +442,7 @@ class SupportivePOMDP:
                     r += self.r_preference
                 elif (a in (self.A_HOLD_H, self.A_HOLD_V) and (
                         (not random) or np.random.random() < .95)):
-                    # Undesired hold most likely gets an error
+                    # Undesired HOLD most likely gets an error
                     obs = self.O_FAIL
                 if obs != self.O_FAIL:  # Ask or righ correct hold
                     r += self._update_for_transition(_new_s, _s.htm)

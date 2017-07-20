@@ -387,6 +387,18 @@ class TestSupportivePOMDP(TestCase):
         s, o, r = self.p.sample_transition(self.p.A_HOLD_V, _s.to_int(),
                                            random=False)
         self.assertEqual(r, -p.cost_hold)
+        # Only wait moves to final state
+        _s = self.p._int_to_state()
+        _s.htm = self.p.htm_clean
+        _s.set_preference(0, 1)
+        s, o, r = self.p.sample_transition(self.p.A_HOLD_V, _s.to_int(),
+                                           random=False)
+        self.assertEqual(o, self.p.O_FAIL)
+        self.assertEqual(s, _s.to_int())
+        s, o, r = self.p.sample_transition(self.p.A_WAIT, _s.to_int(),
+                                           random=False)
+        self.assertEqual(o, self.p.O_NONE)
+        self.assertEqual(self.p._int_to_state(s).htm, self.p.htm_final)
         # Does not apply on final node
         _s = self.p._int_to_state()
         _s.htm = self.p.htm_final
