@@ -182,8 +182,8 @@ class SupportiveExperiment(object):
 
     @classmethod
     def load_from_serialized(cls, config_path):
-        with open(config_path, 'r'):
-            param = json.load(config_path)
+        with open(config_path, 'r') as config_file:
+            param = json.load(config_file)
         return cls(parameters=param)
 
     @classmethod
