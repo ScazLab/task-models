@@ -50,7 +50,7 @@ exps = [('{}-{}-{}'.format(t, l, 's' if s else 'ns'),
         for s in (True, False)]  # intermediate rewards (for subtasks)
 exps = []
 n_iterations = [15, 20, 30] + list(range(50, 1001, 50))
-n_rollout_it = [10, 100, 500, 1000]
+n_rollout_it = [1, 5, 10, 30, 50, 75, 100]
 exps.extend([('iterations-{}-{}'.format(i, r),
               {'iterations': i, 'rollout-iterations': r})
              for i in n_iterations for r in n_rollout_it])
