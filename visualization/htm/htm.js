@@ -7,6 +7,7 @@ function loadhtm(file)
   if (file == '') { file = defaultjsonfile;}
   else            { defaultjsonfile = file;};
 
+  file = file.replace('C:\\fakepath\\', '');
   console.log('Loading file: '+file);
 
   var width  = 1270,
