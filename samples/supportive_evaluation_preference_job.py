@@ -9,6 +9,8 @@ from task_models.evaluation import SupportiveExperiment
 
 class Experiment(SupportiveExperiment):
 
+    EVALUATE_ARGUMENTS = {'max_horizon': 15}
+
     def init_run(self):
         # HTM definition: one leg assembly
         self.htm = LeafCombination(AssembleLeg('leg'))

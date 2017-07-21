@@ -92,10 +92,10 @@ def simulate_one_evaluation(model, pol, max_horizon=200, logger=None,
             }
 
 
-def evaluate(model, pol, n_evaluation, logger=None):
+def evaluate(model, pol, n_evaluation, max_horizon=200, logger=None):
     def func():
-        return simulate_one_evaluation(model, pol, logger=logger)
-
+        return simulate_one_evaluation(model, pol, max_horizon=max_horizon,
+                                       logger=logger)
     return repeat(func, n_evaluation)
 
 
@@ -120,6 +120,8 @@ class SupportiveExperiment(object):
         'p_preference': 0.3,
         'policy': 'pomcp',
     }
+
+    EVALUATE_ARGUMENTS = {}
 
     def __init__(self, parameters=None):
         self.parameters = self.DEFAULT_PARAMETERS.copy()
@@ -150,7 +152,7 @@ class SupportiveExperiment(object):
         # Evaluation
         self.results['evaluations'] = evaluate(
             self.model, self.policy, self.parameters['n_evaluations'],
-            logger=self.log)
+            logger=self.log, **self.EVALUATE_ARGUMENTS)
         # Finishing
         self.finish_run()
         if self.path is not None:
