@@ -138,6 +138,7 @@ class SupportiveExperiment(object):
             self.parameters['iterations'] = 10
             self.parameters['n_particles'] = 20
             self.parameters['horizon-length'] = 2
+        self.log_parameters()
         self.results['parameters'] = self.parameters
         self.init_run()
         self.log('Starting warmup')
@@ -154,6 +155,11 @@ class SupportiveExperiment(object):
         self.finish_run()
         if self.path is not None:
             self.write_result(self.path)
+
+    def log_parameters(self):
+        self.log('Parameters:\n' + '\n'.join([
+            '  - {}: {}'.format(k, self.parameters[k])
+            for k in self.parameters]))
 
     def init_run(self):
         """Needs to set the following attributes:
