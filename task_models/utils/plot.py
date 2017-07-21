@@ -98,7 +98,7 @@ def plot_var(y, x=None, color=None, var=True, var_style='fill', **kwargs):
     if var and var_style in ('bar', 'both'):
         kwargs['yerr'] = std
         if kwargs['linewidth'] is not None:
-            kwargs['elinewidth'] = kwargs['linewidth'] / 8
+            kwargs['elinewidth'] = kwargs['linewidth'] / 4
         plot_fun = ax.errorbar
     if color is not None:
         kwargs['color'] = color
@@ -108,7 +108,7 @@ def plot_var(y, x=None, color=None, var=True, var_style='fill', **kwargs):
         color = lines[0].get_color()
     x = lines[0].get_xdata()
     if var and var_style in ('fill', 'both'):
-        ax.fill_between(x, mean - std, mean + std, alpha=.2, color=color)
+        ax.fill_between(x, mean - std, mean + std, alpha=.2, linewidth=0, color=color)
     remove_chartjunk(ax, ['top', 'right'])
     return lines
 

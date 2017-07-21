@@ -102,17 +102,17 @@ def plot_results():
     # Load results
     results = {j: get_results_from_one(jobs[j]) for j in jobs}
     # Plot returns for preferences
-    figure = plt.figure(figsize=(12, 8), dpi=80, facecolor='w', edgecolor='k')
+    figure = plt.figure()
     cplot = plt.gca()
-    cplot.set_ylabel('Average return', fontsize= 20)
-    cplot.set_xlabel('p_preference', fontsize= 20)
+    cplot.set_ylabel('Average Return')
+    cplot.set_xlabel('$p_H$')
     for pol in policies:
         returns_iterations = [results['preferences-{}-{}'.format(p, pol)][0]
                               for p in p_preference]
         plot_var(returns_iterations, x=p_preference, label=pol, var_style='both',
-                 capsize=3, linewidth=4)
+                 capsize=4, linewidth=4)
         # plt.scatter([p_preference] * 100, returns_iterations)
-    plt.legend(fontsize=18, loc='lower right', frameon=False)
+    plt.legend(loc='lower right', frameon=False)
     # plt.title('Average returns for preference probability')
     return figure
 
@@ -137,24 +137,25 @@ elif args.action == 'status':
 
 elif args.action == 'plot':
     if args.plot_destination is not None:
-        matplotlib.rc_params = {
+        matplotlib.rcParams.update({
             'font.family': 'serif',
-            'font.size': 9.0,
+            'font.size': 20,
             'font.serif': 'Computer Modern Roman',
             'text.usetex': 'True',
             'text.latex.unicode': 'True',
             'axes.titlesize': 'large',
             'axes.labelsize': 'large',
-            'legend.fontsize': 'medium',
+            'legend.fontsize': 18,
             'xtick.labelsize': 'small',
             'ytick.labelsize': 'small',
             'path.simplify': 'True',
             'savefig.bbox': 'tight',
-            'figure.figsize': (7.5, 6),
-        }
+            'figure.figsize': (12, 8),
+            'figure.dpi': 80,
+        })
     figure = plot_results()
     if args.plot_destination is None:
         plt.show()
     else:
         figure.savefig(os.path.join(args.plot_destination, 'preferences.pdf'),
-                       transparent=True, bbox_inches='tight')
+                       transparent=True)
