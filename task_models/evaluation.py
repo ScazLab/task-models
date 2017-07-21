@@ -108,8 +108,8 @@ class SupportiveExperiment(object):
         # Algorithm parameters
         'n_warmup': 2000,           # initial warmup exploration
         'n_evaluations': 20,        # number of evaluations
-        'iterations': 100,          # iterations for the policy (in get_action)
-        'rollout-iterations': 100,  # iterations for rollouts
+        'iterations': 1000,         # iterations for the policy (in get_action)
+        'rollout-iterations': 1,    # iterations for rollouts
         'exploration': 50,
         'relative-explo': False,    # In this case use smaller exploration
         'belief-values': False,

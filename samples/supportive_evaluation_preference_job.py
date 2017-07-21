@@ -23,6 +23,7 @@ class Experiment(SupportiveExperiment):
             self.model.p_change_preference = self.parameters['p_change_preference']
         else:
             self.model.p_change_preference = 0.
+        self.model.p_changed_by_human = 0.
         # Policy
         if self.parameters['policy'] == 'pomcp':
             self.init_pomcp_policy()
