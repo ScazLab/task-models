@@ -48,7 +48,6 @@ exps = [('{}-{}-{}'.format(t, l, 's' if s else 'ns'),
          {'horizon-type': t, 'horizon-length': l, 'intermediate-rewards': s})
         for t, l in zip(horizon_types, horizon_lengths)
         for s in (True, False)]  # intermediate rewards (for subtasks)
-exps = []
 n_iterations = [15, 20, 30] + list(range(50, 1001, 50))
 n_rollout_it = [1, 5, 10, 30, 50, 75, 100]
 exps.extend([('iterations-{}-{}'.format(i, r),
