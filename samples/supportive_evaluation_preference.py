@@ -102,18 +102,18 @@ def plot_results():
     # Load results
     results = {j: get_results_from_one(jobs[j]) for j in jobs}
     # Plot returns for preferences
-    figure = plt.figure()
+    figure = plt.figure(figsize=(12, 8), dpi=80, facecolor='w', edgecolor='k')
     cplot = plt.gca()
-    cplot.set_ylabel('Average return')
-    cplot.set_xlabel('p_preference')
+    cplot.set_ylabel('Average return', fontsize= 20)
+    cplot.set_xlabel('p_preference', fontsize= 20)
     for pol in policies:
         returns_iterations = [results['preferences-{}-{}'.format(p, pol)][0]
                               for p in p_preference]
-        plot_var(returns_iterations, x=p_preference, label=pol, var_style='bar',
-                 capsize=3)
+        plot_var(returns_iterations, x=p_preference, label=pol, var_style='both',
+                 capsize=3, linewidth=4)
         # plt.scatter([p_preference] * 100, returns_iterations)
-    plt.legend()
-    plt.title('Average returns for preference probability')
+    plt.legend(fontsize=18, loc='lower right', frameon=False)
+    # plt.title('Average returns for preference probability')
     return figure
 
 

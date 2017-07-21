@@ -87,7 +87,7 @@ def plot_var(y, x=None, color=None, var=True, var_style='fill', **kwargs):
     @param y: two dimensional array, samples for the same value are on axis 1.
     @param color: color to use
     @param x: optional abscisse
-    @param var_style: 'fill' (default) | 'bar'
+    @param var_style: 'fill' (default) | 'bar' | 'both'
     """
     ax = kwargs.pop('ax', None) or plt.gca()
     mean = np.mean(y, axis=1)
@@ -97,6 +97,8 @@ def plot_var(y, x=None, color=None, var=True, var_style='fill', **kwargs):
     plot_fun = ax.plot
     if var and var_style in ('bar', 'both'):
         kwargs['yerr'] = std
+        if kwargs['linewidth'] is not None:
+            kwargs['elinewidth'] = kwargs['linewidth'] / 8
         plot_fun = ax.errorbar
     if color is not None:
         kwargs['color'] = color
@@ -106,7 +108,7 @@ def plot_var(y, x=None, color=None, var=True, var_style='fill', **kwargs):
         color = lines[0].get_color()
     x = lines[0].get_xdata()
     if var and var_style in ('fill', 'both'):
-        ax.fill_between(x, mean - std, mean + std, alpha=.3, color=color)
+        ax.fill_between(x, mean - std, mean + std, alpha=.2, color=color)
     remove_chartjunk(ax, ['top', 'right'])
     return lines
 
