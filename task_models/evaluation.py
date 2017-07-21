@@ -174,6 +174,7 @@ class SupportiveExperiment(object):
     def init_pomcp_policy(self):
         self.policy = POMCPPolicyRunner(
             self.model, iterations=self.parameters['iterations'],
+            rollout_it=self.parameters['rollout-iterations'],
             horizon=(NHTMHorizon if self.parameters['horizon-type'] == 'htm'
                      else FinishedOrNTransitionsHorizon
                      ).generator(self.model, n=self.parameters['horizon-length']),

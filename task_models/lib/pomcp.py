@@ -67,7 +67,7 @@ def _null_logger(*args, **kwargs):
 class _SearchTree:
 
     def __init__(self, model, horizon_generator, exploration,
-                 relative_exploration=False, rollout_it=100, belief='array',
+                 relative_exploration=False, rollout_it=1, belief='array',
                  belief_params={}, node_params={}, logger=None):
         self._belief = belief
         self._belief_params = belief_params
@@ -186,7 +186,7 @@ class _SearchTree:
 class _ObservationLookupSearchTree(_SearchTree):
 
     def __init__(self, model, horizon, exploration,
-                 relative_exploration=False, belief='array', rollout_it=100,
+                 relative_exploration=False, belief='array', rollout_it=1,
                  belief_params={}, node_params={}, logger=None):
         self._obs_nodes = {}  # used in super for root initialization
         if belief == 'particle':
@@ -195,7 +195,7 @@ class _ObservationLookupSearchTree(_SearchTree):
         super(_ObservationLookupSearchTree, self).__init__(
             model, horizon, exploration,
             relative_exploration=relative_exploration,
-            belief=belief, belief_params={},
+            belief=belief, rollout_it=rollout_it, belief_params={},
             node_params=node_params, logger=logger)
 
     def _observation_node_for_belief(self, b):
@@ -412,7 +412,7 @@ class POMCPPolicyRunner(object):
     """
 
     def __init__(self, model, particles=20, iterations=100, horizon=100,
-                 exploration=None, relative_exploration=False, rollout_it=100,
+                 exploration=None, relative_exploration=False, rollout_it=1,
                  belief_values=False, belief='array', belief_params={},
                  logger=None):
         if logger is None:
