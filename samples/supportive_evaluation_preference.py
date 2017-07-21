@@ -14,6 +14,7 @@ import json
 import argparse
 
 import numpy as np
+import matplotlib
 from matplotlib import pyplot as plt
 
 from expjobs.job import Job
@@ -40,6 +41,7 @@ for p in (run, prepare, status):
                    choices=['process', 'torque'])
 for p in (run, status):
     p.add_argument('-w', '--watch', action='store_true')
+plot.add_argument('--plot-destination', default=None)
 
 
 args = parser.parse_args(sys.argv[1:])
@@ -100,7 +102,7 @@ def plot_results():
     # Load results
     results = {j: get_results_from_one(jobs[j]) for j in jobs}
     # Plot returns for preferences
-    plt.figure()
+    figure = plt.figure()
     cplot = plt.gca()
     cplot.set_ylabel('Average return')
     cplot.set_xlabel('p_preference')
@@ -112,6 +114,7 @@ def plot_results():
         # plt.scatter([p_preference] * 100, returns_iterations)
     plt.legend()
     plt.title('Average returns for preference probability')
+    return figure
 
 
 if args.action == 'prepare':
@@ -133,5 +136,25 @@ elif args.action == 'status':
         print(pool.get_stats())
 
 elif args.action == 'plot':
-    plot_results()
-    plt.show()
+    if args.plot_destination is not None:
+        matplotlib.rc_params = {
+            'font.family': 'serif',
+            'font.size': 9.0,
+            'font.serif': 'Computer Modern Roman',
+            'text.usetex': 'True',
+            'text.latex.unicode': 'True',
+            'axes.titlesize': 'large',
+            'axes.labelsize': 'large',
+            'legend.fontsize': 'medium',
+            'xtick.labelsize': 'small',
+            'ytick.labelsize': 'small',
+            'path.simplify': 'True',
+            'savefig.bbox': 'tight',
+            'figure.figsize': (7.5, 6),
+        }
+    figure = plot_results()
+    if args.plot_destination is None:
+        plt.show()
+    else:
+        figure.savefig(os.path.join(args.plot_destination, 'preferences.pdf'),
+                       transparent=True, bbox_inches='tight')
