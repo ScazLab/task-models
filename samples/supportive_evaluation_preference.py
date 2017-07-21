@@ -107,7 +107,9 @@ def plot_results():
     for pol in policies:
         returns_iterations = [results['preferences-{}-{}'.format(p, pol)][0]
                               for p in p_preference]
-        plot_var(returns_iterations, x=p_preference, label=pol)
+        plot_var(returns_iterations, x=p_preference, label=pol, var_style='bar',
+                 capsize=3)
+        # plt.scatter([p_preference] * 100, returns_iterations)
     plt.legend()
     plt.title('Average returns for preference probability')
 

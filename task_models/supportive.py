@@ -445,7 +445,7 @@ class SupportivePOMDP:
                         (needs_hold == 'v' and a == self.A_HOLD_V)):
                     r += self.r_preference
                 elif (a in (self.A_HOLD_H, self.A_HOLD_V) and (
-                        (not random) or np.random.random() < .95)):
+                        (not random) or np.random.random() < .98)):
                     # Undesired HOLD most likely gets an error
                     obs = self.O_FAIL
                 if obs != self.O_FAIL:  # Ask or righ correct hold

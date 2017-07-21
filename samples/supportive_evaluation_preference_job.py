@@ -19,7 +19,7 @@ class Experiment(SupportiveExperiment):
         self.model.p_preferences = [self.parameters['p_preference']]
         self.model.reward_independent_preference = True
         self.model.r_subtask = 10
-        self.model.r_preference = 10
+        self.model.r_preference = 30
         self.model.r_final = 10
         if 'p_change_preference' in self.parameters:
             self.model.p_change_preference = self.parameters['p_change_preference']
