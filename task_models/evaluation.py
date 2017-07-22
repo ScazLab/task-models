@@ -217,4 +217,4 @@ class SupportiveExperiment(object):
             exp = cls()
         if args.path is not None:
             exp.path = os.path.join(args.path, args.name + '.json')
-        exp.run()
+        exp.run(debug=args.debug)
