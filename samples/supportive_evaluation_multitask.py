@@ -1,24 +1,11 @@
-import sys
-import time
-import logging
-import argparse
-
 import numpy as np
 
-from task_models.lib.pomcp import POMCPPolicyRunner, export_pomcp
 from task_models.task import (LeafCombination, AlternativeCombination,
                               SequentialCombination)
 from task_models.supportive import (SupportivePOMDP, AssembleLeg, SupportedAction,
                                     CONSUMES)
 from task_models.policy import PolicyRunner, PolicyLongSupportiveSequence
-from task_models.evaluation import evaluate
-
-
-parser = argparse.ArgumentParser(
-    description="Script to run evaluation job on the multitask problem")
-parser.add_argument('--debug', action='store_true',
-                    help='quick interactive run with dummy parameters')
-args = parser.parse_args(sys.argv[1:])
+from task_models.evaluation import SupportiveExperiment
 
 
 def task_long_sequence(n):
@@ -55,62 +42,32 @@ class PolicySupportiveAlternatives(PolicyRunner):
         self.reset()
 
 
-def average_return(evaluations):
-    return np.average([x['return'] for x in evaluations])
+class Experiment(SupportiveExperiment):
+
+    # TODO: Is there a nicer way to do that?
+    DEFAULT_PARAMETERS = SupportiveExperiment.DEFAULT_PARAMETERS.copy()
+    DEFAULT_PARAMETERS.update({
+        'n_subtasks': 20,
+    })
+
+    def init_run(self):
+        self.model = SupportivePOMDP(
+            task_long_sequence(self.parameters['n_subtasks']),
+            # discount=.95,  # TODO keep?
+        )
+        self.model.p_preferences = [1.]
+        self.model.p_change_preference = 0.
+        self.model.r_final = 10  # TODO move to parameter?
+        if self.parameters['policy'] == 'pomcp':
+            self.init_pomcp_policy()
+        elif self.parameters['policy'] == 'sequence':
+            self.policy = PolicyLongSupportiveSequence(self.model)
+        else:
+            raise NotImplementedError
+
+    def finish_run(self):
+        self.log('Average return: {}'.format(
+            np.average([x['return'] for x in self.results['evaluations']])))
 
 
-PARAM = {
-    # Algorithm parameters
-    'n_warmup': 1000,         # initial warmup exploration
-    'n_evaluations': 100,     # number of evaluations
-    'iterations': 100,        # iterations for the policy (in get_action)
-    'exploration': 50,
-    'relative_explo': False,  # In this case use smaller exploration
-    'belief_values': False,
-    'n_particles': 150,
-    'horizon-length': 50,
-    'intermediate-rewards': False,
-    'n_subtasks': 20,
-}
-
-if args.debug:
-    PARAM['n_warmup'] = 2
-    PARAM['n_evaluations'] = 2
-    PARAM['iterations'] = 3
-    PARAM['n_particles'] = 20
-    PARAM['horizon-length'] = 2
-
-
-p = SupportivePOMDP(task_long_sequence(PARAM['n_subtasks']), discount=.95)
-p.p_preferences = [1.]
-p.p_change_preference = 0.
-# p.r_final = 10  # TODO move to parameter
-
-logging.basicConfig(level=logging.INFO)
-info = logging.info
-warn = logging.warning
-tostore = {'parameters': PARAM}
-info('Starting warmup')
-# POMCP policy
-pol = POMCPPolicyRunner(p, iterations=PARAM['iterations'],
-                        horizon=PARAM['horizon-length'],
-                        exploration=PARAM['exploration'],
-                        relative_exploration=PARAM['relative_explo'],
-                        belief_values=PARAM['belief_values'],
-                        belief='particle',
-                        belief_params={'n_particles': PARAM['n_particles']})
-# Some initial exploration
-t_0 = time.time()
-pol.get_action(iterations=PARAM['n_warmup'])
-tostore['t_warmup'] = time.time() - t_0
-info('Warmup done in {}s.'.format(tostore['t_warmup']))
-tostore['evaluations-pomcp'] = evaluate(p, pol, PARAM['n_evaluations'],
-                                        logger=info)
-warn('POMCP average return: {}'.format(
-    average_return(tostore['evaluations-pomcp'])))
-# Ad-hoc policy
-pol = PolicyLongSupportiveSequence(p)
-tostore['evaluations-adhoc'] = evaluate(p, pol, PARAM['n_evaluations'],
-                                        logger=info)
-warn('Ad-hoc average return: {}'.format(
-    average_return(tostore['evaluations-adhoc'])))
+Experiment.run_from_arguments()

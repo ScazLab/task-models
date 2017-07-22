@@ -132,14 +132,17 @@ class SupportiveExperiment(object):
         self.results = {}
         self.path = None
 
+    def set_debug_parameters(self):
+        self.parameters['n_warmup'] = 2
+        self.parameters['n_evaluations'] = 2
+        self.parameters['iterations'] = 10
+        self.parameters['n_particles'] = 20
+        self.parameters['horizon-length'] = 2
+
     def run(self, debug=False):
         if debug:
             self.log('DEBUG mode is on')
-            self.parameters['n_warmup'] = 2
-            self.parameters['n_evaluations'] = 2
-            self.parameters['iterations'] = 10
-            self.parameters['n_particles'] = 20
-            self.parameters['horizon-length'] = 2
+            self.set_debug_parameters()
         self.log_parameters()
         self.results['parameters'] = self.parameters
         self.init_run()
