@@ -23,7 +23,7 @@ from expjobs.pool import Pool
 from expjobs.torque import TorquePool, has_qsub
 from expjobs.process import MultiprocessPool
 
-from task_models.utils.plot import plot_var, TEN_COLORS
+from task_models.utils.plot import plot_var
 
 
 parser = argparse.ArgumentParser(
@@ -107,14 +107,13 @@ def plot_results():
     cplot = plt.gca()
     cplot.set_ylabel('Average Return')
     cplot.set_xlabel('$p_H$')
-    # colors = [TEN_COLORS[0], TEN_COLORS[8], TEN_COLORS[2]]
     colors = ["#bb0c36", "#44ac66", "#1f82f9"]
     lines = []
     for pol, col in zip(policies, colors):
         returns_iterations = [results['preferences-{}-{}'.format(p, pol)][0]
                               for p in p_preference]
         lines.append(plot_var(returns_iterations, x=p_preference, label=pol, var_style='both',
-                              capsize=4, linewidth=4, color=col))
+                              capsize=2, linewidth=2, color=col, elinewidth=.5))
         # plt.scatter([p_preference] * 100, returns_iterations)
     legend_lines = []
     for line in lines:
@@ -146,19 +145,18 @@ elif args.action == 'plot':
     if args.plot_destination is not None:
         matplotlib.rcParams.update({
             'font.family': 'serif',
-            'font.size': 20,
+            'font.size': 12,
             'font.serif': 'Computer Modern Roman',
             'text.usetex': 'True',
             'text.latex.unicode': 'True',
             'axes.titlesize': 'large',
             'axes.labelsize': 'large',
-            'legend.fontsize': 18,
+            'legend.fontsize': 12,
             'xtick.labelsize': 'small',
             'ytick.labelsize': 'small',
             'path.simplify': 'True',
             'savefig.bbox': 'tight',
-            'figure.figsize': (12, 8),
-            'figure.dpi': 80,
+            'figure.figsize': (6, 4),
         })
     figure = plot_results()
     if args.plot_destination is None:

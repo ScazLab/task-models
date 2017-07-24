@@ -97,8 +97,6 @@ def plot_var(y, x=None, color=None, var=True, var_style='fill', **kwargs):
     plot_fun = ax.plot
     if var and var_style in ('bar', 'both'):
         kwargs['yerr'] = std
-        if kwargs['linewidth'] is not None:
-            kwargs['elinewidth'] = kwargs['linewidth'] / 4
         plot_fun = ax.errorbar
     if color is not None:
         kwargs['color'] = color
