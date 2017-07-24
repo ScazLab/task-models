@@ -16,13 +16,14 @@ import argparse
 import numpy as np
 import matplotlib
 from matplotlib import pyplot as plt
+import matplotlib.patches as mpatches
 
 from expjobs.job import Job
 from expjobs.pool import Pool
 from expjobs.torque import TorquePool, has_qsub
 from expjobs.process import MultiprocessPool
 
-from task_models.utils.plot import plot_var
+from task_models.utils.plot import plot_var, TEN_COLORS
 
 
 parser = argparse.ArgumentParser(
@@ -106,13 +107,19 @@ def plot_results():
     cplot = plt.gca()
     cplot.set_ylabel('Average Return')
     cplot.set_xlabel('$p_H$')
-    for pol in policies:
+    # colors = [TEN_COLORS[0], TEN_COLORS[8], TEN_COLORS[2]]
+    colors = ["#bb0c36", "#44ac66", "#1f82f9"]
+    lines = []
+    for pol, col in zip(policies, colors):
         returns_iterations = [results['preferences-{}-{}'.format(p, pol)][0]
                               for p in p_preference]
-        plot_var(returns_iterations, x=p_preference, label=pol, var_style='both',
-                 capsize=4, linewidth=4)
+        lines.append(plot_var(returns_iterations, x=p_preference, label=pol, var_style='both',
+                              capsize=4, linewidth=4, color=col))
         # plt.scatter([p_preference] * 100, returns_iterations)
-    plt.legend(loc='lower right', frameon=False)
+    legend_lines = []
+    for line in lines:
+        legend_lines.append(mpatches.Patch(color=line[0].get_color()))
+    plt.legend(legend_lines, policies, loc='lower right', frameon=False)
     # plt.title('Average returns for preference probability')
     return figure
 
