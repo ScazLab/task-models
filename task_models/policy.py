@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class PolicyRunner(object):
 
     class UnexpectedObservation(RuntimeError):
@@ -40,12 +43,23 @@ class PolicyLongSupportiveSequence(PolicyRunner):
 
     def __init__(self, model):
         super(PolicyLongSupportiveSequence, self).__init__(model)
-        self._a_next = self.actions.index('hold H')
         self._a_wait = self.actions.index('wait')
         self._o_none = self.observations.index('none')
         self.n_tasks = self.model.n_htm_states - 2
         self.tools = ['screws', 'screwdriver', 'joints']
+        self._a_next_list = [self.actions.index('hold H')]
         self.reset()
+
+    @property
+    def _a_bring_leg(self):
+        return self._a_bring('leg')
+
+    @property
+    def _a_next(self):
+        return np.random.choice(self._a_next_list)
+
+    def _is_a_next(self, a):
+        return a in self._a_next_list
 
     def _a_bring(self, obj):
         return self.actions.index('bring {}'.format(obj))
@@ -66,7 +80,7 @@ class PolicyLongSupportiveSequence(PolicyRunner):
             a = self._to_bring[0]
         elif self._n_done < self.n_tasks:
             if self._needs_leg:
-                a = self._a_bring('leg')
+                a = self._a_bring_leg
             else:
                 a = self._a_next
         elif len(self._to_clean) > 0:
@@ -87,9 +101,9 @@ class PolicyLongSupportiveSequence(PolicyRunner):
                 self._to_bring.remove(self._last_action)
             elif self._last_action in [self._a_clean(o) for o in self.tools]:
                 self._to_clean.remove(self._last_action)
-            elif self._last_action == self._a_bring('leg'):
+            elif self._last_action == self._a_bring_leg:
                 self._needs_leg = False
-            elif self._last_action == self._a_next and observation == 'none':
+            elif self._is_a_next(self._last_action) and observation == 'none':
                 # Next subtask
                 self._n_done += 1
                 self._needs_leg = True

@@ -200,7 +200,7 @@ class SupportiveExperiment(object):
         return cls(parameters=param)
 
     @classmethod
-    def run_from_arguments(cls):
+    def run_from_arguments(cls, debug=False):
         # Parser definition
         parser = argparse.ArgumentParser(
             description="Script to run evaluation job of the supportive policy")
@@ -220,4 +220,4 @@ class SupportiveExperiment(object):
             exp = cls()
         if args.path is not None:
             exp.path = os.path.join(args.path, args.name + '.json')
-        exp.run(debug=args.debug)
+        exp.run(debug=args.debug or debug)
