@@ -11,11 +11,15 @@ import json
 import argparse
 
 import numpy as np
+import matplotlib
+from matplotlib import pyplot as plt
 
 from expjobs.job import Job
 from expjobs.pool import Pool
 from expjobs.torque import TorquePool, has_qsub
 from expjobs.process import MultiprocessPool
+
+from task_models.utils.plot import boxplot
 
 
 parser = argparse.ArgumentParser(
@@ -43,7 +47,7 @@ SCRIPT = os.path.join(os.path.dirname(__file__),
                       'supportive_evaluation_multitask_job.py')
 
 p_preference = list(np.arange(0, 1.001, .05))
-policies = ['pomcp', 'sequence', 'random']
+policies = ['pomcp', 'repeat', 'random']
 tasks = ['sequence', 'uniform',  'alternative']
 exps = [('{}-{}'.format(task, pol), {'task': task, 'policy': pol})
         for task in tasks for pol in policies]
@@ -91,8 +95,34 @@ def get_results_from_one(job):
             [r['simulator-calls'] for r in results])
 
 
-def plot_results():
-    raise NotImplementedError
+def print_results():
+    # Load results
+    results = {j: get_results_from_one(jobs[j]) for j in jobs}
+    print("Policies: " + ", ".join(policies))
+    for task in tasks:
+        print("{} task: {} {} {}".format(task, *[
+            np.average(results['{}-{}'.format(task, p)][0])
+            for p in policies]))
+    return results
+
+
+def plot_results(results=None, exclude_repeat=True):
+    if results is None:
+        # Load results
+        results = {j: get_results_from_one(jobs[j]) for j in jobs}
+    # Plot returns for preferences
+    figure, plots = plt.subplots(1, len(tasks))
+    for plot, task in zip(plots, tasks):
+        if exclude_repeat:
+            cpolicies = [p for p in policies
+                         if task == 'sequence' or p != 'repeat']
+        else:
+            cpolicies = policies
+        returns = [results['{}-{}'.format(task, pol)][0] for pol in cpolicies]
+        boxplot(returns, xticklabels=policies, ax=plot)
+        plot.set_title("Task: " + task)
+    plots[0].set_ylabel('Average Return')
+    return figure
 
 
 if args.action == 'prepare':
@@ -114,4 +144,27 @@ elif args.action == 'status':
         print(pool.get_stats())
 
 elif args.action == 'plot':
-    raise NotImplementedError
+    results = print_results()
+    if args.plot_destination is not None:
+        matplotlib.rcParams.update({
+            'font.family': 'serif',
+            'font.size': 20,
+            'font.serif': 'Computer Modern Roman',
+            'text.usetex': 'True',
+            'text.latex.unicode': 'True',
+            'axes.titlesize': 'large',
+            'axes.labelsize': 'large',
+            'legend.fontsize': 18,
+            'xtick.labelsize': 'small',
+            'ytick.labelsize': 'small',
+            'path.simplify': 'True',
+            'savefig.bbox': 'tight',
+            'figure.figsize': (12, 8),
+            'figure.dpi': 80,
+        })
+    figure = plot_results(results=results)
+    if args.plot_destination is None:
+        plt.show()
+    else:
+        figure.savefig(os.path.join(args.plot_destination, 'multitask.pdf'),
+                       transparent=True)

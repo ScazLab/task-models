@@ -59,6 +59,7 @@ class Experiment(SupportiveExperiment):
         'n_subtasks': 20,  # only for sequence task
         'task': 'alternative',
         'policy': 'random',
+        'n_evaluations': 100,
     })
 
     def init_run(self):
