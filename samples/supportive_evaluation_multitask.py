@@ -44,7 +44,7 @@ SCRIPT = os.path.join(os.path.dirname(__file__),
 
 p_preference = list(np.arange(0, 1.001, .05))
 policies = ['pomcp', 'sequence', 'random']
-tasks = ['sequence', 'alternative']
+tasks = ['sequence', 'uniform',  'alternative']
 exps = [('{}-{}'.format(task, pol), {'task': task, 'policy': pol})
         for task in tasks for pol in policies]
 

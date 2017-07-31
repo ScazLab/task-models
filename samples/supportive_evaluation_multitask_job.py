@@ -1,3 +1,5 @@
+import itertools
+
 import numpy as np
 
 from task_models.task import (LeafCombination, AlternativeCombination,
@@ -18,8 +20,17 @@ def task_long_sequence(n):
 class CustomHoldLegAssembly(AssembleLeg):
 
     def __init__(self, obj, hold=None):
-        super(CustomObjectAction, self).__init__(str(obj))
+        super(CustomHoldLegAssembly, self).__init__(str(obj))
         self.hold = hold
+
+
+def task_uniform():
+    def task_seq(support_seq):
+        return SequentialCombination([
+            LeafCombination(CustomHoldLegAssembly('leg', hold=s))
+            for i, s in enumerate(support_seq)])
+    return AlternativeCombination([task_seq(''.join(s))
+                                   for s in itertools.product('hv', 3)])
 
 
 def task_alternative():
@@ -54,6 +65,9 @@ class Experiment(SupportiveExperiment):
         if self.parameters['task'] == 'sequence':
             task_length = self.parameters['n_subtasks']
             htm = task_long_sequence(task_length)
+        elif self.parameters['task'] == 'uniform':
+            htm = task_uniform()
+            task_length = 3
         elif self.parameters['task'] == 'alternative':
             htm = task_alternative()
             task_length = 3
