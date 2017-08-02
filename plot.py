@@ -124,6 +124,9 @@ def boxplot(x, **kwargs):
     @return:
     """
     ax = kwargs.pop('ax', None) or plt.gca()
+    linewidth = kwargs.pop('linewidth', 1)
+    color = kwargs.pop('color', BLUE)
+    median_color = kwargs.pop('median_color', RED)
     # If no ticklabels are specified, don't draw any
     xticklabels = kwargs.pop('xticklabels', None)
 
@@ -134,14 +137,13 @@ def boxplot(x, **kwargs):
         ax.xaxis.set_ticklabels(xticklabels)
 
     remove_chartjunk(ax, ['top', 'right', 'bottom'], ticks='x')
-    linewidth = 0.75
 
-    plt.setp(bp['boxes'], color=BLUE, linewidth=linewidth)
-    plt.setp(bp['medians'], color=RED)
-    plt.setp(bp['whiskers'], color=BLUE, linestyle='solid',
+    plt.setp(bp['boxes'], color=color, linewidth=linewidth)
+    plt.setp(bp['medians'], color=median_color)
+    plt.setp(bp['whiskers'], color=color, linestyle='solid',
              linewidth=linewidth)
-    plt.setp(bp['fliers'], color=BLUE)
-    plt.setp(bp['caps'], color=BLUE, linewidth=linewidth)
+    plt.setp(bp['fliers'], color=color)
+    plt.setp(bp['caps'], color=color, linewidth=linewidth)
     ax.spines['left']._linewidth = 0.5
     return bp
 
