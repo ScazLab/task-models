@@ -51,7 +51,7 @@ SCRIPT = os.path.join(os.path.dirname(__file__),
                       'supportive_evaluation_preference_job.py')
 
 p_preference = list(np.arange(0, 1.001, .05))
-policies = ['pomcp', 'always-hold', 'never-hold']
+policies = ['never-hold', 'always-hold', 'pomcp']
 exps = [('preferences-{}-{}'.format(p, pol),
          {'p_preference': p, 'policy': pol, 'n_evaluations': 100})
         for p in p_preference for pol in policies]
@@ -99,22 +99,27 @@ def get_results_from_one(job):
             [r['simulator-calls'] for r in results])
 
 
-def plot_results():
+def plot_results(var=True):
     # Load results
     results = {j: get_results_from_one(jobs[j]) for j in jobs}
     # Plot returns for preferences
     figure = plt.figure()
     cplot = plt.gca()
-    cplot.set_ylabel('Average Return')
+    cplot.set_ylabel('Average Return', labelpad=0)  # '-' sign already pushes label left
     cplot.set_xlabel('$p_H$')
-    colors = ["#bb0c36", "#44ac66", "#1f82f9"]
+    colors = ["#44ac66", "#1f82f9", "#bb0c36"]
     lines = []
     for pol, col in zip(policies, colors):
         returns_iterations = [results['preferences-{}-{}'.format(p, pol)][0]
                               for p in p_preference]
-        lines.append(plot_var(returns_iterations, x=p_preference, label=pol, var_style='both',
-                              capsize=2, linewidth=2, color=col, elinewidth=.5))
+        if var:
+            params = {'var_style': 'both', 'capsize': 2, 'elinewidth': .5}
+        else:
+            params = {'var_style': 'none'}
+        lines.append(plot_var(returns_iterations, x=p_preference, label=pol,
+                              linewidth=2, color=col, **params))
         # plt.scatter([p_preference] * 100, returns_iterations)
+    plt.xlim([0., 1.])
     legend_lines = []
     for line in lines:
         legend_lines.append(mpatches.Patch(color=line[0].get_color()))
@@ -145,20 +150,19 @@ elif args.action == 'plot':
     if args.plot_destination is not None:
         matplotlib.rcParams.update({
             'font.family': 'serif',
-            'font.size': 12,
+            'font.size': 10,
             'font.serif': 'Computer Modern Roman',
             'text.usetex': 'True',
             'text.latex.unicode': 'True',
             'axes.titlesize': 'large',
-            'axes.labelsize': 'large',
-            'legend.fontsize': 12,
-            'xtick.labelsize': 'small',
-            'ytick.labelsize': 'small',
+            'xtick.labelsize': 'x-small',
+            'ytick.labelsize': 'x-small',
             'path.simplify': 'True',
+            'savefig.pad_inches': 0.0,
             'savefig.bbox': 'tight',
-            'figure.figsize': (6, 4),
+            'figure.figsize': (3.5, 2.5),
         })
-    figure = plot_results()
+    figure = plot_results(var=(args.plot_destination is None))
     if args.plot_destination is None:
         plt.show()
     else:
