@@ -284,7 +284,6 @@ class SupportivePOMDP:
         self.discount = discount
         h2d = _HTMToDAG(htm)
         self.htm_nodes = h2d.nodes
-        assert(len(self.htm_nodes) < 128)  # we use dtype=np.int8
         # set final state as successors of last actions in HTM
         self.htm_succs = [[self.htm_clean] if len(s) == 0 else s for s in h2d.succs]
         self.htm_init = h2d.init
