@@ -119,7 +119,7 @@ def plot_results(results=None, exclude_repeat=True):
         else:
             cpolicies = policies
         returns = [results['{}-{}'.format(task, pol)][0] for pol in cpolicies]
-        boxplot(returns, xticklabels=policies, ax=plot)
+        boxplot(returns, xticklabels=cpolicies, ax=plot)
         plot.set_title("Task: " + task)
     plots[0].set_ylabel('Average Return')
     return figure
