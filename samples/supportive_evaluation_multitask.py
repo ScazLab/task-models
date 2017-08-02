@@ -119,8 +119,10 @@ def plot_results(results=None, exclude_repeat=True):
         else:
             cpolicies = policies
         returns = [results['{}-{}'.format(task, pol)][0] for pol in cpolicies]
-        boxplot(returns, xticklabels=cpolicies, ax=plot)
-        plot.set_title("Task: " + task)
+        boxplot(returns, xticklabels=cpolicies, ax=plot, color="#1f82f9",
+                median_color="#bb0c36", showfliers=False)
+        plot.set_title(task.capitalize())
+        plot.set_xticklabels(plot.xaxis.get_ticklabels(), rotation=30)
     plots[0].set_ylabel('Average Return')
     return figure
 
@@ -148,19 +150,17 @@ elif args.action == 'plot':
     if args.plot_destination is not None:
         matplotlib.rcParams.update({
             'font.family': 'serif',
-            'font.size': 20,
+            'font.size': 10,
             'font.serif': 'Computer Modern Roman',
             'text.usetex': 'True',
             'text.latex.unicode': 'True',
-            'axes.titlesize': 'large',
-            'axes.labelsize': 'large',
-            'legend.fontsize': 18,
-            'xtick.labelsize': 'small',
-            'ytick.labelsize': 'small',
+            'axes.titlesize': 'medium',
+            'xtick.labelsize': 'xx-small',
+            'ytick.labelsize': 'xx-small',
             'path.simplify': 'True',
+            'savefig.pad_inches': 0.0,
             'savefig.bbox': 'tight',
-            'figure.figsize': (12, 8),
-            'figure.dpi': 80,
+            'figure.figsize': (3.5, 2.5),
         })
     figure = plot_results(results=results)
     if args.plot_destination is None:
