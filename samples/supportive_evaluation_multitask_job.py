@@ -24,13 +24,13 @@ class CustomHoldLegAssembly(AssembleLeg):
         self.hold = hold
 
 
-def task_uniform():
+def task_uniform(n):
     def task_seq(support_seq):
         return SequentialCombination([
             LeafCombination(CustomHoldLegAssembly('leg', hold=s))
             for i, s in enumerate(support_seq)])
     return AlternativeCombination([task_seq(''.join(s))
-                                   for s in itertools.product('hv', 3)])
+                                   for s in itertools.product('hv', repeat=n)])
 
 
 def task_alternative():
@@ -39,7 +39,7 @@ def task_alternative():
             LeafCombination(CustomHoldLegAssembly('leg', hold=s))
             for i, s in enumerate(support_seq)])
     return AlternativeCombination([task_seq(s)
-                                   for s in ['hvv', 'hhh', 'vhh', 'vvh']])
+                                   for s in ['hvvv', 'hhhh', 'vhhv', 'vvhv']])
 
 
 class PolicySupportiveAlternatives(PolicyLongSupportiveSequence):
@@ -63,15 +63,14 @@ class Experiment(SupportiveExperiment):
     })
 
     def init_run(self):
+        task_length = 4
         if self.parameters['task'] == 'sequence':
             task_length = self.parameters['n_subtasks']
             htm = task_long_sequence(task_length)
         elif self.parameters['task'] == 'uniform':
-            htm = task_uniform()
-            task_length = 3
+            htm = task_uniform(task_length)
         elif self.parameters['task'] == 'alternative':
             htm = task_alternative()
-            task_length = 3
         else:
             raise ValueError('Unknown task: ' + self.parameters['task'])
         self.model = SupportivePOMDP(htm)
@@ -79,9 +78,15 @@ class Experiment(SupportiveExperiment):
         self.model.p_preferences = [1.]
         self.model.p_change_preference = 0.
         self.model.r_final = 10  # TODO move to parameter?
+        if self.parameters['task'] != 'sequence':
+            # Makes wrong action more costly to differentiate algorithms
+            # (The task is used in an abstract way here so this is not really
+            # about holding and preferences.)
+            self.model.cost_hold = 10
+            self.model.r_preference = 18
         if self.parameters['policy'] == 'pomcp':
             self.init_pomcp_policy()
-        elif self.parameters['policy'] == 'sequence':
+        elif self.parameters['policy'] == 'repeat':
             self.policy = PolicyLongSupportiveSequence(self.model)
         elif self.parameters['policy'] == 'random':
             self.policy = PolicySupportiveAlternatives(self.model, task_length)
