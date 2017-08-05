@@ -111,7 +111,14 @@ def plot_results(results=None, exclude_repeat=True):
         # Load results
         results = {j: get_results_from_one(jobs[j]) for j in jobs}
     # Plot returns for preferences
-    figure, plots = plt.subplots(1, len(tasks))
+    assert(len(tasks) == 3)
+    # Share axis for uniform and alternative
+    figure = plt.figure()
+    ax1 = figure.add_subplot(1, 3, 1)
+    ax2 = figure.add_subplot(1, 3, 2)
+    ax3 = figure.add_subplot(1, 3, 3, sharey=ax2)
+    plots = [ax1, ax2, ax3]
+
     for plot, task in zip(plots, tasks):
         if exclude_repeat:
             cpolicies = [p for p in policies
