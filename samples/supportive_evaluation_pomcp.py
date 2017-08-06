@@ -1,15 +1,13 @@
 #!/usr/bin/env python
 
-import io
 import os
-import json
 
 from matplotlib import pyplot as plt
 
 from expjobs.job import Job
-from expjobs.helpers import Launcher
 
 from task_models.utils.plot import plot_var
+from task_models.evaluation import ExpLauncher
 
 
 SCRIPT = os.path.join(os.path.dirname(__file__),
@@ -21,10 +19,9 @@ N_ITERATIONS = [15, 20, 30] + list(range(50, 1001, 50))
 N_ROLLOUT_IT = [1, 5, 10, 30, 50, 75, 100]
 
 
-class ExpLauncher(Launcher):
+class POMCPLauncher(ExpLauncher):
 
-    name = 'multitask experiment'
-    torque_args = {'default_walltime': 720}
+    name = 'POMCP evaluation experiment'
 
     def init_jobs(self):
         horizon_types = (['transitions'] * len(HORIZON_LENGTH_TRANSITIONS) +
@@ -43,22 +40,9 @@ class ExpLauncher(Launcher):
                      for name, exp in self.exps}
         self.exps = dict(self.exps)
 
-    def action_prepare(self):
-        for name in self.exps:
-            with io.open(self.jobs[name].config, 'w') as fp:
-                json.dump(self.exps[name], fp, indent=2)
-
-    @staticmethod
-    def get_results_from_one(job):
-        with io.open(os.path.join(job.path, job.name + '.json'), 'r') as f:
-            results = json.load(f)['evaluations']
-        return ([r['return'] for r in results],
-                [r['elapsed-time'] for r in results],
-                [r['simulator-calls'] for r in results])
-
     def plot_results(self):
         # Load results
-        results = {j: self.get_results_from_one(self.jobs[j]) for j in self.jobs}
+        results = self.get_results()
         # Horizon evaluation
         # Plot returns
         plots = plt.subplots(1, 2, sharey=True)[1]
@@ -125,4 +109,4 @@ class ExpLauncher(Launcher):
         plt.show()
 
 
-ExpLauncher().run()
+POMCPLauncher().run()

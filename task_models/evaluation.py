@@ -6,8 +6,11 @@ import json
 import logging
 import argparse
 
-from task_models.lib.utils import NPEncoder
+import matplotlib
 
+from expjobs.helpers import Launcher
+
+from task_models.lib.utils import NPEncoder
 from task_models.utils.multiprocess import repeat, get_process_elapsed_time
 from task_models.lib.pomcp import NTransitionsHorizon, POMCPPolicyRunner
 from task_models.supportive import NHTMHorizon
@@ -221,3 +224,43 @@ class SupportiveExperiment(object):
         if args.path is not None:
             exp.path = os.path.join(args.path, args.name + '.json')
         exp.run(debug=args.debug or debug)
+
+
+class ExpLauncher(Launcher):
+
+    torque_args = {'default_walltime': 720}
+
+    plot_parms = {
+        'font.family': 'serif',
+        'font.size': 10,
+        'font.serif': 'Computer Modern Roman',
+        'text.usetex': 'True',
+        'text.latex.unicode': 'True',
+        'axes.titlesize': 'medium',
+        'xtick.labelsize': 'xx-small',
+        'ytick.labelsize': 'xx-small',
+        'path.simplify': 'True',
+        'savefig.pad_inches': 0.0,
+        'savefig.bbox': 'tight',
+        'figure.figsize': (3.5, 2.5),
+    }
+
+    @staticmethod
+    def get_results_from_one(job):
+        with io.open(os.path.join(job.path, job.name + '.json'), 'r') as f:
+            results = json.load(f)['evaluations']
+        return ([r['return'] for r in results],
+                [r['elapsed-time'] for r in results],
+                [r['simulator-calls'] for r in results])
+
+    def get_results(self):
+        return {j: self.get_results_from_one(self.jobs[j]) for j in self.jobs}
+
+    def action_prepare(self):
+        for name in self.exps:
+            with io.open(self.jobs[name].config, 'w') as fp:
+                json.dump(self.exps[name], fp, indent=2)
+
+    def set_matplotlib_params_for_print(self, params={}):
+            matplotlib.rcParams.update(self.plot_parms)
+            matplotlib.rcParams.update(params)
