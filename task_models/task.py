@@ -28,8 +28,7 @@ def check_path(path):
                         isinstance(path[2], State) and
                         path[1].check(path[0], path[2]) and  # pre/post
                         check_path(path[2:])
-                        )
-                    )
+                    ))
                 )
     except IndexError:
         return False
@@ -220,7 +219,7 @@ class Combination(object):
         d['children'] = [
             c.as_dictionary(d['id'], id_generator)
             for c in self.children
-            ]
+        ]
         return d
 
     def _deep_copy_children(self, rename_format='{}'):
@@ -258,9 +257,9 @@ class SequentialCombination(Combination):
 
     def deep_copy(self, rename_format='{}'):
         return SequentialCombination(
-                self._deep_copy_children(rename_format=rename_format),
-                name=rename_format.format(self.name),
-                highlighted=self.highlighted)
+            self._deep_copy_children(rename_format=rename_format),
+            name=rename_format.format(self.name),
+            highlighted=self.highlighted)
 
 
 class AlternativeCombination(Combination):
@@ -273,10 +272,10 @@ class AlternativeCombination(Combination):
 
     def deep_copy(self, rename_format='{}'):
         return AlternativeCombination(
-                self._deep_copy_children(rename_format=rename_format),
-                probabilities=self.proba,
-                name=rename_format.format(self.name),
-                highlighted=self.highlighted)
+            self._deep_copy_children(rename_format=rename_format),
+            probabilities=self.proba,
+            name=rename_format.format(self.name),
+            highlighted=self.highlighted)
 
 
 class ParallelCombination(Combination):
@@ -288,17 +287,18 @@ class ParallelCombination(Combination):
 
     def deep_copy(self, rename_format='{}'):
         return ParallelCombination(
-                self._deep_copy_children(rename_format=rename_format),
-                probabilities=self.proba,
-                name=rename_format.format(self.name),
-                highlighted=self.highlighted)
+            self._deep_copy_children(rename_format=rename_format),
+            probabilities=self.proba,
+            name=rename_format.format(self.name),
+            highlighted=self.highlighted)
 
     def to_alternative(self):
-        sequences = [SequentialCombination(
-                        [c.deep_copy('{{}} order-{}'.format(i)) for c in p],
-                        name='{} order-{}'.format(self.name, i))
-                     for i, p in enumerate(permutations(self.children))
-                     ]
+        sequences = [
+            SequentialCombination(
+                [c.deep_copy('{{}} order-{}'.format(i)) for c in p],
+                name='{} order-{}'.format(self.name, i))
+            for i, p in enumerate(permutations(self.children))
+        ]
         return AlternativeCombination(sequences, name=self.name,
                                       highlighted=self.highlighted)
 
@@ -317,4 +317,4 @@ class HierarchicalTask:
             'name': 'Hierarchical task tree' if name is None else name,
             'nodes': None if self.is_empty() else self.root.as_dictionary(
                 None, int_generator()),
-            }
+        }

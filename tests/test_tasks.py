@@ -4,9 +4,10 @@ import numpy as np
 
 from task_models.action import Condition, PrePostConditionAction
 from task_models.state import NDimensionalState
-from task_models.task import (check_path, split_path, TaskGraph, ConjugateTaskGraph,
-                      AbstractAction, ParallelCombination, LeafCombination,
-                      AlternativeCombination, SequentialCombination)
+from task_models.task import (check_path, split_path, TaskGraph,
+                              ConjugateTaskGraph, AbstractAction,
+                              ParallelCombination, LeafCombination,
+                              AlternativeCombination, SequentialCombination)
 
 
 class DummyState(NDimensionalState):
@@ -59,11 +60,11 @@ def get_action(pre, post, name=""):
     """Shortcut to get action from conditions represented as pairs of int.
     """
     return PrePostConditionAction(
-              Condition(DummyState.to_array(pre[0]),
-                        DummyState.to_array(pre[1])),
-              Condition(DummyState.to_array(post[0]),
-                        DummyState.to_array(post[1])),
-              name=name)
+        Condition(DummyState.to_array(pre[0]),
+                  DummyState.to_array(pre[1])),
+        Condition(DummyState.to_array(post[0]),
+                  DummyState.to_array(post[1])),
+        name=name)
 
 
 class TestPathCheck(TestCase):
@@ -220,7 +221,7 @@ class TestTaskGraph(TestCase):
                 DummyState(0),
                 get_action((1 + 2, 0), (1 + 2, 1)),
                 DummyState(1 + 2 + 4),
-                ])
+            ])
 
     def test_must_have_same_transitions(self):
         path = [DummyState(0),
@@ -273,7 +274,7 @@ class TestTaskGraph(TestCase):
             DummyState(1 + 4),
             get_action((1 + 2, 1), (1 + 4, 1 + 4)),  # Different action
             DummyState(1 + 2 + 4),
-            ])
+        ])
         self.graph.check_only_deterministic_transitions()
 
 
