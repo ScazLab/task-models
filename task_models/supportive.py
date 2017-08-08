@@ -232,15 +232,19 @@ class SupportivePOMDP:
     """
     Each action has a condition attribute that is a pair (condition, object)
     where objects are represented as strings and condition is one of:
-    (CONSUMES, USES, CONSUMES_SOME).
+    (CONSUMES, USES, CONSUMES_SOME). Actions also have an attribute `hold`
+    that is one of None, 'H' or 'V' and tells whether the action can be
+    supported with a hold action and which hold action (also depending on
+    whether the preference for holding is present).
 
     The HTM feature has the following values:
-    - one for each node in the DAG representation of the HTM
-    - one final state
+    - one for each node in the DAG representation of the HTM,
+    - one cleaning state,
+    - one final state.
 
     Note on state representation:
     - for public API, states are integers, denoted as `s`
-    - for private methods states may be using the _SupportivePOMDPState;
+    - for private methods states use the more convinient _SupportivePOMDPState;
     they are then denoted as `_s`.
     """
 
@@ -274,6 +278,7 @@ class SupportivePOMDP:
     cost_intrinsic = 1.
     cost_hold = 2.
 
+    # Here we only have one preference
     preferences = ['hold']
     p_preferences = [0.3]
 
@@ -318,16 +323,18 @@ class SupportivePOMDP:
 
     @property
     def n_htm_states(self):
-        """Number of nodes in the DAG plus 1 for the final state.
+        """Number of nodes in the DAG plus 2 for the cleaning and final states.
         """
         return len(self.htm_nodes) + 2
 
     @property
     def htm_clean(self):
+        """Cleaning HTM state"""
         return len(self.htm_nodes)
 
     @property
     def htm_final(self):
+        """Final HTM state"""
         return len(self.htm_nodes) + 1
 
     def is_final(self, s):
@@ -335,6 +342,7 @@ class SupportivePOMDP:
 
     @property
     def features(self):
+        """Names for the state features"""
         return (['HTM'] +
                 ['{}-preference'.format(p) for p in self.preferences] +
                 ['holding'] +
@@ -342,14 +350,17 @@ class SupportivePOMDP:
 
     @property
     def states(self):
+        """All state names. For compatibility only: there are a lot of states."""
         return [str(self._int_to_state(i)) for i in range(self.n_states)]
 
     @property
     def htm_names(self):
+        """All HTM states names (inc. clean and final)."""
         return [n.name for n in self.htm_nodes] + ['clean', 'final']
 
     @property
     def actions(self):
+        """All action names"""
         return ['wait', 'hold H', 'hold V', 'ask hold'] + list(chain(*[
             ['bring ' + o] + (['clear ' + o] if c else [])
             for o, c in zip(self.objects, self.clearable)]))
@@ -358,7 +369,7 @@ class SupportivePOMDP:
         raise NotImplemented
 
     def _update_for_transition(self, _s, node):
-        """Computes reward and modifies state to match transition from node
+        """Computes reward and modifies state to match transition from HTM node
         to a random successor.
         """
         _s.htm = np.random.choice(self.htm_succs[node])
@@ -368,22 +379,25 @@ class SupportivePOMDP:
     # Action indices manipulation
 
     def _init_object_actions_indices(self):
+        """Initialize actions corresponding to get and clear objects.
+        """
         self._skip_to_a_obj = 4
         self._a_bring = [None for _ in self.objects]
-        self._a_remove = [None for _ in self.objects]
+        self._a_clear = [None for _ in self.objects]
         j = self._skip_to_a_obj
         for (o, c) in enumerate(self.clearable):
             self._a_bring[o] = j
             j += 1
             if c:
-                self._a_remove[o] = j
+                self._a_clear[o] = j
                 j += 1
 
     def _obj_from_action(self, a):
+        """Returns index of the object that the action gets or removes."""
         if a in self._a_bring:
             return self._a_bring.index(a)
-        elif a in self._a_remove:
-            return self._a_remove.index(a)
+        elif a in self._a_clear:
+            return self._a_clear.index(a)
         else:
             raise ValueError("Not an object action: %s" % a)
 
@@ -391,16 +405,21 @@ class SupportivePOMDP:
         return a in self._a_bring
 
     def _bring(self, obj):
+        """Returns the index of the action that brings the given object id.
+        """
         return self._a_bring[obj]
 
-    def _remove(self, obj):
-        a = self._a_remove[obj]
+    def _clear(self, obj):
+        """Returns the index of the action that brings the given object id.
+        """
+        a = self._a_clear[obj]
         if a is None:
-            raise ValueError('{} is not cleanable.'.format(obj))
+            raise ValueError('{} is not clearable.'.format(obj))
         return a
 
     def _update_for_condition(self, _s, c, obj):
-        """Computes reward and modifies state according to conditions.
+        """Computes reward and modifies state for HTM state transition.
+        Operates for one given object according to conditions.
         """
         r = 0. if _s.has_object(obj) else -self._cost_get(obj)
         # note: all conditions need object to be there
@@ -423,6 +442,8 @@ class SupportivePOMDP:
             _s.random_object_changes(self.p_changed_by_human)
             _s.random_preference_changes(self.p_change_preference)
         _new_s = self._int_to_state(_s.to_int())
+
+        # Actions that trigger a HTM state transition:
         if a in (self.A_WAIT, self.A_HOLD_H, self.A_HOLD_V):
             r = 0 if a == self.A_WAIT else -self.cost_hold
             if _s.is_final():  # Final state
@@ -436,22 +457,26 @@ class SupportivePOMDP:
                     r += self.r_final
                 else:  # Only WAIT finishes the task
                     obs = self.O_FAIL
-            else:
+            else:  # Transitions within the given HTM
                 obs = self.O_NONE
                 needs_hold = self.htm_nodes[_s.htm].action.hold
+                # Successful supportive action for preference
                 if _s.has_preference(self.PREF_HOLD) and (
                         (needs_hold == 'h' and a == self.A_HOLD_H) or
                         (needs_hold == 'v' and a == self.A_HOLD_V)):
                     r += self.r_preference
                 elif (a in (self.A_HOLD_H, self.A_HOLD_V) and (
                         (not random) or np.random.random() < .98)):
-                    # Undesired HOLD most likely gets an error
+                    # Undesired HOLD: most likely gets an error
                     obs = self.O_FAIL
-                if obs != self.O_FAIL:  # Ask or righ correct hold
+                # otherwise it's a wait, there is nothing to do
+                if obs != self.O_FAIL:  # The transition occurs
                     r += self._update_for_transition(_new_s, _s.htm)
                     r += self.r_subtask
                     if (self.reward_independent_preference and
                             not _s.has_preference(self.PREF_HOLD)):
+                        # Eventually correct reward so that the best reward
+                        # is the same regardless of the preference of the user.
                         r += self.r_preference - self.cost_hold
 
         elif a == self.A_ASK:
@@ -466,6 +491,8 @@ class SupportivePOMDP:
                     obs = self.O_NO
                 else:
                     obs = self.O_NONE
+
+        # Clear and bring actions
         else:
             obj = self._obj_from_action(a)
             is_bring = int(self._is_bring(a))
@@ -482,6 +509,7 @@ class SupportivePOMDP:
         return _new_s.to_int(), obs, r
 
     def sample_start(self):
+        """Samples a starting state."""
         htm_id = np.random.choice(self.htm_init)
         _s = self._int_to_state()
         _s.htm = htm_id

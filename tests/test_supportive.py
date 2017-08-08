@@ -296,11 +296,11 @@ class TestSupportivePOMDP(TestCase):
     def test_action_ids(self):
         self.p._bring(2)
         self.assertTrue(self.p._is_bring(self.p._bring(2)))
-        self.assertFalse(self.p._is_bring(self.p._remove(1)))
+        self.assertFalse(self.p._is_bring(self.p._clear(1)))
         self.assertEqual(self.p.actions[self.p._bring(2)], 'bring leg')
         with self.assertRaises(ValueError):
-            self.p.actions[self.p._remove(2)]
-        self.assertEqual(self.p.actions[self.p._remove(1)], 'clear joints')
+            self.p.actions[self.p._clear(2)]
+        self.assertEqual(self.p.actions[self.p._clear(1)], 'clear joints')
         with self.assertRaises(ValueError):
             self.p._obj_from_action(self.p.A_WAIT)
 
@@ -332,7 +332,7 @@ class TestSupportivePOMDP(TestCase):
         self.assertEqual(_s.has_object(1), 1)
         self.assertEqual(o, self.p.O_NONE)
         # Remove object
-        a = self.p._remove(1)
+        a = self.p._clear(1)
         s, o, r = self.p.sample_transition(a, s)
         _s = self.p._int_to_state(s)
         self.assertEqual(_s.has_object(1), 0)
@@ -419,7 +419,7 @@ class TestSupportivePOMDP(TestCase):
         # Remove object
         _s = self.p._int_to_state()
         _s.set_object(1, 1)
-        a = self.p._remove(1)
+        a = self.p._clear(1)
         s, o, r = self.p.sample_transition(a, _s.to_int())
         _s = self.p._int_to_state(s)
         self.assertEqual(_s.has_object(1), 1)
@@ -428,7 +428,7 @@ class TestSupportivePOMDP(TestCase):
     def test_sample_transition_not_found(self):
         s = 0
         # Remove object
-        a = self.p._remove(1)
+        a = self.p._clear(1)
         s, o, r = self.p.sample_transition(a, s)
         _s = self.p._int_to_state(s)
         self.assertEqual(_s.has_object(1), 0)
