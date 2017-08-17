@@ -184,6 +184,7 @@ class TestSupportivePOMDPState(TestCase):
                                              np.array([.3, 0., .7]))
 
     def test_belief_preferences(self):
+        # _SupportivePOMDPState(n_htm_states, n_preferences, n_body_features, n_objects)
         _s = _SupportivePOMDPState(3, 2, 1, 2)
         b = np.zeros((3 * 2 ** 5))
         # bp[00, 01, 10, 11] = .1 .1 0. .2
