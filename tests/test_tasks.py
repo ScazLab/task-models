@@ -1,4 +1,5 @@
 from unittest import TestCase
+from types import GeneratorType
 
 import numpy as np
 
@@ -11,6 +12,9 @@ from task_models.task import (check_path, split_path, TaskGraph,
 
 
 class DummyState(NDimensionalState):
+    """State representing an int as an array of size dim (default to 6)
+    of its binary expansion.
+    """
 
     dim = 6
 
@@ -277,6 +281,34 @@ class TestTaskGraph(TestCase):
         ])
         self.graph.check_only_deterministic_transitions()
 
+    def test_remove_transition(self):
+        self.graph.add_path(self.path)
+        t1 = self.path[:3]
+        self.assertTrue(self.graph.has_transition(*t1))
+        self.graph.remove_transition(*t1)
+        self.assertFalse(self.graph.has_transition(*t1))
+        with self.assertRaises(KeyError):
+            self.graph.remove_transition(*t1)
+
+    def test_compact_node_to_itself_is_same(self):
+        self.graph.add_path(self.path)
+        trans = [self.path[:3], self.path[2:]]
+        trans[0][1] = ''  # replaces label
+        trans = [tuple(t) for t in trans]
+        self.graph.compact([self.path[0]], self.path[0])
+        self.assertEqual(list(self.graph.all_transitions()), trans)
+
+    def test_compact_all_nodes_is_empty(self):
+        self.graph.add_path(self.path)
+        self.graph.compact([self.path[i] for i in [0, 2, 4]], None)
+        self.assertEqual(list(self.graph.all_transitions()), [])
+
+    def test_compacts_two(self):
+        self.graph.add_path(self.path)
+        self.graph.compact([self.path[i] for i in [0, 2]], None)
+        trans = [(None, '', self.path[4])]
+        self.assertEqual(list(self.graph.all_transitions()), trans)
+
 
 class TestConjugateTaskGraph(TestCase):
 
@@ -382,6 +414,50 @@ class TestConjugateTaskGraph(TestCase):
                               place_frame)
         cgraph.add_transition(place_frame, final, cgraph.terminal)
         self.assertEqual(graph.conjugate(), cgraph)
+
+    def test_get_max_chains_on_chain(self):
+        graph = TaskGraph()
+        graph.add_path([self.s0, self.a0, self.s1, self.a1, self.s2])
+        c = graph.conjugate()
+        chains = c.get_max_chains()
+        self.assertIsInstance(chains, GeneratorType)
+        self.assertEqual(list(chains),
+                         [[c.initial, self.a0, self.a1, c.terminal]])
+
+    def test_get_max_chains_on_clique(self):
+        graph = TaskGraph()
+        a0 = get_action((1, 0), (1, 1))
+        a1 = get_action((2, 0), (2, 2))
+        a2 = get_action((4, 0), (4, 4))
+        si = DummyState(0)
+        sf = DummyState(1 + 2 + 4)
+        graph.add_path([si, a0, DummyState(1), a1, DummyState(1 + 2), a2, sf])
+        graph.add_path([si, a0, DummyState(1), a2, DummyState(1 + 4), a1, sf])
+        graph.add_path([si, a1, DummyState(2), a0, DummyState(1 + 2), a2, sf])
+        graph.add_path([si, a1, DummyState(2), a2, DummyState(2 + 4), a0, sf])
+        graph.add_path([si, a2, DummyState(4), a0, DummyState(1 + 4), a1, sf])
+        graph.add_path([si, a2, DummyState(4), a1, DummyState(2 + 4), a0, sf])
+        c = graph.conjugate()
+        chains = c.get_max_chains()
+        self.assertIsInstance(chains, GeneratorType)
+        self.assertEqual(list(chains), [])
+
+    def test_get_two_max_chains(self):
+        graph = TaskGraph()
+        a0 = get_action((1, 0), (1, 1))
+        a1 = get_action((2, 0), (2, 2))
+        b0 = get_action((4, 0), (4, 4))
+        b1 = get_action((8, 0), (8, 8))
+        si = DummyState(0)
+        sf = DummyState(1 + 2 + 4 + 8)
+        graph.add_path([si, a0, DummyState(1), a1, DummyState(1 + 2),
+                        b0, DummyState(1 + 2 + 4), b1, sf])
+        graph.add_path([si, b0, DummyState(4), b1, DummyState(4 + 8),
+                        a0, DummyState(1 + 4 + 8), a1, sf])
+        c = graph.conjugate()
+        chains = c.get_max_chains()
+        self.assertIsInstance(chains, GeneratorType)
+        self.assertEqual(list(chains), [[a0, a1], [b0, b1]])
 
 
 class TestParallelToAlternatives(TestCase):

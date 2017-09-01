@@ -1,3 +1,7 @@
+# coding: utf-8
+
+from __future__ import unicode_literals
+
 """
 Tools for task representation.
 
@@ -65,6 +69,9 @@ class BaseGraph(object):
             for (a, s_next) in self.transitions[s]:
                 yield (s, a, s_next)
 
+    def remove_transition(self, source, label, destination):
+        self.transitions[source].remove((label, destination))
+
     def all_nodes(self):
         nodes = set()
         for s, l, d in self.all_transitions():
@@ -83,6 +90,23 @@ class BaseGraph(object):
                        'value': {'label': str(l)}}
                       for u, l, v in self.all_transitions()]
         return d
+
+    def compact(self, nodes, new_node):
+        """Compact several nodes into on meta node.
+        There is no difference about nodes and meta nodes, the code is agnostic
+        about the nature of the node. However it replaces all label with
+        an empty string, hence breaking any convention such as labels being
+        states in a TaskGraph.
+        """
+        nodes = set(nodes)
+        for (s, l, d) in list(self.all_transitions()):
+            sin = s in nodes
+            din = d in nodes
+            if sin or din:
+                self.remove_transition(s, l, d)
+                if not (sin and din):  # not an inner node
+                    self.add_transition(
+                        new_node if sin else s, '', new_node if din else d)
 
 
 class TaskGraph(BaseGraph):
@@ -184,8 +208,79 @@ class ConjugateTaskGraph(BaseGraph):
                         ctg.add_transition(a, next_state, next_action)
         return ctg
 
+    def get_max_chains(self, exclude=[]):
+        in_degree = {}
+        unique_transitions = {}
+        for s in self.all_nodes():
+            unique_transitions[s] = set()
+        for (s, l, d) in self.all_transitions():
+            if d not in unique_transitions[s]:
+                in_degree[d] = in_degree.get(d, 0) + 1
+            unique_transitions[s].add(d)
+        to_explore = set([self.initial])
+        explored = set()
+        chain = None
+
+        def explore_successors(node):
+            to_explore.update(unique_transitions[node].difference(explored))
+
+        while len(to_explore) > 0 or chain is not None:
+            if chain is None:
+                node = to_explore.pop()
+                explored.add(node)
+                if len(unique_transitions[node]) == 1:  # out degree == 1
+                    chain = [node]
+                else:
+                    explore_successors(node)
+            else:
+                node = chain[-1]
+                assert(len(unique_transitions[node]) == 1)
+                next_node = list(unique_transitions[node])[0]
+                done = False
+                if in_degree[next_node] == 1:
+                    chain.append(next_node)
+                    explored.add(next_node)
+                    if len(unique_transitions[next_node]) != 1:
+                        done = True
+                        explore_successors(next_node)
+                else:
+                    to_explore.add(next_node)
+                    done = True
+                if done:
+                    if len(chain) > 1:
+                        yield chain
+                    chain = None
+
+    def get_max_cliques(self):
+        raise NotImplementedError
+
 
 # Hierarchical task definition
+
+class MetaAction(AbstractAction):
+
+    SEP = {'sequence': '→',
+           'parallel': '||',
+           'alternative': '∨',
+           }
+
+    def __init__(self, kind, actions):
+        self.kind = kind
+        self.actions = actions
+
+    def __eq__(self, other):
+        return isinstance(other, MetaAction) and self.actions == other.actions
+
+    @property
+    def name(self):
+        return self.SEP[self.kind].join([a.name for a in self.actions])
+
+    def to_combination(self):
+        children = [
+            a.to_combination() if isinstance(a, MetaAction) else LeafCombination(a)
+            for a in self.actions]
+        return COMBINATION_CLASSES[self.kind](children)
+
 
 def int_generator():
     i = -1
@@ -318,3 +413,9 @@ class HierarchicalTask:
             'nodes': None if self.is_empty() else self.root.as_dictionary(
                 None, int_generator()),
         }
+
+
+COMBINATION_CLASSES = {'sequence': SequentialCombination,
+                       'parallel': ParallelCombination,
+                       'alternative': AlternativeCombination,
+                       }
