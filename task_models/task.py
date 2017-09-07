@@ -209,10 +209,12 @@ class ConjugateTaskGraph(BaseGraph):
         return ctg
 
     def get_max_chains(self, exclude=[]):
+        """Search non-trivial maximum chains in the graph.
+
+        :returns: iterator over chains (as lists)
+        """
         in_degree = {}
-        unique_transitions = {}
-        for s in self.all_nodes():
-            unique_transitions[s] = set()
+        unique_transitions = {n: set() for n in self.all_nodes()}
         for (s, l, d) in self.all_transitions():
             if d not in unique_transitions[s]:
                 in_degree[d] = in_degree.get(d, 0) + 1

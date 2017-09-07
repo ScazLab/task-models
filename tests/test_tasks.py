@@ -444,10 +444,10 @@ class TestConjugateTaskGraph(TestCase):
 
     def test_get_two_max_chains(self):
         graph = TaskGraph()
-        a0 = get_action((1, 0), (1, 1))
-        a1 = get_action((2, 0), (2, 2))
-        b0 = get_action((4, 0), (4, 4))
-        b1 = get_action((8, 0), (8, 8))
+        a0 = get_action((1, 0), (1, 1), name='a0')
+        a1 = get_action((2, 0), (2, 2), name='a1')
+        b0 = get_action((4, 0), (4, 4), name='b0')
+        b1 = get_action((8, 0), (8, 8), name='b0')
         si = DummyState(0)
         sf = DummyState(1 + 2 + 4 + 8)
         graph.add_path([si, a0, DummyState(1), a1, DummyState(1 + 2),
@@ -457,7 +457,11 @@ class TestConjugateTaskGraph(TestCase):
         c = graph.conjugate()
         chains = c.get_max_chains()
         self.assertIsInstance(chains, GeneratorType)
-        self.assertEqual(list(chains), [[a0, a1], [b0, b1]])
+        chains = list(chains)
+        self.assertEqual(len(chains), 2)
+        self.assertIn([a0, a1], chains)
+        self.assertIn([b0, b1], chains)
+        # (accounts for all orders)
 
 
 class TestParallelToAlternatives(TestCase):
