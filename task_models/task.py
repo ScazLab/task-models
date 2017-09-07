@@ -46,7 +46,7 @@ def split_path(path):
 def max_cliques(graph):
     """Searches non-trivial maximum cliques in graph.
 
-    Uses Bron-Kerbosch algorithm.
+    Uses Bron-Kerbosch algorithm with pivot.
 
     :graph: dictionary of node: set(neighbours) representing symmetric graph
         (must verify: v in graph[u] => u in graph[v])
@@ -61,15 +61,17 @@ def max_cliques(graph):
 def _bron_kerbosch(graph, r, p, x):
     if len(p) == 0 and len(x) == 0:
         yield r
-    # Todo implement pivot
-    for u in list(p):  # copying for iteration (set will be modified)
-        # yield from...
-        for clique in _bron_kerbosch(graph, r.union([u]),
-                                     p.intersection(graph[u]),
-                                     x.intersection(graph[u])):
-            yield clique
-        p.remove(u)
-        x.add(u)
+    elif len(p) > 0:
+        pivot = max(p, key=lambda u: len(graph[u].intersection(p)))
+        # (node with the most neighbours in p)
+        for u in p.difference(graph[pivot]):
+            # yield from...
+            for clique in _bron_kerbosch(graph, r.union([u]),
+                                         p.intersection(graph[u]),
+                                         x.intersection(graph[u])):
+                yield clique
+            p.remove(u)
+            x.add(u)
 
 
 class BaseGraph(object):
