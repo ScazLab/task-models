@@ -8,7 +8,8 @@ from task_models.state import NDimensionalState
 from task_models.task import (check_path, split_path, TaskGraph,
                               ConjugateTaskGraph, AbstractAction,
                               ParallelCombination, LeafCombination,
-                              AlternativeCombination, SequentialCombination)
+                              AlternativeCombination, SequentialCombination,
+                              max_cliques)
 
 
 class DummyState(NDimensionalState):
@@ -172,6 +173,29 @@ class TestSplitPath(TestCase):
     def test_split7(self):
         self.assertEqual(split_path(range(1, 8)),
                          [(1, 2, 3), (3, 4, 5), (5, 6, 7)])
+
+
+class TestMaxClique(TestCase):
+
+    def setUp(self):
+        self.g = {1: set([2, 5]),
+                  2: set([1, 3, 5]),
+                  3: set([2, 4]),
+                  4: set([3, 5, 6]),
+                  5: set([1, 2, 4]),
+                  6: set([4]),
+                  }
+
+    def test_max_cliques(self):
+        cliques = max_cliques(self.g)
+        self.assertIsInstance(cliques, GeneratorType)
+        cliques = list(cliques)
+        self.assertEqual(len(cliques), 5)
+        self.assertIn(set([1, 2, 5]), cliques)
+        self.assertIn(set([2, 3]), cliques)
+        self.assertIn(set([3, 4]), cliques)
+        self.assertIn(set([4, 5]), cliques)
+        self.assertIn(set([4, 6]), cliques)
 
 
 class TestTaskGraph(TestCase):
@@ -462,6 +486,32 @@ class TestConjugateTaskGraph(TestCase):
         self.assertIn([a0, a1], chains)
         self.assertIn([b0, b1], chains)
         # (accounts for all orders)
+
+    def test_get_max_clique_on_chain(self):
+        graph = TaskGraph()
+        graph.add_path([self.s0, self.a0, self.s1, self.a1, self.s2])
+        c = graph.conjugate()
+        chains = c.get_max_cliques()
+        self.assertIsInstance(chains, GeneratorType)
+        self.assertEqual(list(chains), [])
+
+    def test_get_max_clique_on_clique(self):
+        graph = TaskGraph()
+        a0 = get_action((1, 0), (1, 1), name='0')
+        a1 = get_action((2, 0), (2, 2), name='1')
+        a2 = get_action((4, 0), (4, 4), name='2')
+        si = DummyState(0)
+        sf = DummyState(1 + 2 + 4)
+        graph.add_path([si, a0, DummyState(1), a1, DummyState(1 + 2), a2, sf])
+        graph.add_path([si, a0, DummyState(1), a2, DummyState(1 + 4), a1, sf])
+        graph.add_path([si, a1, DummyState(2), a0, DummyState(1 + 2), a2, sf])
+        graph.add_path([si, a1, DummyState(2), a2, DummyState(2 + 4), a0, sf])
+        graph.add_path([si, a2, DummyState(4), a0, DummyState(1 + 4), a1, sf])
+        graph.add_path([si, a2, DummyState(4), a1, DummyState(2 + 4), a0, sf])
+        c = graph.conjugate()
+        chains = c.get_max_cliques()
+        self.assertIsInstance(chains, GeneratorType)
+        self.assertEqual(list(chains), [set([a0, a1, a2])])
 
 
 class TestParallelToAlternatives(TestCase):

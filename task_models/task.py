@@ -43,6 +43,35 @@ def split_path(path):
             for i in range(0, len(path) - 2, 2)]
 
 
+def max_cliques(graph):
+    """Searches non-trivial maximum cliques in graph.
+
+    Uses Bron-Kerbosch algorithm.
+
+    :graph: dictionary of node: set(neighbours) representing symmetric graph
+        (must verify: v in graph[u] => u in graph[v])
+    :returns: iterator over cliques (as sets)
+    """
+    # yield from
+    for clique in _bron_kerbosch(graph, set(), set(graph), set()):
+        if len(clique) > 1:  # non-trivial
+            yield clique
+
+
+def _bron_kerbosch(graph, r, p, x):
+    if len(p) == 0 and len(x) == 0:
+        yield r
+    # Todo implement pivot
+    for u in list(p):  # copying for iteration (set will be modified)
+        # yield from...
+        for clique in _bron_kerbosch(graph, r.union([u]),
+                                     p.intersection(graph[u]),
+                                     x.intersection(graph[u])):
+            yield clique
+        p.remove(u)
+        x.add(u)
+
+
 class BaseGraph(object):
     """Transitions (s, l, d) are stored as {s: {(l, d), ...}, ...}, that is
     a dictionary of sets of pairs.
@@ -254,7 +283,18 @@ class ConjugateTaskGraph(BaseGraph):
                     chain = None
 
     def get_max_cliques(self):
-        raise NotImplementedError
+        """Searches non-trivial maximum cliques in the symmetrized graph.
+
+        :returns: iterator over cliques (as sets)
+        """
+        # compute symmetric graph
+        unique = set((s, d) for (s, _, d) in self.all_transitions())
+        symmetric = {n: set() for n in self.all_nodes()}
+        for s, d in unique:
+            if (d, s) in unique:
+                symmetric[s].add(d)
+                symmetric[d].add(s)
+        return max_cliques(symmetric)
 
 
 # Hierarchical task definition
