@@ -239,6 +239,14 @@ class ConjugateTaskGraph(BaseGraph):
                         ctg.add_transition(a, next_state, next_action)
         return ctg
 
+    def compact(self, nodes, new_node):
+        # TODO: is this really the desired behavior?
+        super(ConjugateTaskGraph, self).compact(nodes, new_node)
+        if self.initial in nodes:
+            self.initial = new_node
+        if self.terminal in nodes:
+            self.terminal = new_node
+
     def get_max_chains(self, exclude=[]):
         """Search non-trivial maximum chains in the graph.
 
