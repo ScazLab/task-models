@@ -48,7 +48,7 @@ class Action(object):
         self.name = name
 
     def __repr__(self):
-        return "Action<{}>".format(self.name)
+        return "{}<{}>".format(self.__class__.__name__, self.name)
 
     def __str__(self):
         return self.name

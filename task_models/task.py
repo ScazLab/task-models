@@ -309,21 +309,35 @@ class MetaAction(AbstractAction):
            }
 
     def __init__(self, kind, actions):
+        super(MetaAction, self).__init__(self._name(kind, actions))
         self.kind = kind
         self.actions = actions
 
     def __eq__(self, other):
-        return isinstance(other, MetaAction) and self.actions == other.actions
+        return (isinstance(other, MetaAction) and
+                self.kind == other.kind and
+                self.actions == other.actions)
 
-    @property
-    def name(self):
-        return self.SEP[self.kind].join([a.name for a in self.actions])
+    def __hash__(self):
+        return hash(self.name)
+        # Needs to re-implement __hash__ despite inheritence (see following
+        # from datamodels doc).
+        # A class that overrides __eq__() and does not define __hash__() will
+        # have its __hash__() implicitly set to None. When the __hash__()
+        # method of a class is None, instances of the class will raise an
+        # appropriate TypeError when a program attempts to retrieve their hash
+        # value, and will also be correctly identified as unhashable when
+        # checking isinstance(obj, collections.Hashable).
 
     def to_combination(self):
         children = [
             a.to_combination() if isinstance(a, MetaAction) else LeafCombination(a)
             for a in self.actions]
         return COMBINATION_CLASSES[self.kind](children)
+
+    @classmethod
+    def _name(cls, kind, actions):
+        return '({})'.format(cls.SEP[kind].join([a.name for a in actions]))
 
 
 def int_generator():
