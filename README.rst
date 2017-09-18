@@ -16,7 +16,7 @@ If you are using this software and or one of its components, we warmly recommend
 Prerequisites
 -------------
 
-This package requires a binary from Anthony Cassandra's POMDP solver. Please visit `pomdp.org <http://www.pomdp.org/>`_ for any matter related to the POMDP solver. In order to be using the *simplex* finite grid method, a fork of the version from `cmansley <https://github.com/cmansley/pomdp-solve>`_ needs to be installed that contains a fix to the original code. You can get the fork `here <https://github.com/scazlab/pomdp-solve>`.
+This package requires a binary from Anthony Cassandra's POMDP solver. Please visit `pomdp.org <http://www.pomdp.org/>`_ for any matter related to the POMDP solver. In order to be using the *simplex* finite grid method, a fork of the version from `cmansley <https://github.com/cmansley/pomdp-solve>`_ needs to be installed that contains a fix to the original code. You can get the fork `here <https://github.com/scazlab/pomdp-solve>`_.
 
 Here are some instructions on how to compile and install the solver properly (assuming that :code:`~/src` is the directory in which you usually place your code)::
 
