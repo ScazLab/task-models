@@ -2,14 +2,17 @@ from unittest import TestCase
 from types import GeneratorType
 
 import numpy as np
+import math
 
 from task_models.action import Condition, PrePostConditionAction
 from task_models.state import NDimensionalState
 from task_models.task import (check_path, split_path, TaskGraph,
-                              ConjugateTaskGraph, AbstractAction,
-                              ParallelCombination, LeafCombination,
-                              AlternativeCombination, SequentialCombination,
-                              max_cliques)
+                              ConjugateTaskGraph, AbstractAction, PredAction,
+                              LeafCombination,
+                              AlternativeCombination, SequentialCombination, ParallelCombination,
+                              max_cliques,
+                              HierarchicalTask,
+                              TrajectoryElement)
 
 
 class DummyState(NDimensionalState):
@@ -526,3 +529,195 @@ class TestParallelToAlternatives(TestCase):
         self.assertEqual(len(alt.children), 6)
         self.assertIsInstance(alt.children[0], SequentialCombination)
         self.assertTrue(all([len(c.children) == 3 for c in alt.children]))
+
+    def test_complex(self):
+        a = LeafCombination(AbstractAction('a'))
+        b = LeafCombination(AbstractAction('b'))
+        c = LeafCombination(AbstractAction('c'))
+        p1 = ParallelCombination([a, b])
+        p2 = ParallelCombination([p1, c])
+        alt = p2.to_alternative()
+        self.assertIsInstance(alt, AlternativeCombination)
+        self.assertEqual(len(alt.children), 6)
+        self.assertIsInstance(alt.children[0], SequentialCombination)
+        self.assertTrue(all([len(c.children) == 3 for c in alt.children]))
+
+
+class TestGenAllTrajectories(TestCase):
+
+    def test_leaf(self):
+        leaf = LeafCombination(PredAction(
+            'l', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+        task = HierarchicalTask(root=leaf)
+        task.gen_all_trajectories()
+        trajectories = task.all_trajectories
+        assert(isinstance(trajectories, list))
+        assert(len(trajectories) == 1)
+        assert(isinstance(trajectories[0], list))
+        assert(len(trajectories[0]) == 1)
+        assert(trajectories[0][0].node.name == leaf.name)
+
+    def test_parallel(self):
+        a = LeafCombination(PredAction(
+            'a', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+        b = LeafCombination(PredAction(
+            'b', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+        c = LeafCombination(PredAction(
+            'c', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+        nodes = [a, b, c]
+        task = HierarchicalTask(root=ParallelCombination(nodes))
+        task.gen_all_trajectories()
+        trajectories = task.all_trajectories
+        assert(isinstance(trajectories, list))
+        assert(len(trajectories) == math.factorial(len(nodes)))
+        assert(isinstance(traj, list) and len(traj) == len(nodes)
+               and isinstance(el, TrajectoryElement)
+               for traj in trajectories for el in traj)
+
+    def test_sequential(self):
+        a = LeafCombination(PredAction(
+            'a', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+        b = LeafCombination(PredAction(
+            'b', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+        c = LeafCombination(PredAction(
+            'c', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+        task = HierarchicalTask(root=SequentialCombination([a, b, c]))
+        task.gen_all_trajectories()
+        trajectories = task.all_trajectories
+        assert(isinstance(trajectories, list))
+        assert(isinstance(trajectories[0], list))
+        assert(len(trajectories) == 1)
+        assert(len(trajectories[0]) == 3)
+        assert(isinstance(traj, TrajectoryElement)
+               for traj in trajectories[0])
+
+    def test_alternative(self):
+        a = LeafCombination(PredAction(
+            'a', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+        b = LeafCombination(PredAction(
+            'b', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+        c = LeafCombination(PredAction(
+            'c', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+        nodes = [a, b, c]
+        task = HierarchicalTask(root=AlternativeCombination([a, b, c]))
+        task.gen_all_trajectories()
+        trajectories = task.all_trajectories
+        assert(isinstance(trajectories, list))
+        assert(len(trajectories) == len(nodes))
+        assert(isinstance(traj, list) and len(traj) == 1
+               and isinstance(traj[0], TrajectoryElement)
+               for traj in trajectories)
+
+    def test_two_level(self):
+        a = LeafCombination(PredAction(
+            'a', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+        b = LeafCombination(PredAction(
+            'b', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+        c = LeafCombination(PredAction(
+            'c', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+        ab = SequentialCombination([a, b])
+        two_level_task1 = HierarchicalTask(root=ParallelCombination(
+            [ab, c]))
+        two_level_task2 = HierarchicalTask(root=AlternativeCombination(
+            [SequentialCombination([a, b]), c]))
+        two_level_task3 = HierarchicalTask(root=SequentialCombination(
+            [SequentialCombination([a, b]), c]))
+        two_level_task4 = HierarchicalTask(root=AlternativeCombination(
+            [c, SequentialCombination([a, b])]))
+        two_level_task1.gen_all_trajectories()
+        trajectories = two_level_task1.all_trajectories
+        assert(len(trajectories) == 2)
+        assert(len(traj) == 3 and isinstance(traj, list)
+               and isinstance(el, TrajectoryElement)
+               for traj in trajectories for el in traj)
+        two_level_task2.gen_all_trajectories()
+        trajectories = two_level_task2.all_trajectories
+        assert(len(trajectories) == 2)
+        assert(len(trajectories[0]) == 2 and len(trajectories[1]) == 1)
+        assert(isinstance(traj, list)
+               and isinstance(el, TrajectoryElement)
+               for traj in trajectories for el in traj)
+        two_level_task3.gen_all_trajectories()
+        trajectories = two_level_task3.all_trajectories
+        assert(isinstance(trajectories, list))
+        assert(isinstance(trajectories[0], list))
+        assert(len(trajectories) == 1)
+        assert (len(trajectories[0]) == 3)
+        assert(isinstance(traj, TrajectoryElement)
+               for traj in trajectories[0])
+        two_level_task4.gen_all_trajectories()
+        trajectories = two_level_task4.all_trajectories
+        assert(len(trajectories) == 2)
+        assert(len(trajectories[0]) == 1 and len(trajectories[1]) == 2)
+        assert(isinstance(traj, list)
+               and isinstance(el, TrajectoryElement)
+               for traj in trajectories for el in traj)
+
+    def test_three_level(self):
+        b = LeafCombination(PredAction(
+            'b', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+        c = LeafCombination(PredAction(
+            'c', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+        a1 = LeafCombination(PredAction(
+            'a1', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+        a2 = LeafCombination(PredAction(
+            'a2', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+        a1a2 = SequentialCombination([a1, a2])
+        three_level_task1 = HierarchicalTask(root=ParallelCombination(
+            [SequentialCombination([a1a2, b]), c]))
+        three_level_task2 = HierarchicalTask(root=SequentialCombination(
+            [SequentialCombination([a1a2, b]), c]))
+        three_level_task1.gen_all_trajectories()
+        trajectories = three_level_task1.all_trajectories
+        assert(len(trajectories) == 2)
+        assert(len(traj) == 4 and isinstance(traj, list)
+               and isinstance(el, TrajectoryElement)
+               for traj in trajectories for el in traj)
+        three_level_task2.gen_all_trajectories()
+        trajectories = three_level_task2.all_trajectories
+        assert(isinstance(trajectories, list))
+        assert(isinstance(trajectories[0], list))
+        assert(len(trajectories) == 1)
+        assert (len(trajectories[0]) == 4)
+        assert(isinstance(traj, TrajectoryElement)
+               for traj in trajectories[0])
+
+    def test_complex_task1(self):
+        ## Define the task
+        mount_central = ParallelCombination([
+            LeafCombination(PredAction(
+                'Get central frame', (1, 0, 0, 0, 0, 0, 0, 0, 0))),
+            LeafCombination(PredAction(
+                'Start Hold central frame', (1, 1, 0, 0, 0, 0, 0, 0, 0)))],
+            name='Mount central frame')
+        mount_legs = ParallelCombination([
+            ParallelCombination([
+                LeafCombination(PredAction(
+                    'Get left leg', (1, 1, 1, 0, 0, 0, 0, 0, 0))),
+                LeafCombination(PredAction(
+                    'Snap left leg', (1, 1, 1, 1, 0, 0, 0, 0, 0))),
+            ], name='Mount left leg'),
+            ParallelCombination([
+                LeafCombination(PredAction(
+                    'Get right leg', (1, 1, 1, 1, 1, 0, 0, 0, 0))),
+                LeafCombination(PredAction(
+                    'Snap right leg', (1, 1, 1, 1, 1, 1, 0, 0, 0))),
+            ], name='Mount right leg'),
+        ],
+            name='Mount legs')
+        release_central = LeafCombination(
+            PredAction('Release central frame', (1, 1, 1, 1, 1, 1, 1, 0, 0)))
+        mount_top = ParallelCombination([
+            LeafCombination(PredAction('Get top', (1, 1, 1, 1, 1, 1, 1, 1, 0))),
+            LeafCombination(PredAction('Snap top', (1, 1, 1, 1, 1, 1, 1, 1, 1)))],
+            name='Mount top')
+
+        mount_central_alt = mount_central.to_alternative()
+        mount_legs_alt = mount_legs.to_alternative()
+        print(mount_central_alt.children)
+        print(mount_legs_alt.children)
+        task = HierarchicalTask(root=ParallelCombination([mount_central, mount_legs]))
+        task.gen_all_trajectories()
+        trajectories = task.all_trajectories
+        print(len(trajectories))
+

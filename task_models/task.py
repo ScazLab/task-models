@@ -1,6 +1,8 @@
 # coding: utf-8
 
 from __future__ import unicode_literals
+import numpy as np
+import itertools as iter
 
 """
 Tools for task representation.
@@ -9,11 +11,14 @@ These make no sense if states are not discrete (although they may be
 represented as continuous vectors).
 """
 
-
 from itertools import permutations
 
-from .state import State
-from .action import Action
+from task_models.state import State
+from task_models.action import Action
+
+
+# from task_models import State
+# from .action import Action
 
 
 def check_path(path):
@@ -150,7 +155,7 @@ class TaskGraph(BaseGraph):
         self.terminal = set()
 
     def __eq__(self, other):
-        return (super().__eq__(other) and
+        return (super(TaskGraph, self).__eq__(other) and
                 isinstance(other, TaskGraph) and
                 self.initial == other.initial and
                 self.terminal == other.terminal)
@@ -200,7 +205,6 @@ class TaskGraph(BaseGraph):
 
 
 class AbstractAction(Action):
-
     def __hash__(self):
         return hash(self.name)
 
@@ -214,8 +218,33 @@ class AbstractAction(Action):
         return AbstractAction(rename_format.format(self.name))
 
 
-class ConjugateTaskGraph(BaseGraph):
+class PredAction(AbstractAction):
+    """Action abstraction to be used for the prediction project.
 
+    :param name: str (must be unique)
+    :param durations: (float: human, float: robot, float: error)
+        Duration for human and robot to perform the action as well as error
+        time when robot starts action at wrong moment (the error time includes
+        the time of acting before interruption as well as the recovery time).
+    :param human_probability: float
+        Probability that the human would take care of this action. If not
+        defined, will have to be estimated.
+    :param fail_probability: float
+        Probability that the robot action fails.
+    :param no_probability: float
+        Probability that the human answers no to the robot asking if he can
+        take the action.
+    """
+
+    def __init__(self, name, bin_feats):
+        super(PredAction, self).__init__(name=name)
+        self.bin_feats = bin_feats
+
+    def copy(self, rename_format='{}'):
+        return PredAction(rename_format.format(self.name), self.bin_feats)
+
+
+class ConjugateTaskGraph(BaseGraph):
     initial = AbstractAction('initial')
     terminal = AbstractAction('terminal')
 
@@ -275,7 +304,7 @@ class ConjugateTaskGraph(BaseGraph):
                     explore_successors(node)
             else:
                 node = chain[-1]
-                assert(len(unique_transitions[node]) == 1)
+                assert (len(unique_transitions[node]) == 1)
                 next_node = list(unique_transitions[node])[0]
                 done = False
                 if in_degree[next_node] == 1:
@@ -310,7 +339,6 @@ class ConjugateTaskGraph(BaseGraph):
 # Hierarchical task definition
 
 class MetaAction(AbstractAction):
-
     SEP = {'sequence': '→',
            'parallel': '||',
            'alternative': '∨',
@@ -356,13 +384,27 @@ def int_generator():
 
 
 class Combination(object):
-
     kind = 'Undefined'
 
-    def __init__(self, children, name='unnamed', highlighted=False):
+    def __init__(self, children, name='unnamed', highlighted=False,
+                 probabilities=None):
         self.children = children  # Actions or combinations
         self.name = name
         self.highlighted = highlighted
+        self.proba = probabilities
+
+    @property
+    def proba(self):
+        return self.__proba
+
+    @proba.setter
+    def proba(self, probabilities):
+        num_children = len(self.children)
+        if len(probabilities) != num_children:
+            raise ValueError("Length of probabilities array should be equal \
+                             to number of children of combination.")
+        else:
+            self.__proba = probabilities
 
     def _meta_dictionary(self, parent_id, id_generator):
         attr = []
@@ -389,7 +431,6 @@ class Combination(object):
 
 
 class LeafCombination(Combination):
-
     kind = None
 
     def __init__(self, action, highlighted=False):
@@ -413,23 +454,77 @@ class LeafCombination(Combination):
 
 
 class SequentialCombination(Combination):
-
     kind = 'Sequence'
+
+    def __init__(self, children, **xargs):
+        super(SequentialCombination, self).__init__(children, **xargs)
+
+    @property
+    def proba(self):
+        return super(SequentialCombination, self).proba
+        # return self.__proba
+
+    @proba.setter
+    def proba(self, probabilities):
+        num_children = len(self.children)
+        if probabilities is None:
+            return super(SequentialCombination, self.__class__). \
+                proba.fset(self, [1] * num_children)
+            # self.__proba = [1] * num_children
+        elif any(p != 1 for p in probabilities):
+            raise ValueError("Sequential combinations must have each prob \
+                             value equal to 1.")
+        else:
+            return super(SequentialCombination, self.__class__). \
+                proba.fset(self, probabilities)
+            # self.__proba = probabilities
 
     def deep_copy(self, rename_format='{}'):
         return SequentialCombination(
             self._deep_copy_children(rename_format=rename_format),
+            probabilities=self.proba,
             name=rename_format.format(self.name),
             highlighted=self.highlighted)
 
 
 class AlternativeCombination(Combination):
-
     kind = 'Alternative'
 
-    def __init__(self, children, probabilities=None, **xargs):
+    def __init__(self, children, from_parallel=False, **xargs):
+        self._from_parallel = from_parallel
         super(AlternativeCombination, self).__init__(children, **xargs)
-        self.proba = probabilities
+
+    @property
+    def proba(self):
+        return super(AlternativeCombination, self).proba
+        # return self.__proba
+
+    @proba.setter
+    def proba(self, probabilities):
+        num_children = len(self.children)
+        prob = float(1) / num_children
+        if probabilities is None:
+            if self._from_parallel:
+                return super(AlternativeCombination, self.__class__). \
+                    proba.fset(self, [prob] * num_children)
+            else:
+                # TODO: Change the value of these probs here to reflect \
+                # correct alternative probs
+                return super(AlternativeCombination, self.__class__). \
+                    proba.fset(self, [prob] * num_children)
+                # self.__proba = [prob] * num_children
+                # else:
+                #     raise ValueError("Alternative combinations should have probs specified.")
+        elif np.min(probabilities) < 0:
+            raise ValueError("At least one prob value is < 0.")
+        elif np.max(probabilities) > 1:
+            raise ValueError("At least one prob value is > 1.")
+        elif np.sum(probabilities) != 1:
+            raise ValueError("Probs should sum to 1.")
+        else:
+            return super(AlternativeCombination, self.__class__). \
+                proba.fset(self, probabilities)
+            # self.__proba = probabilities
 
     def deep_copy(self, rename_format='{}'):
         return AlternativeCombination(
@@ -440,11 +535,31 @@ class AlternativeCombination(Combination):
 
 
 class ParallelCombination(Combination):
-
     kind = 'Parallel'
 
     def __init__(self, children, **xargs):
         super(ParallelCombination, self).__init__(children, **xargs)
+
+    @property
+    def proba(self):
+        return super(ParallelCombination, self).proba
+        # return self.__proba
+
+    @proba.setter
+    def proba(self, probabilities):
+        num_children = len(self.children)
+        #prob = float(1) / num_children
+        if probabilities is None:
+            return super(ParallelCombination, self.__class__). \
+                proba.fset(self, [1] * num_children)
+            # self.__proba = [prob] * num_children
+        elif any(p != 1 for p in probabilities):
+            raise ValueError("The parallel combination should have each \
+                             branch prob = 1.")
+        else:
+            return super(ParallelCombination, self.__class__). \
+                proba.fset(self, probabilities)
+            # self.__proba = probabilities
 
     def deep_copy(self, rename_format='{}'):
         return ParallelCombination(
@@ -460,15 +575,40 @@ class ParallelCombination(Combination):
                 name='{} order-{}'.format(self.name, i))
             for i, p in enumerate(permutations(self.children))
         ]
-        return AlternativeCombination(sequences, name=self.name,
+        return AlternativeCombination(sequences, from_parallel=True, name=self.name,
                                       highlighted=self.highlighted)
 
 
-class HierarchicalTask:
+class TrajectoryElement(object):
+    """Objects out of which we build trajectories.
+    Trajectories are sequences of leaves generated from an HTM.
+    """
+
+    def __init__(self, node, prob):
+        self.node = node
+        self.prob = prob
+
+    @property
+    def prob(self):
+        return self.__prob
+
+    @prob.setter
+    def prob(self, prob):
+        if prob < 0:
+            raise ValueError("Prob < 0.")
+        elif prob > 1:
+            raise ValueError("Prob > 1.")
+        else:
+            self.__prob = prob
+
+
+class HierarchicalTask(object):
     """Tree representing a hierarchy of tasks which leaves are actions."""
 
     def __init__(self, root=None):
         self.root = root
+        self.all_trajectories = []
+        self.all_clean_trajectories = []
 
     def is_empty(self):
         return self.root is None
@@ -480,6 +620,734 @@ class HierarchicalTask:
                 None, int_generator()),
         }
 
+    def gen_all_trajectories(self):
+        self.all_trajectories = \
+            self.gen_trajectories_rec(self.root, prob=1)
+        #if all(isinstance(traj, TrajectoryElement) for traj in self.all_trajectories):
+        #    self.all_trajectories = [self.all_trajectories]
+        self.all_clean_trajectories = \
+            self.gen_clean_trajectories(self.all_trajectories)
+
+    # # Almost there
+    def gen_trajectories_rec(self, node, prob):
+        """Visits the graph, recording the leaves and returns list of indices
+        of initial and final leaves in the node.
+        """
+        if isinstance(node, LeafCombination):
+            return TrajectoryElement(node, prob)
+        else:
+            if isinstance(node, ParallelCombination):
+                print("parallel")
+                node = node.to_alternative()
+            if isinstance(node, AlternativeCombination) or \
+                isinstance(node, SequentialCombination):
+                children_trajectories = \
+                    [self.gen_trajectories_rec(c, node.proba[c_idx])
+                     for c_idx, c in enumerate(node.children)]
+                # if isinstance(node, SequentialCombination):
+                #     children_trajectories = list(iter.product(
+                #         children_trajectories, repeat=1))
+                new_trajectories = []
+                for child in children_trajectories:
+                    if isinstance(node, AlternativeCombination):
+                        if isinstance(child, list):
+                            if all(isinstance(el, list) for el in child):
+                                new_trajectories.extend(child)
+                            else:
+                                new_trajectories.append(child)
+                        else:
+                            new_trajectories.append([child])
+                    else:
+                        if not new_trajectories:
+                            if isinstance(child, list):
+                                new_trajectories.extend(child)
+                            else:
+                                # append([child]) maybe, it was append(child) previously
+                                new_trajectories.append(child)
+                        else:
+                            product_trajectories_clean = []
+                            # if just one el -> [[]]
+                            # if a list -> []
+                            # if a list of lists -> nothing
+                            if not(isinstance(child, list)):
+                                child = [[child]]
+                            elif any(not(isinstance(el, list)) for el in child):
+                                child = [child]
+                            if not(isinstance(new_trajectories, list)):
+                                new_trajectories = [[new_trajectories]]
+                            elif any(not(isinstance(traj, list)) for traj in new_trajectories):
+                                new_trajectories = [new_trajectories]
+                            product_trajectories = list(iter.product(
+                                new_trajectories, child))
+                            # if isinstance(child, list):
+                            #     product_trajectories = list(iter.product(
+                            #         [new_trajectories], [child]))
+                            # else:
+                            #     product_trajectories = list(iter.product(
+                            #         [new_trajectories], [[child]]))
+                            for product in product_trajectories:
+                                product_trajectories_clean.append(
+                                    list(iter.chain.from_iterable(product)))
+                            if isinstance(product_trajectories_clean, list):
+                                if isinstance(product_trajectories_clean[0], list) \
+                                        and len(product_trajectories_clean) == 1:
+                                        product_trajectories_clean = product_trajectories_clean[0]
+                            new_trajectories = product_trajectories_clean
+            else:
+                raise ValueError("Reached invalid type during recursion.")
+            # if isinstance(new_trajectories, list) \
+            #         and isinstance(new_trajectories[0], list) \
+            #         and len(new_trajectories) == 1:
+            #     new_trajectories = new_trajectories[0]
+            return new_trajectories
+
+    # # # Almost there
+    # def gen_trajectories_rec(self, node, prob):
+    #     """Visits the graph, recording the leaves and returns list of indices
+    #     of initial and final leaves in the node.
+    #     """
+    #     if isinstance(node, LeafCombination):
+    #         return TrajectoryElement(node, prob)
+    #     else:
+    #         if isinstance(node, ParallelCombination):
+    #             print("parallel")
+    #             node = node.to_alternative()
+    #         if isinstance(node, AlternativeCombination) or \
+    #             isinstance(node, SequentialCombination):
+    #             children_trajectories = \
+    #                 [self.gen_trajectories_rec(c, node.proba[c_idx])
+    #                  for c_idx, c in enumerate(node.children)]
+    #             # if isinstance(node, SequentialCombination):
+    #             #     children_trajectories = list(iter.product(
+    #             #         children_trajectories, repeat=1))
+    #             new_trajectories = []
+    #             for child in children_trajectories:
+    #                 if isinstance(node, AlternativeCombination):
+    #                     if isinstance(child, list):
+    #                         new_trajectories.append(child)
+    #                     else:
+    #                         new_trajectories.append([child])
+    #                 else:
+    #                     if not new_trajectories:
+    #                         if isinstance(child, list):
+    #                             new_trajectories.extend(child)
+    #                         else:
+    #                             # append([child]) maybe, it was append(child) previously
+    #                             new_trajectories.append(child)
+    #                     else:
+    #                         product_trajectories_clean = []
+    #                         # if just one el -> [[]]
+    #                         # if a list -> []
+    #                         # if a list of lists -> nothing
+    #                         if not(isinstance(child, list)):
+    #                             child = [[child]]
+    #                         elif any(not(isinstance(el, list)) for el in child):
+    #                             child = [child]
+    #                         if not(isinstance(new_trajectories, list)
+    #                             and all(isinstance(traj, list) for traj in new_trajectories)):
+    #                             new_trajectories = [new_trajectories]
+    #                         product_trajectories = list(iter.product(
+    #                             new_trajectories, child))
+    #                         # if isinstance(child, list):
+    #                         #     product_trajectories = list(iter.product(
+    #                         #         [new_trajectories], [child]))
+    #                         # else:
+    #                         #     product_trajectories = list(iter.product(
+    #                         #         [new_trajectories], [[child]]))
+    #                         for product in product_trajectories:
+    #                             product_trajectories_clean.append(
+    #                                 list(iter.chain.from_iterable(product)))
+    #                         if isinstance(product_trajectories_clean, list):
+    #                             if isinstance(product_trajectories_clean[0], list) \
+    #                                     and len(product_trajectories_clean) == 1:
+    #                                     product_trajectories_clean = product_trajectories_clean[0]
+    #                         new_trajectories = product_trajectories_clean
+    #         else:
+    #             raise ValueError("Reached invalid type during recursion.")
+    #         # if isinstance(new_trajectories, list) \
+    #         #         and isinstance(new_trajectories[0], list) \
+    #         #         and len(new_trajectories) == 1:
+    #         #     new_trajectories = new_trajectories[0]
+    #         return new_trajectories
+
+    # # # Almost there
+    # def gen_trajectories_rec(self, node, prob):
+    #     """Visits the graph, recording the leaves and returns list of indices
+    #     of initial and final leaves in the node.
+    #     """
+    #     if isinstance(node, LeafCombination):
+    #         return TrajectoryElement(node, prob)
+    #     else:
+    #         if isinstance(node, ParallelCombination):
+    #             print("parallel")
+    #             node = node.to_alternative()
+    #         if isinstance(node, AlternativeCombination) or \
+    #             isinstance(node, SequentialCombination):
+    #             children_trajectories = \
+    #                 [self.gen_trajectories_rec(c, node.proba[c_idx])
+    #                  for c_idx, c in enumerate(node.children)]
+    #             # if isinstance(node, SequentialCombination):
+    #             #     children_trajectories = list(iter.product(
+    #             #         children_trajectories, repeat=1))
+    #             new_trajectories = []
+    #             for child in children_trajectories:
+    #                 if isinstance(node, AlternativeCombination):
+    #                     if isinstance(child, list):
+    #                         new_trajectories.append(child)
+    #                     else:
+    #                         new_trajectories.append([child])
+    #                 else:
+    #                     if not new_trajectories:
+    #                         if isinstance(child, list):
+    #                             new_trajectories.extend(child)
+    #                         else:
+    #                             # append([child]) maybe, it was append(child) previously
+    #                             new_trajectories.append(child)
+    #                     else:
+    #                         product_trajectories_clean = []
+    #                         if not(isinstance(child, list)):
+    #                             child = [child]
+    #                         if not(isinstance(new_trajectories, list)
+    #                             and all(isinstance(traj, list) for traj in new_trajectories)):
+    #                             new_trajectories = [new_trajectories]
+    #                         product_trajectories = list(iter.product(
+    #                             new_trajectories, [child]))
+    #                         # if isinstance(child, list):
+    #                         #     product_trajectories = list(iter.product(
+    #                         #         [new_trajectories], [child]))
+    #                         # else:
+    #                         #     product_trajectories = list(iter.product(
+    #                         #         [new_trajectories], [[child]]))
+    #                         for product in product_trajectories:
+    #                             product_trajectories_clean.append(
+    #                                 list(iter.chain.from_iterable(product)))
+    #                         if isinstance(product_trajectories_clean, list):
+    #                             if isinstance(product_trajectories_clean[0], list) \
+    #                                     and len(product_trajectories_clean) == 1:
+    #                                     product_trajectories_clean = product_trajectories_clean[0]
+    #                         new_trajectories = product_trajectories_clean
+    #         else:
+    #             raise ValueError("Reached invalid type during recursion.")
+    #         # if isinstance(new_trajectories, list) \
+    #         #         and isinstance(new_trajectories[0], list) \
+    #         #         and len(new_trajectories) == 1:
+    #         #     new_trajectories = new_trajectories[0]
+    #         return new_trajectories
+
+    # # # Newest and greatest, bug with parallel of parallel
+    # def gen_trajectories_rec(self, node, prob):
+    #     """Visits the graph, recording the leaves and returns list of indices
+    #     of initial and final leaves in the node.
+    #     """
+    #     if isinstance(node, LeafCombination):
+    #         return TrajectoryElement(node, prob)
+    #     else:
+    #         if isinstance(node, ParallelCombination):
+    #             print("parallel")
+    #             node = node.to_alternative()
+    #         if isinstance(node, AlternativeCombination) or \
+    #             isinstance(node, SequentialCombination):
+    #             children_trajectories = \
+    #                 [self.gen_trajectories_rec(c, node.proba[c_idx])
+    #                  for c_idx, c in enumerate(node.children)]
+    #             # if isinstance(node, SequentialCombination):
+    #             #     children_trajectories = list(iter.product(
+    #             #         children_trajectories, repeat=1))
+    #             new_trajectories = []
+    #             for child in children_trajectories:
+    #                 if isinstance(node, AlternativeCombination):
+    #                     if isinstance(child, list):
+    #                         new_trajectories.append(child)
+    #                     else:
+    #                         new_trajectories.append([child])
+    #                 else:
+    #                     if not new_trajectories:
+    #                         if isinstance(child, list):
+    #                             new_trajectories.extend(child)
+    #                         else:
+    #                             # append([child]) maybe, it was append(child) previously
+    #                             new_trajectories.append([child])
+    #                     elif not(isinstance(new_trajectories[0], list)):
+    #                         if isinstance(child, list):
+    #                             new_trajectories.extend(child)
+    #                         else:
+    #                             new_trajectories.append(child)
+    #                     else:
+    #                         for traj_idx, traj in enumerate(new_trajectories):
+    #                             if isinstance(child, list):
+    #                                 for el in child:
+    #                                     if isinstance(el, list):
+    #                                         new_trajectories[traj_idx].extend(el)
+    #                                     else:
+    #                                         new_trajectories[traj_idx].extend([el])
+    #                             else:
+    #                                 new_trajectories[traj_idx].extend([child])
+    #
+    #                         #new_trajectories = list(iter.product(
+    #                         #    new_trajectories, [child]))
+    #         else:
+    #             raise ValueError("Reached invalid type during recursion.")
+    #         if isinstance(new_trajectories, list) \
+    #                 and isinstance(new_trajectories[0], list) \
+    #                 and len(new_trajectories) == 1:
+    #             new_trajectories = new_trajectories[0]
+    #         return new_trajectories
+
+    # # # Newest and greatest, bug with parallel of parallel
+    # def gen_trajectories_rec(self, node, prob):
+    #     """Visits the graph, recording the leaves and returns list of indices
+    #     of initial and final leaves in the node.
+    #     """
+    #     if isinstance(node, LeafCombination):
+    #         return TrajectoryElement(node, prob)
+    #     else:
+    #         if isinstance(node, ParallelCombination):
+    #             print("parallel")
+    #             node = node.to_alternative()
+    #         if isinstance(node, AlternativeCombination) or \
+    #             isinstance(node, SequentialCombination):
+    #             children_trajectories = \
+    #                 [self.gen_trajectories_rec(c, node.proba[c_idx])
+    #                  for c_idx, c in enumerate(node.children)]
+    #             # if isinstance(node, SequentialCombination):
+    #             #     children_trajectories = list(iter.product(
+    #             #         children_trajectories, repeat=1))
+    #             new_trajectories = []
+    #             for child in children_trajectories:
+    #                 if isinstance(node, AlternativeCombination):
+    #                     if isinstance(child, list):
+    #                         new_trajectories.append(child)
+    #                     else:
+    #                         new_trajectories.append([child])
+    #                 else:
+    #                     if not new_trajectories:
+    #                         if isinstance(child, list):
+    #                             new_trajectories.extend(child)
+    #                         else:
+    #                             # append([child]) maybe, it was append(child) previously
+    #                             new_trajectories.append([child])
+    #                     elif not(isinstance(new_trajectories[0], list)):
+    #                         if isinstance(child, list):
+    #                             new_trajectories.extend(child)
+    #                         else:
+    #                             new_trajectories.append(child)
+    #                     else:
+    #                         for traj_idx, traj in enumerate(new_trajectories):
+    #                             if isinstance(child, list):
+    #                                 new_trajectories[traj_idx].extend(child)
+    #                             else:
+    #                                 new_trajectories[traj_idx].extend([child])
+    #
+    #                         #new_trajectories = list(iter.product(
+    #                         #    new_trajectories, [child]))
+    #         else:
+    #             raise ValueError("Reached invalid type during recursion.")
+    #         if isinstance(new_trajectories, list) \
+    #                 and isinstance(new_trajectories[0], list) \
+    #                 and len(new_trajectories) == 1:
+    #             new_trajectories = new_trajectories[0]
+    #         return new_trajectories
+
+    # # # Second thing that's more nicely written, but it's still incorrect for alternatives
+    # def gen_trajectories_rec(self, node, prob):
+    #     """Visits the graph, recording the leaves and returns list of indices
+    #     of initial and final leaves in the node.
+    #     """
+    #     if isinstance(node, LeafCombination):
+    #         return TrajectoryElement(node, prob)
+    #     else:
+    #         if isinstance(node, ParallelCombination):
+    #             print("parallel")
+    #             node = node.to_alternative()
+    #         if isinstance(node, AlternativeCombination) or \
+    #             isinstance(node, SequentialCombination):
+    #             children_trajectories = \
+    #                 [self.gen_trajectories_rec(c, node.proba[c_idx])
+    #                  for c_idx, c in enumerate(node.children)]
+    #             # if isinstance(node, SequentialCombination):
+    #             #     children_trajectories = list(iter.product(
+    #             #         children_trajectories, repeat=1))
+    #             new_trajectories = []
+    #             for child in children_trajectories:
+    #                 if isinstance(node, AlternativeCombination):
+    #                     if isinstance(child, list):
+    #                         new_trajectories.append(child)
+    #                     else:
+    #                         new_trajectories.append([child])
+    #                 else:
+    #                     if not new_trajectories:
+    #                         if isinstance(child, list):
+    #                             new_trajectories.extend(child)
+    #                         else:
+    #                             new_trajectories.append(child)
+    #                     elif not(isinstance(new_trajectories[0], list)):
+    #                         if isinstance(child, list):
+    #                             new_trajectories.extend(child)
+    #                         else:
+    #                             new_trajectories.append(child)
+    #                     else:
+    #                         for traj_idx, traj in enumerate(new_trajectories):
+    #                             if isinstance(child, list):
+    #                                 new_trajectories[traj_idx].extend(child)
+    #                             else:
+    #                                 new_trajectories[traj_idx].extend([child])
+    #
+    #                         #new_trajectories = list(iter.product(
+    #                         #    new_trajectories, [child]))
+    #         else:
+    #             raise ValueError("Reached invalid type during recursion.")
+    #         return new_trajectories
+
+    # # # Second thing that's more nicely written, but it's still incorrect for alternatives
+    # def gen_trajectories_rec(self, node, prob):
+    #     """Visits the graph, recording the leaves and returns list of indices
+    #     of initial and final leaves in the node.
+    #     """
+    #     if isinstance(node, LeafCombination):
+    #         return [TrajectoryElement(node, prob)]
+    #     else:
+    #         if isinstance(node, ParallelCombination):
+    #             print("parallel")
+    #             node = node.to_alternative()
+    #         if isinstance(node, AlternativeCombination) or \
+    #             isinstance(node, SequentialCombination):
+    #             children_trajectories = \
+    #                 [self.gen_trajectories_rec(c, node.proba[c_idx])
+    #                  for c_idx, c in enumerate(node.children)]
+    #             if isinstance(node, AlternativeCombination):
+    #                 children_trajectories = list(iter.product(
+    #                     children_trajectories, repeat=1))
+    #             new_trajectories = []
+    #             for child in children_trajectories:
+    #                 if not(isinstance(child, TrajectoryElement)):
+    #                     for el in child:
+    #                         new_trajectories.append(el)
+    #                 else:
+    #                     new_trajectories.append(child)
+    #         else:
+    #             raise ValueError("Reached invalid type during recursion.")
+    #         return new_trajectories
+
+    # First thing that kinda words, but it's still incorrect for alternatives
+    # def gen_trajectories_rec(self, node, prob):
+    #     """Visits the graph, recording the leaves and returns list of indices
+    #     of initial and final leaves in the node.
+    #     """
+    #     if isinstance(node, LeafCombination):
+    #         return TrajectoryElement(node, prob)
+    #     else:
+    #         if isinstance(node, ParallelCombination):
+    #             print("parallel")
+    #             node = node.to_alternative()
+    #         if isinstance(node, AlternativeCombination):
+    #             print("alt")
+    #             children_trajectories = \
+    #                 [self.gen_trajectories_rec(c, node.proba[c_idx])
+    #                  for c_idx, c in enumerate(node.children)]
+    #             product_trajectories = list(iter.product(children_trajectories, repeat=1))
+    #             new_trajectories = []
+    #             for child in product_trajectories:
+    #                 print(type(child))
+    #                 if not(isinstance(child, TrajectoryElement)):
+    #                     for el in child:
+    #                         new_trajectories.append(el)
+    #                 else:
+    #                     new_trajectories.append(child)
+    #         elif isinstance(node, SequentialCombination):
+    #             print("seq")
+    #             children_trajectories = \
+    #                 [self.gen_trajectories_rec(c, node.proba[c_idx])
+    #                  for c_idx, c in enumerate(node.children)]
+    #             new_trajectories = []
+    #             for child in children_trajectories:
+    #                 print(type(child))
+    #                 if not(isinstance(child, TrajectoryElement)):
+    #                     for el in child:
+    #                         new_trajectories.append(el)
+    #                 else:
+    #                     new_trajectories.append(child)
+    #         else:
+    #             raise ValueError("Reached invalid type during recursion.")
+    #         return new_trajectories
+
+    # def gen_trajectories_rec(self, node, prob):
+    #     """Visits the graph, recording the leaves and returns list of indices
+    #     of initial and final leaves in the node.
+    #     """
+    #     if isinstance(node, LeafCombination):
+    #         return TrajectoryElement(node, prob)
+    #     else:
+    #         if isinstance(node, ParallelCombination):
+    #             print("parallel")
+    #             node = node.to_alternative()
+    #         if isinstance(node, AlternativeCombination):
+    #             print("alt")
+    #             children_trajectories = \
+    #                 [self.gen_trajectories_rec(c, node.proba[c_idx])
+    #                  for c_idx, c in enumerate(node.children)]
+    #             new_trajectories = []
+    #             for child in children_trajectories:
+    #                 print(type(child))
+    #                 if not(isinstance(child, TrajectoryElement)):
+    #                     crazy = list(iter.chain.from_iterable([child]))
+    #                     new_trajectories.append(crazy)
+    #                 else:
+    #                     new_trajectories.append(child)
+    #         elif isinstance(node, SequentialCombination):
+    #             print("seq")
+    #             children_trajectories = \
+    #                 [self.gen_trajectories_rec(c, node.proba[c_idx])
+    #                  for c_idx, c in enumerate(node.children)]
+    #             new_trajectories = []
+    #             for child in children_trajectories:
+    #                 if not(isinstance(child, TrajectoryElement)):
+    #                     new_trajectories.append(list(iter.chain.from_iterable([child])))
+    #                 else:
+    #                     new_trajectories.append(child)
+    #             # new_trajectories = \
+    #             #     list(iter.chain(
+    #             #         list(iter.product(children_trajectories, repeat=1))))
+    #         else:
+    #             raise ValueError("Reached invalid type during recursion.")
+    #         return new_trajectories
+
+    # def gen_trajectories_rec(self, node, prob):
+    #     """Visits the graph, recording the leaves and returns list of indices
+    #     of initial and final leaves in the node.
+    #     """
+    #     if isinstance(node, LeafCombination):
+    #         return TrajectoryElement(node, prob)
+    #     else:
+    #         if isinstance(node, ParallelCombination):
+    #             print("parallel")
+    #             node = node.to_alternative()
+    #         if isinstance(node, AlternativeCombination):
+    #             print("alt")
+    #             children_trajectories = \
+    #                 [self.gen_trajectories_rec(c, node.proba[c_idx])
+    #                  for c_idx, c in enumerate(node.children)]
+    #             new_trajectories = []
+    #             for child in children_trajectories:
+    #                 print(type(child))
+    #                 if not(isinstance(child, TrajectoryElement)):
+    #                     crazy = list(iter.chain.from_iterable([child]))
+    #                     new_trajectories.append(crazy)
+    #                 else:
+    #                     new_trajectories.append(child)
+    #         elif isinstance(node, SequentialCombination):
+    #             print("seq")
+    #             children_trajectories = \
+    #                 [self.gen_trajectories_rec(c, node.proba[c_idx])
+    #                  for c_idx, c in enumerate(node.children)]
+    #             new_trajectories = []
+    #             for child in children_trajectories:
+    #                 if not(isinstance(child, TrajectoryElement)):
+    #                     new_trajectories.append(list(iter.chain.from_iterable([child])))
+    #                 else:
+    #                     new_trajectories.append(child)
+    #             # new_trajectories = \
+    #             #     list(iter.chain(
+    #             #         list(iter.product(children_trajectories, repeat=1))))
+    #         else:
+    #             raise ValueError("Reached invalid type during recursion.")
+    #         return new_trajectories
+
+    # def gen_trajectories_rec(self, node, prob):
+    #     """Visits the graph, recording the leaves and returns list of indices
+    #     of initial and final leaves in the node.
+    #     """
+    #     if isinstance(node, LeafCombination):
+    #         return TrajectoryElement(node, prob)
+    #     else:
+    #         if isinstance(node, ParallelCombination):
+    #             print("parallel")
+    #             node = node.to_alternative()
+    #         if isinstance(node, AlternativeCombination):
+    #             print("alt")
+    #             children_trajectories = \
+    #                 [self.gen_trajectories_rec(c, node.proba[c_idx])
+    #                  for c_idx, c in enumerate(node.children)]
+    #             new_trajectories = list(iter.chain(children_trajectories))
+    #         elif isinstance(node, SequentialCombination):
+    #             print("seq")
+    #             children_trajectories = \
+    #                 [self.gen_trajectories_rec(c, node.proba[c_idx])
+    #                  for c_idx, c in enumerate(node.children)]
+    #             new_trajectories = \
+    #                 list(iter.chain(children_trajectories))
+    #             # new_trajectories = \
+    #             #     list(iter.chain(
+    #             #         list(iter.product(children_trajectories, repeat=1))))
+    #         else:
+    #             raise ValueError("Reached invalid type during recursion.")
+    #         return new_trajectories
+
+    # def gen_trajectories_rec(self, node, prob):
+    #     """Visits the graph, recording the leaves and returns list of indices
+    #     of initial and final leaves in the node.
+    #     """
+    #     if isinstance(node, LeafCombination):
+    #         return [TrajectoryElement(node, prob)]
+    #     else:
+    #         if isinstance(node, ParallelCombination) or \
+    #                 isinstance(node, AlternativeCombination):
+    #             children_trajectories = \
+    #                 [self.gen_trajectories_rec(c, node.proba[c_idx])
+    #                  for c_idx, c in enumerate(node.children)]
+    #             new_all_trajectories = \
+    #                 list(iter.permutations(children_trajectories))
+    #         elif isinstance(node, SequentialCombination):
+    #             children_trajectories = \
+    #                 [self.gen_trajectories_rec(c, node.proba[c_idx])
+    #                  for c_idx, c in enumerate(node.children)]
+    #             new_all_trajectories = \
+    #                 list(iter.product(children_trajectories, repeat=1))
+    #         else:
+    #             raise ValueError("Reached invalid type during recursion.")
+    #         return new_all_trajectories
+
+    def gen_clean_trajectories(self, all_trajectories):
+        """Generates clean trajectories for an HTM,
+        i.e. a list of equal length trajectories
+        containing only TrajectoryElement objects.
+        """
+        return 1
+
+    def sample_trajectory(self, node, prob):
+        """Samples a trajectory from an HTM.
+        """
+        if isinstance(node, LeafCombination):
+            return 1
+        else:
+            if isinstance(node, ParallelCombination):
+                [self.gen_trajectories_rec(c, node.proba[c_idx])
+                 for c_idx, c in enumerate(node.children)]
+            elif isinstance(node, AlternativeCombination):
+                [self.gen_trajectories_rec(c, node.proba[c_idx])
+                 for c_idx, c in enumerate(node.children)]
+            elif isinstance(node, SequentialCombination):
+                [self.gen_trajectories_rec(c, node.proba[c_idx])
+                 for c_idx, c in enumerate(node.children)]
+            else:
+                raise ValueError("Reached invalid type during recursion.")
+            return 1
+
+
+def test_generate_all_trajectories_parallel():
+    ## Define the task
+    mount_central = ParallelCombination([
+        LeafCombination(PredAction(
+            'Get central frame', (1, 0, 0, 0, 0, 0, 0, 0, 0))),
+        LeafCombination(PredAction(
+            'Start Hold central frame', (1, 1, 0, 0, 0, 0, 0, 0, 0)))],
+        name='Mount central frame')
+    mount_legs = ParallelCombination([
+        ParallelCombination([
+            LeafCombination(PredAction(
+                'Get left leg', (1, 1, 1, 0, 0, 0, 0, 0, 0))),
+            LeafCombination(PredAction(
+                'Snap left leg', (1, 1, 1, 1, 0, 0, 0, 0, 0))),
+        ], name='Mount left leg'),
+        ParallelCombination([
+            LeafCombination(PredAction(
+                'Get right leg', (1, 1, 1, 1, 1, 0, 0, 0, 0))),
+            LeafCombination(PredAction(
+                'Snap right leg', (1, 1, 1, 1, 1, 1, 0, 0, 0))),
+        ], name='Mount right leg'),
+    ],
+        name='Mount legs')
+    release_central = LeafCombination(
+        PredAction('Release central frame', (1, 1, 1, 1, 1, 1, 1, 0, 0)))
+    mount_top = ParallelCombination([
+        LeafCombination(PredAction('Get top', (1, 1, 1, 1, 1, 1, 1, 1, 0))),
+        LeafCombination(PredAction('Snap top', (1, 1, 1, 1, 1, 1, 1, 1, 1)))],
+        name='Mount top')
+
+    mount_central_alt = mount_central.to_alternative()
+    mount_legs_alt = mount_legs.to_alternative()
+    print(mount_central_alt.children)
+    print(mount_legs_alt.children)
+
+    chair_task_root = ParallelCombination(
+        [mount_central, mount_legs, release_central, mount_top], name='Mount chair')
+
+    test_parallel = ParallelCombination([mount_top, release_central])
+    test_seq = SequentialCombination([mount_top, release_central])
+
+    chair_task = HierarchicalTask(root=chair_task_root)
+    chair_task_parallel = HierarchicalTask(root=test_parallel)
+    chair_task_seq = HierarchicalTask(root=test_seq)
+
+    chair_task_dict = chair_task.as_dictionary()
+    print("yay")
+    print(chair_task_dict)
+
+    test = 1
+
+    leaf = LeafCombination(PredAction(
+        'l', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+    simple_task_leaf = HierarchicalTask(root=leaf)
+
+    a = LeafCombination(PredAction(
+        'a', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+    a1 = LeafCombination(PredAction(
+        'a1', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+    a2 = LeafCombination(PredAction(
+        'a2', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+    b = LeafCombination(PredAction(
+        'b', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+    c = LeafCombination(PredAction(
+        'c', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+    ab = SequentialCombination([a, b])
+    a1a2 = SequentialCombination([a1, a2])
+
+    alt_a = LeafCombination(AbstractAction('a'))
+    alt_b = LeafCombination(AbstractAction('b'))
+    alt_c = LeafCombination(AbstractAction('c'))
+    alt_p1 = ParallelCombination([alt_a, alt_b])
+    alt_p2 = ParallelCombination([alt_p1, alt_c])
+    alt_alt = alt_p2.to_alternative()
+
+    simple_task_parallel = HierarchicalTask(root=ParallelCombination([a, b, c]))
+    simple_task_parallel2 = HierarchicalTask(root=ParallelCombination([a, b]))
+    simple_task_seq = HierarchicalTask(root=SequentialCombination([a, b, c]))
+    simple_task_alt = HierarchicalTask(root=AlternativeCombination([a, b, c]))
+    two_level_task1 = HierarchicalTask(root=ParallelCombination([ab, c]))
+    two_level_task2 = HierarchicalTask(root=AlternativeCombination([SequentialCombination([a, b]), c]))
+    two_level_task3 = HierarchicalTask(root=SequentialCombination([SequentialCombination([a, b]), c]))
+    two_level_task4 = HierarchicalTask(root=AlternativeCombination([c, SequentialCombination([a, b])]))
+    two_level_task5 = HierarchicalTask(root=ParallelCombination([ParallelCombination([a, b]), c]))
+    three_level_task1 = HierarchicalTask(root=ParallelCombination([SequentialCombination([a1a2, b]), c]))
+    three_level_task2 = HierarchicalTask(root=SequentialCombination([SequentialCombination([a1a2, b]), c]))
+
+
+    #chair_task.gen_all_trajectories()
+    #chair_task_parallel.gen_all_trajectories()
+    #chair_task_seq.gen_all_trajectories()
+    #simple_task_leaf.gen_all_trajectories()
+    simple_task_parallel2.gen_all_trajectories()
+    simple_task_parallel.gen_all_trajectories()
+    simple_task_seq.gen_all_trajectories()
+    simple_task_alt.gen_all_trajectories()
+    two_level_task1.gen_all_trajectories()
+    two_level_task2.gen_all_trajectories()
+    two_level_task3.gen_all_trajectories()
+    two_level_task4.gen_all_trajectories()
+    two_level_task5.gen_all_trajectories()
+    three_level_task1.gen_all_trajectories()
+    three_level_task2.gen_all_trajectories()
+    print("---")
+    print("Length of generated trajectories ", len(chair_task.all_trajectories))
+    for traj in chair_task.all_trajectories:
+        print(traj.leaf.name)
+
+
+def main():
+    test_generate_all_trajectories_parallel()
+
+
+if __name__ == '__main__':
+    main()
 
 COMBINATION_CLASSES = {'sequence': SequentialCombination,
                        'parallel': ParallelCombination,
