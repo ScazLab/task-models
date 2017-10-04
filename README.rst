@@ -18,7 +18,7 @@ Prerequisites
 
 This package requires a binary from Anthony Cassandra's POMDP solver. Please visit `pomdp.org <http://www.pomdp.org/>`_ for any matter related to the POMDP solver. In order to be using the *simplex* finite grid method, a fork of the version from `cmansley <https://github.com/cmansley/pomdp-solve>`_ needs to be installed that contains a fix to the original code. You can get the fork `here <https://github.com/scazlab/pomdp-solve>`_.
 
-Here are some instructions on how to compile and install the solver properly (assuming that :code:`~/src` is the directory in which you usually place your code)::
+The python code is looking for the :code:`pomdp-solve` executable in your :code:`$PATH`. Here are some instructions on how to compile and install the solver properly (assuming that :code:`~/src` is the directory in which you usually place your code)::
 
    cd ~/src
    git clone https://github.com/scazlab/pomdp-solve
@@ -29,8 +29,7 @@ Here are some instructions on how to compile and install the solver properly (as
    make
    make install
 
-
-Now you should have :code:`pomdp-solve` installed in your local path, and it should be available for the python package to be used.
+Make sure that :code:`~/.local/bin` is in yout path and now you should have :code:`pomdp-solve` installed in it, and it should be available for the python package to be used.
 
 ICRA 2017
 ---------
