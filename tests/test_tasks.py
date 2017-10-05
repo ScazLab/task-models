@@ -11,8 +11,7 @@ from task_models.task import (check_path, split_path, TaskGraph,
                               LeafCombination,
                               AlternativeCombination, SequentialCombination, ParallelCombination,
                               max_cliques,
-                              HierarchicalTask,
-                              TrajectoryElement)
+                              HierarchicalTask)
 
 
 class DummyState(NDimensionalState):
@@ -552,7 +551,7 @@ class TestGenAllTrajectories(TestCase):
         self.assertEqual(len(trajectories), 1)
         self.assertIsInstance(trajectories[0], list)
         self.assertEqual(len(trajectories[0]), 1)
-        self.assertEqual(trajectories[0][0].node.name, leaf.name)
+        self.assertEqual(trajectories[0][0].name, leaf.name)
 
     def test_parallel(self):
         a = LeafCombination(PredAction(
@@ -568,7 +567,7 @@ class TestGenAllTrajectories(TestCase):
         self.assertIsInstance(trajectories, list)
         self.assertEqual(len(trajectories), math.factorial(len(nodes)))
         self.assertTrue(isinstance(traj, list) and len(traj) == len(nodes)
-                        and isinstance(el, TrajectoryElement)
+                        and isinstance(el, LeafCombination)
                         for traj in trajectories for el in traj)
 
     def test_sequential(self):
@@ -585,7 +584,7 @@ class TestGenAllTrajectories(TestCase):
         self.assertIsInstance(trajectories[0], list)
         self.assertEqual(len(trajectories), 1)
         self.assertEqual(len(trajectories[0]), 3)
-        self.assertTrue(isinstance(traj, TrajectoryElement)
+        self.assertTrue(isinstance(traj, LeafCombination)
                         for traj in trajectories[0])
 
     def test_alternative(self):
@@ -602,7 +601,7 @@ class TestGenAllTrajectories(TestCase):
         self.assertIsInstance(trajectories, list)
         self.assertEqual(len(trajectories), len(nodes))
         self.assertTrue(isinstance(traj, list) and len(traj) == 1
-                        and isinstance(traj[0], TrajectoryElement)
+                        and isinstance(traj[0], LeafCombination)
                         for traj in trajectories)
 
     def test_two_level(self):
@@ -628,7 +627,7 @@ class TestGenAllTrajectories(TestCase):
         self.assertIsInstance(trajectories, list)
         self.assertEqual(len(trajectories), 2)
         self.assertTrue(len(traj) == 3 and isinstance(traj, list)
-                        and isinstance(el, TrajectoryElement)
+                        and isinstance(el, LeafCombination)
                         for traj in trajectories for el in traj)
         two_level_task2.gen_all_trajectories()
         trajectories = two_level_task2.all_trajectories
@@ -636,7 +635,7 @@ class TestGenAllTrajectories(TestCase):
         self.assertEqual(len(trajectories), 2)
         self.assertTrue(len(trajectories[0]) == 2 and len(trajectories[1]) == 1)
         self.assertTrue(isinstance(traj, list)
-                        and isinstance(el, TrajectoryElement)
+                        and isinstance(el, LeafCombination)
                         for traj in trajectories for el in traj)
         two_level_task3.gen_all_trajectories()
         trajectories = two_level_task3.all_trajectories
@@ -644,7 +643,7 @@ class TestGenAllTrajectories(TestCase):
         self.assertIsInstance(trajectories[0], list)
         self.assertEqual(len(trajectories), 1)
         self.assertEqual(len(trajectories[0]), 3)
-        self.assertTrue(isinstance(traj, TrajectoryElement)
+        self.assertTrue(isinstance(traj, LeafCombination)
                         for traj in trajectories[0])
         two_level_task4.gen_all_trajectories()
         trajectories = two_level_task4.all_trajectories
@@ -652,14 +651,14 @@ class TestGenAllTrajectories(TestCase):
         self.assertEqual(len(trajectories), 2)
         self.assertTrue(len(trajectories[0]) == 1 and len(trajectories[1]) == 2)
         self.assertTrue(isinstance(traj, list)
-                        and isinstance(el, TrajectoryElement)
+                        and isinstance(el, LeafCombination)
                         for traj in trajectories for el in traj)
         two_level_task5.gen_all_trajectories()
         trajectories = two_level_task5.all_trajectories
         self.assertIsInstance(trajectories, list)
         self.assertEqual(len(trajectories), 4)
         self.assertTrue(isinstance(traj, list) and len(traj) == 3
-                        and isinstance(el, TrajectoryElement)
+                        and isinstance(el, LeafCombination)
                         for traj in trajectories for el in traj)
 
     def test_three_level(self):
@@ -680,7 +679,7 @@ class TestGenAllTrajectories(TestCase):
         trajectories = three_level_task1.all_trajectories
         self.assertEqual(len(trajectories), 2)
         self.assertTrue(len(traj) == 4 and isinstance(traj, list)
-                        and isinstance(el, TrajectoryElement)
+                        and isinstance(el, LeafCombination)
                         for traj in trajectories for el in traj)
         three_level_task2.gen_all_trajectories()
         trajectories = three_level_task2.all_trajectories
@@ -688,7 +687,7 @@ class TestGenAllTrajectories(TestCase):
         self.assertIsInstance(trajectories[0], list)
         self.assertEqual(len(trajectories), 1)
         self.assertEqual(len(trajectories[0]), 4)
-        self.assertTrue(isinstance(traj, TrajectoryElement)
+        self.assertTrue(isinstance(traj, LeafCombination)
                         for traj in trajectories[0])
 
     def test_complex_task(self):
@@ -728,16 +727,16 @@ class TestGenAllTrajectories(TestCase):
         self.assertIsInstance(trajectories, list)
         self.assertEqual(len(trajectories), 2)
         self.assertTrue(isinstance(traj, list) and len(traj) == 9
-                        and isinstance(el, TrajectoryElement)
+                        and isinstance(el, LeafCombination)
                         for traj in trajectories for el in traj)
-        self.assertEqual(trajectories[0][2].node.name, 'Get left leg order-0')
-        self.assertEqual(trajectories[0][3].node.name, 'Snap left leg order-0')
-        self.assertEqual(trajectories[0][4].node.name, 'Get right leg order-0')
-        self.assertEqual(trajectories[0][5].node.name, 'Snap right leg order-0')
-        self.assertEqual(trajectories[0][6].node.name, 'Release central frame')
-        self.assertEqual(trajectories[1][2].node.name, 'Get right leg order-1')
-        self.assertEqual(trajectories[1][3].node.name, 'Snap right leg order-1')
-        self.assertEqual(trajectories[1][4].node.name, 'Get left leg order-1')
-        self.assertEqual(trajectories[1][5].node.name, 'Snap left leg order-1')
-        self.assertEqual(trajectories[1][6].node.name, 'Release central frame')
+        self.assertEqual(trajectories[0][2].name, 'Get left leg order-0')
+        self.assertEqual(trajectories[0][3].name, 'Snap left leg order-0')
+        self.assertEqual(trajectories[0][4].name, 'Get right leg order-0')
+        self.assertEqual(trajectories[0][5].name, 'Snap right leg order-0')
+        self.assertEqual(trajectories[0][6].name, 'Release central frame')
+        self.assertEqual(trajectories[1][2].name, 'Get right leg order-1')
+        self.assertEqual(trajectories[1][3].name, 'Snap right leg order-1')
+        self.assertEqual(trajectories[1][4].name, 'Get left leg order-1')
+        self.assertEqual(trajectories[1][5].name, 'Snap left leg order-1')
+        self.assertEqual(trajectories[1][6].name, 'Release central frame')
 

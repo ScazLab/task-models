@@ -466,18 +466,18 @@ class SequentialCombination(Combination):
 
     @proba.setter
     def proba(self, probabilities):
+        correct = False
         num_children = len(self.children)
         if probabilities is None:
+            correct = True
+        elif all(prob == 1 for prob in probabilities):
+            correct = True
+        if correct is True:
             return super(SequentialCombination, self.__class__). \
                 proba.fset(self, [1] * num_children)
-            # self.__proba = [1] * num_children
-        elif any(p != 1 for p in probabilities):
-            raise ValueError("Sequential combinations must have each prob \
-                             value equal to 1.")
         else:
-            return super(SequentialCombination, self.__class__). \
-                proba.fset(self, probabilities)
-            # self.__proba = probabilities
+            raise ValueError("Sequential combinations have default probs \
+                             set to [1] * num children.")
 
     def deep_copy(self, rename_format='{}'):
         return SequentialCombination(
@@ -490,41 +490,29 @@ class SequentialCombination(Combination):
 class AlternativeCombination(Combination):
     kind = 'Alternative'
 
-    def __init__(self, children, from_parallel=False, **xargs):
-        self._from_parallel = from_parallel
+    def __init__(self, children, **xargs):
         super(AlternativeCombination, self).__init__(children, **xargs)
 
     @property
     def proba(self):
         return super(AlternativeCombination, self).proba
-        # return self.__proba
 
     @proba.setter
     def proba(self, probabilities):
-        num_children = len(self.children)
-        prob = float(1) / num_children
         if probabilities is None:
-            if self._from_parallel:
-                return super(AlternativeCombination, self.__class__). \
-                    proba.fset(self, [prob] * num_children)
-            else:
-                # TODO: Change the value of these probs here to reflect \
-                # correct alternative probs
-                return super(AlternativeCombination, self.__class__). \
-                    proba.fset(self, [prob] * num_children)
-                # self.__proba = [prob] * num_children
-                # else:
-                #     raise ValueError("Alternative combinations should have probs specified.")
+            num_children = len(self.children)
+            prob = float(1) / num_children
+            return super(AlternativeCombination, self.__class__). \
+                proba.fset(self, [prob] * num_children)
         elif np.min(probabilities) < 0:
             raise ValueError("At least one prob value is < 0.")
         elif np.max(probabilities) > 1:
             raise ValueError("At least one prob value is > 1.")
-        elif np.sum(probabilities) != 1:
+        elif not(np.isclose(np.sum(probabilities), 1)):
             raise ValueError("Probs should sum to 1.")
         else:
             return super(AlternativeCombination, self.__class__). \
                 proba.fset(self, probabilities)
-            # self.__proba = probabilities
 
     def deep_copy(self, rename_format='{}'):
         return AlternativeCombination(
@@ -543,23 +531,21 @@ class ParallelCombination(Combination):
     @property
     def proba(self):
         return super(ParallelCombination, self).proba
-        # return self.__proba
 
     @proba.setter
     def proba(self, probabilities):
-        num_children = len(self.children)
-        # prob = float(1) / num_children
+        correct = False
         if probabilities is None:
+            correct = True
+        elif all(prob is None for prob in probabilities):
+            correct = True
+        if correct is True:
+            num_children = len(self.children)
             return super(ParallelCombination, self.__class__). \
-                proba.fset(self, [1] * num_children)
-            # self.__proba = [prob] * num_children
-        elif any(p != 1 for p in probabilities):
-            raise ValueError("The parallel combination should have each \
-                             branch prob = 1.")
+                proba.fset(self, [None] * num_children)
         else:
-            return super(ParallelCombination, self.__class__). \
-                proba.fset(self, probabilities)
-            # self.__proba = probabilities
+            raise ValueError("Parallel combinations shouldn't have \
+            probs specified.")
 
     def deep_copy(self, rename_format='{}'):
         return ParallelCombination(
@@ -575,7 +561,7 @@ class ParallelCombination(Combination):
                 name='{} order-{}'.format(self.name, i))
             for i, p in enumerate(permutations(self.children))
         ]
-        return AlternativeCombination(sequences, from_parallel=True, name=self.name,
+        return AlternativeCombination(sequences, name=self.name,
                                       highlighted=self.highlighted)
 
 
@@ -608,6 +594,7 @@ class HierarchicalTask(object):
     def __init__(self, root=None):
         self.root = root
         self.all_trajectories = []
+        self.traj_probs = []
 
     def is_empty(self):
         return self.root is None
@@ -621,18 +608,18 @@ class HierarchicalTask(object):
 
     def gen_all_trajectories(self):
         self.all_trajectories = \
-            self.gen_trajectories_rec(self.root, prob=1)
-        if isinstance(self.all_trajectories, TrajectoryElement):
+            self.gen_trajectories_rec(self.root, proba=1)
+        if isinstance(self.all_trajectories, LeafCombination):
             self.all_trajectories = [[self.all_trajectories]]
-        elif all(isinstance(traj, TrajectoryElement)
+        elif all(isinstance(traj, LeafCombination)
                  for traj in self.all_trajectories):
             self.all_trajectories = [self.all_trajectories]
 
-    def gen_trajectories_rec(self, node, prob):
+    def gen_trajectories_rec(self, node, proba):
         """Generates all possible trajectories from an HTM.
         """
         if isinstance(node, LeafCombination):
-            return TrajectoryElement(node, prob)
+            return node
         else:
             if isinstance(node, ParallelCombination):
                 node = node.to_alternative()
@@ -659,9 +646,10 @@ class HierarchicalTask(object):
                                 new_trajectories.append(child)
                         else:
                             product_trajectories_clean = []
+                            # Prep child and new_trajectories for product:
                             # if just one el -> [[]]
                             # if a list -> []
-                            # if a list of lists -> leave as is
+                            # if a list of all lists -> leave as is
                             if not (isinstance(child, list)):
                                 child = [[child]]
                             elif any(not (isinstance(el, list))
@@ -728,6 +716,8 @@ def debugging():
     # print(mount_central_alt.children)
     # print(mount_legs_alt.children)
 
+    mount_legs_alt = mount_legs.to_alternative()
+
     chair_task_root = SequentialCombination(
         [mount_central, mount_legs, release_central, mount_top], name='Mount chair')
 
@@ -739,8 +729,8 @@ def debugging():
     chair_task_seq = HierarchicalTask(root=test_seq)
 
     chair_task_dict = chair_task.as_dictionary()
-    #print("yay")
-    #print(chair_task_dict)
+    # print("yay")
+    # print(chair_task_dict)
 
     test = 1
 
@@ -754,12 +744,15 @@ def debugging():
         'a1', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
     a2 = LeafCombination(PredAction(
         'a2', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+    a11 = LeafCombination(PredAction(
+        'a1', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
     b = LeafCombination(PredAction(
         'b', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
     c = LeafCombination(PredAction(
         'c', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
     ab = SequentialCombination([a, b])
     a1a2 = SequentialCombination([a1, a2])
+    a1a2a11 = ParallelCombination([a1a2, a11])
 
     alt_a = LeafCombination(AbstractAction('a'))
     alt_b = LeafCombination(AbstractAction('b'))
@@ -767,6 +760,7 @@ def debugging():
     alt_p1 = ParallelCombination([alt_a, alt_b])
     alt_p2 = ParallelCombination([alt_p1, alt_c])
     alt_alt = alt_p2.to_alternative()
+    alt_probs = AlternativeCombination([a, b, c])
 
     simple_task_parallel = HierarchicalTask(root=ParallelCombination([a, b, c]))
     simple_task_parallel2 = HierarchicalTask(root=ParallelCombination([a, b]))
@@ -779,13 +773,14 @@ def debugging():
     two_level_task5 = HierarchicalTask(root=ParallelCombination([ParallelCombination([a, b]), c]))
     three_level_task1 = HierarchicalTask(root=ParallelCombination([SequentialCombination([a1a2, b]), c]))
     three_level_task2 = HierarchicalTask(root=SequentialCombination([SequentialCombination([a1a2, b]), c]))
+    four_level_task1 = HierarchicalTask(root=SequentialCombination([SequentialCombination([a1a2a11, b]), c]))
 
-    chair_task.gen_all_trajectories()
+    #chair_task.gen_all_trajectories()
     # chair_task_parallel.gen_all_trajectories()
     # chair_task_seq.gen_all_trajectories()
-    simple_task_leaf.gen_all_trajectories()
-    simple_task_parallel2.gen_all_trajectories()
-    simple_task_parallel.gen_all_trajectories()
+    #simple_task_leaf.gen_all_trajectories()
+    #simple_task_parallel2.gen_all_trajectories()
+    #simple_task_parallel.gen_all_trajectories()
     simple_task_seq.gen_all_trajectories()
     simple_task_alt.gen_all_trajectories()
     two_level_task1.gen_all_trajectories()
@@ -795,9 +790,10 @@ def debugging():
     two_level_task5.gen_all_trajectories()
     three_level_task1.gen_all_trajectories()
     three_level_task2.gen_all_trajectories()
-    #print("---")
-    #print("Length of generated trajectories ", len(chair_task.all_trajectories))
-    #for traj in chair_task.all_trajectories:
+    four_level_task1.gen_all_trajectories()
+    print("---")
+    # print("Length of generated trajectories ", len(chair_task.all_trajectories))
+    # for traj in chair_task.all_trajectories:
     #    print(traj.leaf.name)
 
 
