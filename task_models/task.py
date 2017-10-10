@@ -638,25 +638,41 @@ class HierarchicalTask(object):
     #         raise ValueError("Reached invalid type during recursion.")
 
     def gen_trajectories_rec(self, node, proba=None):
-        """Generates all possible trajectories from an HTM.
+        """Generates all possible trajectories from an HTMs
         """
         if isinstance(node, LeafCombination):
-            return [[node]]
+            #return [[node]]
+            return [(1, [node])]
         elif isinstance(node, ParallelCombination):
             return self.gen_trajectories_rec(node.to_alternative())
         elif isinstance(node, AlternativeCombination):
-            return list(iter.chain.from_iterable(
-                [self.gen_trajectories_rec(c, node.proba[c_idx])
-                 for c_idx, c in enumerate(node.children)]))
+            children_trajectories = [(p * node.proba[c_idx], seq)
+                  for c_idx, c in enumerate(node.children)
+                  for p, seq in self.gen_trajectories_rec(c, node.proba[c_idx])]
+            # new_trajectories = list(iter.chain.from_iterable(
+            #     # [self.gen_trajectories_rec(c, node.proba[c_idx])
+            #     #  for c_idx, c in enumerate(node.children)]))
+            #     children_trajectories))
+            return children_trajectories
+            # return list(iter.chain.from_iterable(
+            #     # [self.gen_trajectories_rec(c, node.proba[c_idx])
+            #     #  for c_idx, c in enumerate(node.children)]))
+            #     [(p * node.proba[c_idx], seq)
+            #      for c_idx, c in enumerate(node.children)
+            #      for p, seq in self.gen_trajectories_rec(c, node.proba[c_idx])]))
         elif isinstance(node, SequentialCombination):
             children_trajectories = [
                 self.gen_trajectories_rec(c, node.proba[c_idx])
                 for c_idx, c in enumerate(node.children)]
             new_trajectories = []
-            product_trajectories = list(iter.product(
-                *children_trajectories))
+            product_trajectories = list(
+                iter.product(*children_trajectories))
             for product in product_trajectories:
-                new_trajectories.append(list(iter.chain.from_iterable(product)))
+                probas, seqs = zip(*product)
+                new_trajectories.append((float(np.product(probas)),
+                                         list(iter.chain.from_iterable(seqs))))
+                # new_trajectories.append(list(
+                #     iter.chain.from_iterable(product)))
             return new_trajectories
         else:
             raise ValueError("Reached invalid type during recursion.")
@@ -731,7 +747,7 @@ def debugging():
     a2 = LeafCombination(PredAction(
         'a2', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
     a11 = LeafCombination(PredAction(
-        'a1', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+        'a11', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
     b = LeafCombination(PredAction(
         'b', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
     c = LeafCombination(PredAction(
@@ -757,6 +773,7 @@ def debugging():
     two_level_task3 = HierarchicalTask(root=SequentialCombination([SequentialCombination([a, b]), c]))
     two_level_task4 = HierarchicalTask(root=AlternativeCombination([c, SequentialCombination([a, b])]))
     two_level_task5 = HierarchicalTask(root=ParallelCombination([ParallelCombination([a, b]), c]))
+    two_level_task6 = HierarchicalTask(root=ParallelCombination([c, ParallelCombination([a, b])]))
     three_level_task1 = HierarchicalTask(root=ParallelCombination([SequentialCombination([a1a2, b]), c]))
     three_level_task2 = HierarchicalTask(root=SequentialCombination([SequentialCombination([a1a2, b]), c]))
     four_level_task1 = HierarchicalTask(root=SequentialCombination([SequentialCombination([a1a2a11, b]), c]))
@@ -765,8 +782,8 @@ def debugging():
     # chair_task_parallel.gen_all_trajectories()
     # chair_task_seq.gen_all_trajectories()
     simple_task_leaf.gen_all_trajectories()
-    #simple_task_parallel2.gen_all_trajectories()
-    #simple_task_parallel.gen_all_trajectories()
+    simple_task_parallel2.gen_all_trajectories()
+    simple_task_parallel.gen_all_trajectories()
     simple_task_seq.gen_all_trajectories()
     simple_task_alt.gen_all_trajectories()
     two_level_task1.gen_all_trajectories()
@@ -774,6 +791,7 @@ def debugging():
     two_level_task3.gen_all_trajectories()
     two_level_task4.gen_all_trajectories()
     two_level_task5.gen_all_trajectories()
+    two_level_task6.gen_all_trajectories()
     three_level_task1.gen_all_trajectories()
     three_level_task2.gen_all_trajectories()
     four_level_task1.gen_all_trajectories()
