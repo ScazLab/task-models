@@ -609,71 +609,59 @@ class HierarchicalTask(object):
     def gen_all_trajectories(self):
         self.all_trajectories = \
             self.gen_trajectories_rec(self.root, proba=1)
-        if isinstance(self.all_trajectories, LeafCombination):
-            self.all_trajectories = [[self.all_trajectories]]
-        elif all(isinstance(traj, LeafCombination)
-                 for traj in self.all_trajectories):
-            self.all_trajectories = [self.all_trajectories]
 
-    def gen_trajectories_rec(self, node, proba):
+    # def gen_trajectories_rec(self, node, proba=None):
+    #     """Generates all possible trajectories from an HTM.
+    #     """
+    #     if isinstance(node, LeafCombination):
+    #         return [(1, [node])]
+    #     elif isinstance(node, ParallelCombination):
+    #         return self.gen_trajectories_rec(node.to_alternative())
+    #     elif isinstance(node, AlternativeCombination):
+    #         return list(iter.chain.from_iterable(
+    #             [(p * node.proba[c_idx], seq)
+    #              for p, seq in self.gen_trajectories_rec(c, node.proba[c_idx])
+    #              for c_idx, c in enumerate(node.children)]))
+    #     elif isinstance(node, SequentialCombination):
+    #         children_trajectories = [
+    #             self.gen_trajectories_rec(c, node.proba[c_idx])
+    #             for c_idx, c in enumerate(node.children)]
+    #         new_trajectories = [[]]
+    #         for child in children_trajectories:
+    #             product_trajectories = list(iter.product(
+    #                         new_trajectories, *child))
+    #             new_trajectories = []
+    #             for product in product_trajectories:
+    #                 new_trajectories.append((list(iter.chain.from_iterable(product)))
+    #         return new_trajectories
+    #     else:
+    #         raise ValueError("Reached invalid type during recursion.")
+
+    def gen_trajectories_rec(self, node, proba=None):
         """Generates all possible trajectories from an HTM.
         """
         if isinstance(node, LeafCombination):
-            return node
-        else:
-            if isinstance(node, ParallelCombination):
-                node = node.to_alternative()
-            if isinstance(node, AlternativeCombination) or \
-                    isinstance(node, SequentialCombination):
-                children_trajectories = \
-                    [self.gen_trajectories_rec(c, node.proba[c_idx])
-                     for c_idx, c in enumerate(node.children)]
+            return [[node]]
+        elif isinstance(node, ParallelCombination):
+            return self.gen_trajectories_rec(node.to_alternative())
+        elif isinstance(node, AlternativeCombination):
+            return list(iter.chain.from_iterable(
+                [self.gen_trajectories_rec(c, node.proba[c_idx])
+                 for c_idx, c in enumerate(node.children)]))
+        elif isinstance(node, SequentialCombination):
+            children_trajectories = [
+                self.gen_trajectories_rec(c, node.proba[c_idx])
+                for c_idx, c in enumerate(node.children)]
+            new_trajectories = [[]]
+            for child in children_trajectories:
+                product_trajectories = list(iter.product(
+                            new_trajectories, child))
                 new_trajectories = []
-                for child in children_trajectories:
-                    if isinstance(node, AlternativeCombination):
-                        if isinstance(child, list):
-                            if all(isinstance(el, list) for el in child):
-                                new_trajectories.extend(child)
-                            else:
-                                new_trajectories.append(child)
-                        else:
-                            new_trajectories.append([child])
-                    else:
-                        if not new_trajectories:
-                            if isinstance(child, list):
-                                new_trajectories.extend(child)
-                            else:
-                                new_trajectories.append(child)
-                        else:
-                            product_trajectories_clean = []
-                            # Prep child and new_trajectories for product:
-                            # if just one el -> [[]]
-                            # if a list -> []
-                            # if a list of all lists -> leave as is
-                            if not (isinstance(child, list)):
-                                child = [[child]]
-                            elif any(not (isinstance(el, list))
-                                     for el in child):
-                                child = [child]
-                            if not (isinstance(new_trajectories, list)):
-                                new_trajectories = [[new_trajectories]]
-                            elif any(not (isinstance(traj, list))
-                                     for traj in new_trajectories):
-                                new_trajectories = [new_trajectories]
-                            product_trajectories = list(iter.product(
-                                new_trajectories, child))
-                            for product in product_trajectories:
-                                product_trajectories_clean.append(
-                                    list(iter.chain.from_iterable(product)))
-                            if isinstance(product_trajectories_clean, list):
-                                if isinstance(product_trajectories_clean[0], list) \
-                                        and len(product_trajectories_clean) == 1:
-                                    product_trajectories_clean = \
-                                        product_trajectories_clean[0]
-                            new_trajectories = product_trajectories_clean
-            else:
-                raise ValueError("Reached invalid type during recursion.")
+                for product in product_trajectories:
+                    new_trajectories.append(list(iter.chain.from_iterable(product)))
             return new_trajectories
+        else:
+            raise ValueError("Reached invalid type during recursion.")
 
     def sample_trajectory(self, node, prob):
         """Samples a trajectory from an HTM.
@@ -778,7 +766,7 @@ def debugging():
     #chair_task.gen_all_trajectories()
     # chair_task_parallel.gen_all_trajectories()
     # chair_task_seq.gen_all_trajectories()
-    #simple_task_leaf.gen_all_trajectories()
+    simple_task_leaf.gen_all_trajectories()
     #simple_task_parallel2.gen_all_trajectories()
     #simple_task_parallel.gen_all_trajectories()
     simple_task_seq.gen_all_trajectories()
