@@ -652,13 +652,11 @@ class HierarchicalTask(object):
             children_trajectories = [
                 self.gen_trajectories_rec(c, node.proba[c_idx])
                 for c_idx, c in enumerate(node.children)]
-            new_trajectories = [[]]
-            for child in children_trajectories:
-                product_trajectories = list(iter.product(
-                            new_trajectories, child))
-                new_trajectories = []
-                for product in product_trajectories:
-                    new_trajectories.append(list(iter.chain.from_iterable(product)))
+            new_trajectories = []
+            product_trajectories = list(iter.product(
+                *children_trajectories))
+            for product in product_trajectories:
+                new_trajectories.append(list(iter.chain.from_iterable(product)))
             return new_trajectories
         else:
             raise ValueError("Reached invalid type during recursion.")
