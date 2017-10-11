@@ -508,7 +508,7 @@ class AlternativeCombination(Combination):
             raise ValueError("At least one prob value is < 0.")
         elif np.max(probabilities) > 1:
             raise ValueError("At least one prob value is > 1.")
-        elif not(np.isclose(np.sum(probabilities), 1)):
+        elif not (np.isclose(np.sum(probabilities), 1)):
             raise ValueError("Probs should sum to 1.")
         else:
             return super(AlternativeCombination, self.__class__). \
@@ -608,61 +608,29 @@ class HierarchicalTask(object):
 
     def gen_all_trajectories(self):
         self.all_trajectories = \
-            self.gen_trajectories_rec(self.root, proba=1)
+            self._gen_trajectories_rec(self.root)
 
-    # def gen_trajectories_rec(self, node, proba=None):
-    #     """Generates all possible trajectories from an HTM.
-    #     """
-    #     if isinstance(node, LeafCombination):
-    #         return [(1, [node])]
-    #     elif isinstance(node, ParallelCombination):
-    #         return self.gen_trajectories_rec(node.to_alternative())
-    #     elif isinstance(node, AlternativeCombination):
-    #         return list(iter.chain.from_iterable(
-    #             [(p * node.proba[c_idx], seq)
-    #              for p, seq in self.gen_trajectories_rec(c, node.proba[c_idx])
-    #              for c_idx, c in enumerate(node.children)]))
-    #     elif isinstance(node, SequentialCombination):
-    #         children_trajectories = [
-    #             self.gen_trajectories_rec(c, node.proba[c_idx])
-    #             for c_idx, c in enumerate(node.children)]
-    #         new_trajectories = [[]]
-    #         for child in children_trajectories:
-    #             product_trajectories = list(iter.product(
-    #                         new_trajectories, *child))
-    #             new_trajectories = []
-    #             for product in product_trajectories:
-    #                 new_trajectories.append((list(iter.chain.from_iterable(product)))
-    #         return new_trajectories
-    #     else:
-    #         raise ValueError("Reached invalid type during recursion.")
+    def _gen_trajectories_rec(self, node):
+        """Generates all possible trajectories from an HTMs.
 
-    def gen_trajectories_rec(self, node, proba=None):
-        """Generates all possible trajectories from an HTMs
+        :returns: list of tuples of the following form
+        [(proba, [LC1, LC2, ...]), (), ...]
+        Each tuple represents a trajectory of the HTM,
+        with the first element equal to the probability of that trajectory
+        and the second element equal to the list of leaf combinations.
         """
         if isinstance(node, LeafCombination):
-            #return [[node]]
             return [(1, [node])]
         elif isinstance(node, ParallelCombination):
-            return self.gen_trajectories_rec(node.to_alternative())
+            return self._gen_trajectories_rec(node.to_alternative())
         elif isinstance(node, AlternativeCombination):
             children_trajectories = [(p * node.proba[c_idx], seq)
-                  for c_idx, c in enumerate(node.children)
-                  for p, seq in self.gen_trajectories_rec(c, node.proba[c_idx])]
-            # new_trajectories = list(iter.chain.from_iterable(
-            #     # [self.gen_trajectories_rec(c, node.proba[c_idx])
-            #     #  for c_idx, c in enumerate(node.children)]))
-            #     children_trajectories))
+                                     for c_idx, c in enumerate(node.children)
+                                     for p, seq in self._gen_trajectories_rec(c)]
             return children_trajectories
-            # return list(iter.chain.from_iterable(
-            #     # [self.gen_trajectories_rec(c, node.proba[c_idx])
-            #     #  for c_idx, c in enumerate(node.children)]))
-            #     [(p * node.proba[c_idx], seq)
-            #      for c_idx, c in enumerate(node.children)
-            #      for p, seq in self.gen_trajectories_rec(c, node.proba[c_idx])]))
         elif isinstance(node, SequentialCombination):
             children_trajectories = [
-                self.gen_trajectories_rec(c, node.proba[c_idx])
+                self._gen_trajectories_rec(c)
                 for c_idx, c in enumerate(node.children)]
             new_trajectories = []
             product_trajectories = list(
@@ -671,16 +639,9 @@ class HierarchicalTask(object):
                 probas, seqs = zip(*product)
                 new_trajectories.append((float(np.product(probas)),
                                          list(iter.chain.from_iterable(seqs))))
-                # new_trajectories.append(list(
-                #     iter.chain.from_iterable(product)))
             return new_trajectories
         else:
             raise ValueError("Reached invalid type during recursion.")
-
-    def sample_trajectory(self, node, prob):
-        """Samples a trajectory from an HTM.
-        """
-        return 1
 
 
 def debugging():
@@ -753,8 +714,11 @@ def debugging():
     c = LeafCombination(PredAction(
         'c', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
     ab = SequentialCombination([a, b])
+    ba = SequentialCombination([b, a])
     a1a2 = SequentialCombination([a1, a2])
     a1a2a11 = ParallelCombination([a1a2, a11])
+    alt_aux1 = AlternativeCombination([ab, ba], probabilities=[0.8, 0.2])
+    alt_aux2 = AlternativeCombination([ab, ba], probabilities=[0.1, 0.9])
 
     alt_a = LeafCombination(AbstractAction('a'))
     alt_b = LeafCombination(AbstractAction('b'))
@@ -777,8 +741,10 @@ def debugging():
     three_level_task1 = HierarchicalTask(root=ParallelCombination([SequentialCombination([a1a2, b]), c]))
     three_level_task2 = HierarchicalTask(root=SequentialCombination([SequentialCombination([a1a2, b]), c]))
     four_level_task1 = HierarchicalTask(root=SequentialCombination([SequentialCombination([a1a2a11, b]), c]))
+    custom_task1 = HierarchicalTask(root=AlternativeCombination(
+        [SequentialCombination([alt_aux1, c]), SequentialCombination([c, alt_aux2])], probabilities=[0.7, 0.3]))
 
-    #chair_task.gen_all_trajectories()
+    # chair_task.gen_all_trajectories()
     # chair_task_parallel.gen_all_trajectories()
     # chair_task_seq.gen_all_trajectories()
     simple_task_leaf.gen_all_trajectories()
@@ -795,6 +761,7 @@ def debugging():
     three_level_task1.gen_all_trajectories()
     three_level_task2.gen_all_trajectories()
     four_level_task1.gen_all_trajectories()
+    custom_task1.gen_all_trajectories()
     print("---")
     # print("Length of generated trajectories ", len(chair_task.all_trajectories))
     # for traj in chair_task.all_trajectories:
