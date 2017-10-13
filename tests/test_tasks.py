@@ -750,7 +750,8 @@ class TestGenAllTrajectoriesWithProbs(TestCase):
                             and len(traj[1]) == 3
                             and isinstance(el, LeafCombination)
                             for traj in trajectories for el in traj[1]))
-        self.assertEqual(np.isclose([list(zip(*trajectories))[0]], [0.56, 0.14, 0.03, 0.27]).sum(), 4)
+        self.assertEqual(np.isclose([list(zip(*trajectories))[0]],
+                                    [0.56, 0.14, 0.03, 0.27]).sum(), 4)
         self.assertTrue(np.isclose([np.sum(list(zip(*trajectories))[0])], [1]))
 
     def test_complex_task(self):

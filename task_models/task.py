@@ -3,6 +3,9 @@
 from __future__ import unicode_literals
 import numpy as np
 import itertools as iter
+import os
+import logging
+import re
 
 """
 Tools for task representation.
@@ -16,9 +19,11 @@ from itertools import permutations
 from task_models.state import State
 from task_models.action import Action
 
-
 # from task_models import State
 # from .action import Action
+
+main_path = "/Users/Corina/Documents/AAMAS2018/sim_data"
+path_sim_train = os.path.join(main_path, "train")
 
 
 def check_path(path):
@@ -591,10 +596,10 @@ class TrajectoryElement(object):
 class HierarchicalTask(object):
     """Tree representing a hierarchy of tasks which leaves are actions."""
 
-    def __init__(self, root=None):
+    def __init__(self, root=None, name=None):
         self.root = root
+        self.name = name
         self.all_trajectories = []
-        self.traj_probs = []
 
     def is_empty(self):
         return self.root is None
@@ -611,7 +616,7 @@ class HierarchicalTask(object):
             self._gen_trajectories_rec(self.root)
 
     def _gen_trajectories_rec(self, node):
-        """Generates all possible trajectories from an HTMs.
+        """Generates all possible trajectories from an HTM.
 
         :returns: list of tuples of the following form
         [(proba, [LC1, LC2, ...]), (), ...]
@@ -642,6 +647,46 @@ class HierarchicalTask(object):
             return new_trajectories
         else:
             raise ValueError("Reached invalid type during recursion.")
+
+    def gen_bin_feats_traj(self):
+        """Generates binary features for all possible trajectories from an HTM
+        and writes them to file.
+        Should only be called after calling gen_all_trajectories().
+        """
+        if self.all_trajectories:
+            trajectories = list(zip(*self.all_trajectories))[1]
+            objects = set(iter.chain.from_iterable(trajectories))
+            bin_feats_init = np.array([0] * len(objects))
+            obj_names = dict()
+            for obj_idx, obj in enumerate(sorted(objects)):
+                name = obj.name
+                rem = re.search(r'( order)', obj.name)
+                if rem:
+                    name = obj.name[:rem.start()]
+                obj_names[name] = obj_idx
+                #obj_names[obj.name] = obj_idx
+            for traj_idx, traj in enumerate(trajectories):
+                bin_feats = np.tile(bin_feats_init,
+                                    (len(set(traj)) + 1, 1))
+                for node_idx, node in enumerate(traj):
+                    keys = [obj_names.get(key.name) if re.search(r'( order)', key.name) is None
+                            else obj_names.get(key.name[:re.search(r'( order)', key.name).start()])
+                            for key in traj[:node_idx + 1]]
+                    bin_feats[node_idx + 1, keys] = 1
+                task_name = "jdoe"
+                if self.name:
+                    task_name = self.name
+                f_out = os.path.join(path_sim_train, "task_{}_traj_{}.bfout".
+                                        format(task_name, traj_idx))
+                if os.path.isfile(f_out) is False:
+                    np.savetxt(f_out, bin_feats, fmt=str("%d"))
+                else:
+                    logging.warning("Did not save file task_{}_traj_{}.bfout "
+                                    "because it already exists. "
+                                    "Continuing onto the next trajectory.")
+                    continue
+        else:
+            raise ValueError("Cannot generate bin feats before generating all trajectories.")
 
 
 def debugging():
@@ -732,7 +777,7 @@ def debugging():
     simple_task_parallel2 = HierarchicalTask(root=ParallelCombination([a, b]))
     simple_task_seq = HierarchicalTask(root=SequentialCombination([a, b, c]))
     simple_task_alt = HierarchicalTask(root=AlternativeCombination([a, b, c]))
-    two_level_task1 = HierarchicalTask(root=ParallelCombination([ab, c]))
+    two_level_task1 = HierarchicalTask(root=ParallelCombination([ab, c]), name="two_level_task1")
     two_level_task2 = HierarchicalTask(root=AlternativeCombination([SequentialCombination([a, b]), c]))
     two_level_task3 = HierarchicalTask(root=SequentialCombination([SequentialCombination([a, b]), c]))
     two_level_task4 = HierarchicalTask(root=AlternativeCombination([c, SequentialCombination([a, b])]))
@@ -766,6 +811,10 @@ def debugging():
     # print("Length of generated trajectories ", len(chair_task.all_trajectories))
     # for traj in chair_task.all_trajectories:
     #    print(traj.leaf.name)
+
+    simple_task_seq.gen_bin_feats_traj()
+    two_level_task1.gen_bin_feats_traj()
+    print("---")
 
 
 def main():
