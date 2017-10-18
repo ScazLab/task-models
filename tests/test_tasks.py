@@ -806,4 +806,3 @@ class TestGenAllTrajectoriesWithProbs(TestCase):
         self.assertEqual(trajectories[1][1][4].name, 'Get left leg order-1')
         self.assertEqual(trajectories[1][1][5].name, 'Snap left leg order-1')
         self.assertEqual(trajectories[1][1][6].name, 'Release central frame')
-
