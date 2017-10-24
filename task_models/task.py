@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 import numpy as np
 import itertools as iter
 import os
+import errno
 import logging
 import re
 import json
@@ -89,6 +90,15 @@ def unique_rows(a):
     b = a.ravel().view(np.dtype((np.void, a.dtype.itemsize * a.shape[1])))
     _, unique_idx = np.unique(b, return_index=True)
     return a[unique_idx]
+
+
+def make_sure_path_exists(path):
+
+    try:
+        os.makedirs(path)
+    except OSError as exception:
+        if exception.errno != errno.EEXIST:
+            raise
 
 
 class BaseGraph(object):
@@ -607,6 +617,9 @@ class HierarchicalTask(object):
         self.root = root
         self.name = name
         self.all_trajectories = []
+        self.bin_trajectories = []
+        self.obj_names = dict()
+        self.obj_ints = dict()
 
     def is_empty(self):
         return self.root is None
@@ -655,7 +668,7 @@ class HierarchicalTask(object):
         else:
             raise ValueError("Reached invalid type during recursion.")
 
-    def gen_bin_feats_traj(self):
+    def gen_bin_feats_traj(self, cum_feats=False):
         """Generates binary features for all possible trajectories from an HTM
         and writes them to file.
         Should only be called after calling gen_all_trajectories().
@@ -664,7 +677,7 @@ class HierarchicalTask(object):
             regexp = r'( order)'
             trajectories = list(zip(*self.all_trajectories))[1]
             objects = list(set(iter.chain.from_iterable(trajectories)))
-            obj_names = dict()
+            #obj_names = dict()
             obj_idx = 0
             try:
                 import operator
@@ -678,19 +691,23 @@ class HierarchicalTask(object):
                 rem = re.search(regexp, obj.name)
                 if rem:
                     name = obj.name[:rem.start()]
-                if not(name in obj_names.keys()):
-                    obj_names[name] = obj_idx
+                if not(name in self.obj_names.keys()):
+                    self.obj_names[name] = obj_idx
                     obj_idx += 1
-            bin_feats_init = np.array([0] * len(obj_names))
+            self.obj_ints = dict(map(reversed, self.obj_names.items()))
+            bin_feats_init = np.array([0] * len(self.obj_names))
             task_name = "jdoe"
             if self.name:
                 task_name = self.name
-            f = os.path.join(path_sim_train, "task_{}_obj.txt".format(task_name))
+            path = os.path.join(path_sim_train, task_name)
+            make_sure_path_exists(path)
+            f = os.path.join(path, "task_{}_obj.txt".format(task_name))
             if os.path.isfile(f) is False:
                 f_out = open(f, 'w')
-                sorted_vals = sorted(obj_names, key=obj_names.get)
+                sorted_vals = sorted(self.obj_names, key=self.obj_names.get)
                 for el in sorted_vals:
-                    f_out.write("{:>20} {}\n".format(el, obj_names[el]))
+                    #f_out.write("{:>20} {}\n".format(el, obj_names[el]))
+                    f_out.write("{} {}\n".format(self.obj_names[el], el))
                 f_out.close()
             else:
                 logging.warning("Did not save file task_{}_obj.obj "
@@ -700,13 +717,23 @@ class HierarchicalTask(object):
                 bin_feats = np.tile(bin_feats_init,
                                     (len(set(traj)) + 1, 1))
                 for node_idx, node in enumerate(traj):
-                    keys = [obj_names.get(key.name) if re.search(regexp, key.name) is None
-                            else obj_names.get(key.name[:re.search(regexp, key.name).start()])
-                            for key in traj[:node_idx + 1]]
-                    bin_feats[node_idx + 1, keys] = 1
+                    if cum_feats is True:
+                        #Use this code for cumulative features
+                        #set bin_feats[none_idx + 1, keys] to 1
+                        keys = [self.obj_names.get(key.name) if re.search(regexp, key.name) is None
+                                else self.obj_names.get(key.name[:re.search(regexp, key.name).start()])
+                                for key in traj[:node_idx + 1]]
+                        bin_feats[node_idx + 1, keys] = 1
+                    else:
+                        action = self.obj_names.get(traj[node_idx].name)
+                        if action is None:
+                            action = self.obj_names.get(traj[node_idx]
+                                                   .name[:re.search(regexp, traj[node_idx].name).start()])
+                        bin_feats[node_idx + 1, action] = 1
                 #bin_feats = unique_rows(bin_feats)
-                f_out = os.path.join(path_sim_train, "task_{}_traj_{}.bfout".
+                f_out = os.path.join(path, "task_{}_traj_{}.bfout".
                                         format(task_name, traj_idx))
+                self.bin_trajectories.append(bin_feats)
                 if os.path.isfile(f_out) is False:
                     np.savetxt(f_out, bin_feats, fmt=str("%d"))
                 else:
@@ -715,6 +742,7 @@ class HierarchicalTask(object):
                                     "Continuing onto the next trajectory."
                                     .format(task_name, traj_idx))
                     continue
+            self.bin_trajectories = np.array(self.bin_trajectories)
         else:
             raise ValueError("Cannot generate bin feats before generating all trajectories.")
 
@@ -841,6 +869,9 @@ def debugging():
                                  name='sim_task1')
     sim_task2 = HierarchicalTask(root=SequentialCombination([a_legs_2, a_rest_2], name='complete'),
                                  name='sim_task2')
+    sim_task3 = HierarchicalTask(root=ParallelCombination([b_l1, b_l2], name='complete'), name='sim_task3')
+    sim_task_action1 = HierarchicalTask(root=SequentialCombination([b_scr, a_legs_1, a_rest_1], name='complete'),
+                                 name='sim_task_action1')
 
     # chair_task.gen_all_trajectories()
     # chair_task_parallel.gen_all_trajectories()
@@ -862,6 +893,8 @@ def debugging():
     custom_task1.gen_all_trajectories()
     sim_task1.gen_all_trajectories()
     sim_task2.gen_all_trajectories()
+    sim_task3.gen_all_trajectories()
+    sim_task_action1.gen_all_trajectories()
     print("---")
     # print("Length of generated trajectories ", len(chair_task.all_trajectories))
     # for traj in chair_task.all_trajectories:
@@ -869,8 +902,11 @@ def debugging():
 
     #simple_task_seq.gen_bin_feats_traj()
     #two_level_task1.gen_bin_feats_traj()
-    sim_task1.gen_bin_feats_traj()
-    sim_task2.gen_bin_feats_traj()
+
+    #sim_task1.gen_bin_feats_traj()
+    #sim_task2.gen_bin_feats_traj()
+    sim_task3.gen_bin_feats_traj()
+    sim_task_action1.gen_bin_feats_traj()
     print("---")
 
 
