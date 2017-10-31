@@ -7,6 +7,7 @@ import os
 import errno
 import logging
 import re
+import shutil
 import json
 
 """
@@ -26,6 +27,9 @@ from task_models.action import Action
 
 main_path = "/Users/Corina/Documents/AAMAS2018/sim_data"
 path_sim_train = os.path.join(main_path, "train")
+path_sim_test = os.path.join(main_path, "test")
+path_sim_obj = "/Users/Corina/Documents/HRT_BCT_full/GithubCode/hrteaming-bctask/" \
+               "StateDiscretization/HMM/DevDebugCompleteDataSet/Features"
 
 
 def check_path(path):
@@ -620,6 +624,8 @@ class HierarchicalTask(object):
         self.bin_trajectories = []
         self.obj_names = dict()
         self.obj_ints = dict()
+        self.num_obj = 0
+        self.gen_dict()
 
     def is_empty(self):
         return self.root is None
@@ -676,32 +682,13 @@ class HierarchicalTask(object):
         if self.all_trajectories:
             regexp = r'( order)'
             trajectories = list(zip(*self.all_trajectories))[1]
-            objects = list(set(iter.chain.from_iterable(trajectories)))
-            #obj_names = dict()
-            obj_idx = 0
-            try:
-                import operator
-            except ImportError:
-                cmpfun = lambda x: x.name  # use a lambda if no operator module
-            else:
-                cmpfun = operator.attrgetter("name")  # use operator since it's faster than lambda
-            objects.sort(key=cmpfun)  # sort in-place
-            for obj in objects:
-                name = obj.name
-                rem = re.search(regexp, obj.name)
-                if rem:
-                    name = obj.name[:rem.start()]
-                if not(name in self.obj_names.keys()):
-                    self.obj_names[name] = obj_idx
-                    obj_idx += 1
-            self.obj_ints = dict(map(reversed, self.obj_names.items()))
             bin_feats_init = np.array([0] * len(self.obj_names))
             task_name = "jdoe"
             if self.name:
                 task_name = self.name
             path = os.path.join(path_sim_train, task_name)
             make_sure_path_exists(path)
-            f = os.path.join(path, "task_{}_obj.txt".format(task_name))
+            f = os.path.join(path_sim_obj, "task_{}_obj.txt".format(task_name))
             if os.path.isfile(f) is False:
                 f_out = open(f, 'w')
                 sorted_vals = sorted(self.obj_names, key=self.obj_names.get)
@@ -743,8 +730,38 @@ class HierarchicalTask(object):
                                     .format(task_name, traj_idx))
                     continue
             self.bin_trajectories = np.array(self.bin_trajectories)
+            path_test = os.path.join(path_sim_test, task_name)
+            make_sure_path_exists(path_test)
+            for i in range(6):
+                shutil.copy2(os.path.join(path, "task_{}_traj_{}.bfout".format(task_name, i)), path_test)
         else:
             raise ValueError("Cannot generate bin feats before generating all trajectories.")
+
+    def gen_object_bin_feats_sb(self):
+        """Generates binary features plus supportive behaviors for an object from the HTM."""
+        if self.obj_names:
+            return 1
+        else:
+            raise ValueError("Cannot generate bin feats w/ supportive behaviors "
+                             "before generating all trajectories.")
+
+    def gen_dict(self):
+        regexp = r'( order)'
+        self._gen_dict_rec(self.root, regexp)
+        self.obj_ints = dict(map(reversed, self.obj_names.items()))
+
+    def _gen_dict_rec(self, node, regexp):
+        if isinstance(node, LeafCombination):
+            name = node.name
+            rem = re.search(regexp, node.name)
+            if rem:
+                name = node.name[:rem.start()]
+            if not(name in self.obj_names.keys()):
+                self.obj_names[name] = self.num_obj
+                self.num_obj += 1
+        else:
+            for child in node.children:
+                self._gen_dict_rec(child, regexp)
 
 
 def debugging():

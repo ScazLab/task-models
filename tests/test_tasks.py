@@ -806,3 +806,35 @@ class TestGenAllTrajectoriesWithProbs(TestCase):
         self.assertEqual(trajectories[1][1][4].name, 'Get left leg order-1')
         self.assertEqual(trajectories[1][1][5].name, 'Snap left leg order-1')
         self.assertEqual(trajectories[1][1][6].name, 'Release central frame')
+
+
+class TestGenBinTrajectories(TestCase):
+    def test_sim_task(self):
+        b_l1 = LeafCombination(AbstractAction('bring_leg1'))
+        b_l2 = LeafCombination(AbstractAction('bring_leg2'))
+        b_l3 = LeafCombination(AbstractAction('bring_leg3'))
+        b_l4 = LeafCombination(AbstractAction('bring_leg4'))
+        b_s = LeafCombination(AbstractAction('bring_seat'))
+        b_b = LeafCombination(AbstractAction('bring_back'))
+        b_scr = LeafCombination(AbstractAction('bring_screwdriver'))
+        a_legs_1 = ParallelCombination([b_l1, b_l2, b_l3, b_l4], name='attach_legs')
+        a_rest_1 = ParallelCombination([b_s, b_b], name='attach_rest')
+        a_l1_2 = ParallelCombination([b_l1, b_scr], name='attach_leg1')
+        a_l2_2 = ParallelCombination([b_l2, b_scr], name='attach_leg2')
+        a_l3_2 = ParallelCombination([b_l3, b_scr], name='attach_leg3')
+        a_l4_2 = ParallelCombination([b_l4, b_scr], name='attach_leg4')
+        a_s_2 = ParallelCombination([b_s, b_scr], name='attach_seat')
+        a_b_2 = ParallelCombination([b_b, b_scr], name='attach_back')
+        a_legs_2 = ParallelCombination([a_l1_2, a_l2_2, a_l3_2, a_l4_2], name='attach_legs')
+        a_rest_2 = ParallelCombination([a_s_2, a_b_2], name='attach_rest')
+
+        sim_task_action1 = HierarchicalTask(root=
+                                            SequentialCombination([b_scr, a_legs_1, a_rest_1], name='complete'),
+                                            name='sim_task_action1')
+
+        sim_task_action1.gen_all_trajectories()
+        sim_task_action1.gen_bin_feats_traj(False)
+        self.assertTrue(all(el == 7
+                            for el in np.sum(np.sum(sim_task_action1.bin_trajectories, axis=1), axis=1)))
+
+
