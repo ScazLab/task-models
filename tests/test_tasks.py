@@ -542,8 +542,7 @@ class TestParallelToAlternatives(TestCase):
 
 class TestGenAllTrajectoriesWithProbs(TestCase):
     def test_leaf(self):
-        leaf = LeafCombination(PredAction(
-            'l', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+        leaf = LeafCombination(AbstractAction('l'))
         task = HierarchicalTask(root=leaf)
         task.gen_all_trajectories()
         trajectories = task.all_trajectories
@@ -556,12 +555,9 @@ class TestGenAllTrajectoriesWithProbs(TestCase):
         self.assertEqual(trajectories[0][1][0].name, leaf.name)
 
     def test_parallel(self):
-        a = LeafCombination(PredAction(
-            'a', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
-        b = LeafCombination(PredAction(
-            'b', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
-        c = LeafCombination(PredAction(
-            'c', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+        a = LeafCombination(AbstractAction('a'))
+        b = LeafCombination(AbstractAction('b'))
+        c = LeafCombination(AbstractAction('c'))
         nodes = [a, b, c]
         task = HierarchicalTask(root=ParallelCombination(nodes))
         task.gen_all_trajectories()
@@ -576,12 +572,9 @@ class TestGenAllTrajectoriesWithProbs(TestCase):
                             for traj in trajectories for el in traj[1]))
 
     def test_sequential(self):
-        a = LeafCombination(PredAction(
-            'a', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
-        b = LeafCombination(PredAction(
-            'b', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
-        c = LeafCombination(PredAction(
-            'c', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+        a = LeafCombination(AbstractAction('a'))
+        b = LeafCombination(AbstractAction('b'))
+        c = LeafCombination(AbstractAction('c'))
         task = HierarchicalTask(root=SequentialCombination([a, b, c]))
         task.gen_all_trajectories()
         trajectories = task.all_trajectories
@@ -594,12 +587,9 @@ class TestGenAllTrajectoriesWithProbs(TestCase):
         self.assertEqual(trajectories[0][0], 1)
 
     def test_alternative(self):
-        a = LeafCombination(PredAction(
-            'a', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
-        b = LeafCombination(PredAction(
-            'b', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
-        c = LeafCombination(PredAction(
-            'c', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+        a = LeafCombination(AbstractAction('a'))
+        b = LeafCombination(AbstractAction('b'))
+        c = LeafCombination(AbstractAction('c'))
         nodes = [a, b, c]
         task = HierarchicalTask(root=AlternativeCombination([a, b, c]))
         task.gen_all_trajectories()
@@ -614,12 +604,9 @@ class TestGenAllTrajectoriesWithProbs(TestCase):
                             for traj in trajectories for el in traj[1]))
 
     def test_two_level(self):
-        a = LeafCombination(PredAction(
-            'a', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
-        b = LeafCombination(PredAction(
-            'b', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
-        c = LeafCombination(PredAction(
-            'c', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+        a = LeafCombination(AbstractAction('a'))
+        b = LeafCombination(AbstractAction('b'))
+        c = LeafCombination(AbstractAction('c'))
         ab = SequentialCombination([a, b])
         two_level_task1 = HierarchicalTask(root=ParallelCombination(
             [ab, c]))
@@ -694,14 +681,10 @@ class TestGenAllTrajectoriesWithProbs(TestCase):
                             for traj in trajectories for el in traj[1]))
 
     def test_three_level(self):
-        b = LeafCombination(PredAction(
-            'b', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
-        c = LeafCombination(PredAction(
-            'c', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
-        a1 = LeafCombination(PredAction(
-            'a1', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
-        a2 = LeafCombination(PredAction(
-            'a2', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+        b = LeafCombination(AbstractAction('b'))
+        c = LeafCombination(AbstractAction('c'))
+        a1 = LeafCombination(AbstractAction('a1'))
+        a2 = LeafCombination(AbstractAction('a2'))
         a1a2 = SequentialCombination([a1, a2])
         three_level_task1 = HierarchicalTask(root=ParallelCombination(
             [SequentialCombination([a1a2, b]), c]))
@@ -728,12 +711,9 @@ class TestGenAllTrajectoriesWithProbs(TestCase):
                             for node in trajectories[0][1]))
 
     def test_custom_probs_alt(self):
-        a = LeafCombination(PredAction(
-            'a', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
-        b = LeafCombination(PredAction(
-            'b', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
-        c = LeafCombination(PredAction(
-            'c', (1, 0, 0, 0, 0, 0, 0, 0, 0)))
+        a = LeafCombination(AbstractAction('a'))
+        b = LeafCombination(AbstractAction('b'))
+        c = LeafCombination(AbstractAction('c'))
         ab = SequentialCombination([a, b])
         ba = SequentialCombination([b, a])
         alt_aux1 = AlternativeCombination([ab, ba], probabilities=[0.8, 0.2])
@@ -756,31 +736,25 @@ class TestGenAllTrajectoriesWithProbs(TestCase):
 
     def test_complex_task(self):
         mount_central = SequentialCombination([
-            LeafCombination(PredAction(
-                'Get central frame', (1, 0, 0, 0, 0, 0, 0, 0, 0))),
-            LeafCombination(PredAction(
-                'Start Hold central frame', (1, 1, 0, 0, 0, 0, 0, 0, 0)))],
+            LeafCombination(AbstractAction('Get central frame')),
+            LeafCombination(AbstractAction('Start Hold central frame'))],
             name='Mount central frame')
         mount_legs = ParallelCombination([
             SequentialCombination([
-                LeafCombination(PredAction(
-                    'Get left leg', (1, 1, 1, 0, 0, 0, 0, 0, 0))),
-                LeafCombination(PredAction(
-                    'Snap left leg', (1, 1, 1, 1, 0, 0, 0, 0, 0))),
+                LeafCombination(AbstractAction('Get left leg')),
+                LeafCombination(AbstractAction('Snap left leg')),
             ], name='Mount left leg'),
             SequentialCombination([
-                LeafCombination(PredAction(
-                    'Get right leg', (1, 1, 1, 1, 1, 0, 0, 0, 0))),
-                LeafCombination(PredAction(
-                    'Snap right leg', (1, 1, 1, 1, 1, 1, 0, 0, 0))),
+                LeafCombination(AbstractAction('Get right leg')),
+                LeafCombination(AbstractAction('Snap right leg')),
             ], name='Mount right leg'),
         ],
             name='Mount legs')
         release_central = LeafCombination(
-            PredAction('Release central frame', (1, 1, 1, 1, 1, 1, 1, 0, 0)))
+            AbstractAction('Release central frame'))
         mount_top = SequentialCombination([
-            LeafCombination(PredAction('Get top', (1, 1, 1, 1, 1, 1, 1, 1, 0))),
-            LeafCombination(PredAction('Snap top', (1, 1, 1, 1, 1, 1, 1, 1, 1)))],
+            LeafCombination(AbstractAction('Get top')),
+            LeafCombination(AbstractAction('Snap top'))],
             name='Mount top')
 
         chair_task_root = SequentialCombination(

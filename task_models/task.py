@@ -632,7 +632,7 @@ class HierarchicalTask(object):
     """Tree representing a hierarchy of tasks which leaves are actions."""
 
     def __init__(self, root=None, name=None, num_feats_action=None,
-                 share_feats=True,
+                 share_feats=False,
                  num_supp_bhvs=None, num_supp_bhvs_named=None, num_supp_bhvs_rd=None,
                  supp_bhvs_dict=dict(), supp_bhvs_named_dict=dict(), supp_bhvs_rd_dict=dict()):
         self.root = root
@@ -654,18 +654,27 @@ class HierarchicalTask(object):
         self.train_set_sb = []
         self.train_set_sb_actions = []
         self.train_set_sb_traj = []
+        self.train_set_sb_blind_robot = []
+        self.train_set_sb_actions_blind_robot = []
+        self.train_set_sb_traj_blind_robot = []
         self.test_set_sb = []
         self.test_set_sb_traj = []
         self.test_set_sb_actions = []
         self.train_set_sb_named = []
         self.train_set_sb_actions_named = []
         self.train_set_sb_traj_named = []
+        self.train_set_sb_blind_robot_named = []
+        self.train_set_sb_actions_blind_robot_named = []
+        self.train_set_sb_traj_blind_robot_named = []
         self.test_set_sb_named = []
         self.test_set_sb_traj_named = []
         self.test_set_sb_actions_named = []
         self.train_set_sb_rd = []
         self.train_set_sb_actions_rd = []
         self.train_set_sb_traj_rd = []
+        self.train_set_sb_blind_robot_rd = []
+        self.train_set_sb_actions_blind_robot_rd = []
+        self.train_set_sb_traj_blind_robot_rd = []
         self.test_set_sb_rd = []
         self.test_set_sb_traj_rd = []
         self.test_set_sb_actions_rd = []
@@ -728,6 +737,13 @@ class HierarchicalTask(object):
         else:
             for child in node.children:
                 self._gen_dict_rec(child, regexp)
+
+    def base_name(self, name):
+        regexp = r'( order)'
+        rem = re.search(regexp, name)
+        if rem:
+            name = name[:rem.start()]
+        return name
 
     def gen_all_trajectories(self):
         self.all_trajectories = \
@@ -819,19 +835,6 @@ class HierarchicalTask(object):
                 task_name = self.name
             path = os.path.join(path_sim_train, task_name)
             self.write_task_dict_to_file(path, task_name)
-            # make_sure_path_exists(path)
-            # f = os.path.join(path_sim_obj, "task_{}_obj.txt".format(task_name))
-            # if os.path.isfile(f) is False:
-            #     f_out = open(f, 'w')
-            #     sorted_vals = sorted(self.obj_names, key=self.obj_names.get)
-            #     for el in sorted_vals:
-            #         #f_out.write("{:>20} {}\n".format(el, obj_names[el]))
-            #         f_out.write("{} {}\n".format(self.obj_names[el], el))
-            #     f_out.close()
-            # else:
-            #     logging.warning("Did not save file task_{}_obj.txt "
-            #                     "because it already exists. "
-            #                     .format(task_name))
             for traj_idx, traj in enumerate(trajectories):
                 bin_feats = np.tile(bin_feats_init,
                                     (len(set(traj)) + 1, 1))
@@ -852,14 +855,6 @@ class HierarchicalTask(object):
                                         format(task_name, traj_idx))
                 self.bin_trajectories.append(bin_feats)
                 self.write_traj_to_file(f_out, bin_feats, task_name, traj_idx)
-                # if os.path.isfile(f_out) is False:
-                #     np.savetxt(f_out, bin_feats, fmt=str("%d"))
-                # else:
-                #     logging.warning("Did not save file task_{}_traj_{}.bfout "
-                #                     "because it already exists. "
-                #                     "Continuing onto the next trajectory."
-                #                     .format(task_name, traj_idx))
-                #     continue
             self.bin_trajectories = np.array(self.bin_trajectories)
             path_test = os.path.join(path_sim_test, task_name)
             make_sure_path_exists(path_test)
@@ -885,11 +880,11 @@ class HierarchicalTask(object):
         bin_feats_obj = np.random.binomial(1, feat_probs, size=num_feats)
         return bin_feats_obj
 
-    def gen_training_set_actions(self, size):
+    def gen_training_set_actions(self, size, bias=False):
         if len(self.all_trajectories) == 0:
             self.gen_all_trajectories()
         self.train_set_actions, self.train_set_actions_traj = \
-            self._gen_set_bin_feats_actions(self.all_trajectories, size, path_sim_train)
+            self._gen_set_bin_feats_actions(self.all_trajectories, size, path_sim_train, bias=bias)
 
     def gen_test_set_actions(self, size):
         if len(self.train_set_actions) == 0:
@@ -897,7 +892,8 @@ class HierarchicalTask(object):
         self.test_set_actions, self.test_set_actions_traj = \
             self._gen_set_bin_feats_actions(self.all_trajectories, size, path_sim_test)
 
-    def _gen_set_bin_feats_actions(self, trajectories, size, path_sim_local):
+    def _gen_set_bin_feats_actions(self, trajectories, size, path_sim_local,
+                                   bias=False, bias_weight=50):
         """Generates sets to be used for a dataset only for actions.
         It excludes supportive behaviors."""
         len_traj = len(trajectories)
@@ -915,8 +911,18 @@ class HierarchicalTask(object):
         else:
             traj_bin_feats_init = np.array([0] * (self.num_obj*self.num_feats_action))
         set_actions_traj_local = []
+        bias_progress = 0
         for i in range(size):
             traj = trajectories[np.random.randint(0, len_traj)][1]
+            if bias is True and bias_progress <= bias_weight:
+                zero_leaf_name = self.base_name(traj[0].name)
+                fourth_leaf_name = self.base_name(traj[4].name)
+                while zero_leaf_name != 'gatherparts_leg_3' \
+                        or fourth_leaf_name != 'gatherparts_leg_1':
+                    traj = trajectories[np.random.randint(0, len_traj)][1]
+                    zero_leaf_name = self.base_name(traj[0].name)
+                    fourth_leaf_name = self.base_name(traj[4].name)
+                bias_progress += 1
             set_actions_traj_local.append(traj)
             traj_bin_feats = np.tile(traj_bin_feats_init,
                                 (len(set(traj)) + 1, 1))
@@ -928,8 +934,8 @@ class HierarchicalTask(object):
                 else:
                     action = self.obj_names.get(traj[node_idx].name)
                     if action is None:
-                        action = self.obj_names.get(traj[node_idx]
-                                                    .name[:re.search(regexp, traj[node_idx].name).start()])
+                        action = self.obj_names.get(traj[node_idx].name[:re.
+                                                    search(regexp, traj[node_idx].name).start()])
                     start_idx = action * self.num_feats_action
                     end_idx = start_idx + self.num_feats_action
                     traj_bin_feats[node_idx + 1, start_idx:end_idx] = node_bin_feats_sb
@@ -942,6 +948,27 @@ class HierarchicalTask(object):
             self.write_traj_to_file(f_out, traj_bin_feats, task_name, i)
             set_bin_feats.append(traj_bin_feats)
         return np.array(set_bin_feats), set_actions_traj_local
+
+    def gen_train_set_sb_blind_robot(self, user_prefs, test_set_size):
+        self.train_set_sb_blind_robot, \
+        self.train_set_sb_traj_blind_robot, \
+        self.train_set_sb_actions_blind_robot = \
+            self._gen_set_sb(self.train_set_actions_traj, self.train_set_actions,
+                             user_prefs, test_set_size, sb_type='prob')
+
+    def gen_train_set_sb_blind_robot_named(self, user_prefs, test_set_size):
+        self.train_set_sb_blind_robot_named, \
+        self.train_set_sb_traj_blind_robot_named, \
+        self.train_set_sb_actions_blind_robot_named = \
+            self._gen_set_sb(self.train_set_actions_traj, self.train_set_actions,
+                             user_prefs, test_set_size, sb_type='named')
+
+    def gen_train_set_sb_blind_robot_rd(self, user_prefs, test_set_size):
+        self.train_set_sb_blind_robot_rd, \
+        self.train_set_sb_traj_blind_robot_rd, \
+        self.train_set_sb_actions_blind_robot_rd = \
+            self._gen_set_sb(self.train_set_actions_traj, self.train_set_actions,
+                             user_prefs, test_set_size, sb_type='rd')
 
     def gen_train_set_sb(self, user_prefs, num_dems):
         self.train_set_sb, self.train_set_sb_traj, self.train_set_sb_actions = \
@@ -1129,6 +1156,26 @@ class HierarchicalTask(object):
         self.test_set_sb_rd = []
         self.test_set_sb_traj_rd = []
         self.test_set_sb_actions_rd = []
+
+    def reset_sb_sets_blind_robot(self):
+        self.train_set_sb_blind_robot = []
+        self.train_set_sb_actions_blind_robot = []
+        self.train_set_sb_traj_blind_robot = []
+        self.train_set_sb_blind_robot_named = []
+        self.train_set_sb_actions_blind_robot_named = []
+        self.train_set_sb_traj_blind_robot_named = []
+        self.train_set_sb_blind_robot_rd = []
+        self.train_set_sb_actions_blind_robot_rd = []
+        self.train_set_sb_traj_blind_robot_rd = []
+
+    def reset_main_sets(self):
+        self.all_trajectories = []
+        self.bin_trajectories = []
+        self.bin_trajectories_test = []
+        self.train_set_actions = []
+        self.train_set_actions_traj = []
+        self.test_set_actions = []
+        self.test_set_actions_traj = []
 
 
 def debugging():
