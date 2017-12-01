@@ -25,10 +25,11 @@ from task_models.action import Action
 # from task_models import State
 # from .action import Action
 
-main_path = "/Users/Corina/Documents/AAMAS2018/sim_data"
+WRITE_TO_FILE = False
+main_path = "/home/corina/sim_data"
 path_sim_train = os.path.join(main_path, "train")
 path_sim_test = os.path.join(main_path, "test")
-path_sim_obj = "/Users/Corina/Documents/HRT_BCT_full/GithubCode/hrteaming-bctask/" \
+path_sim_obj = "/home/corina/code/hrc_ws/src/hrteaming-bctask/" \
                "StateDiscretization/HMM/DevDebugCompleteDataSet/Features"
 
 
@@ -784,7 +785,7 @@ class HierarchicalTask(object):
 
     def write_task_dict_to_file(self, path, task_name):
         make_sure_path_exists(path)
-        f = os.path.join(path_sim_obj, "task_{}_obj.txt".format(task_name))
+        f = os.path.join(path, "task_{}_obj.txt".format(task_name))
         # if os.path.isfile(f) is False:
         f_out = open(f, 'w')
         if self.share_feats is False:
@@ -801,11 +802,10 @@ class HierarchicalTask(object):
         #                     "because it already exists. "
         #                     .format(task_name))
 
-    def write_feats_to_file(self, path, task_name):
+    def write_traj_to_file(self, path, bin_feats, task_name, traj_idx):
         make_sure_path_exists(path)
-        f = os.path.join(path_sim_obj, "task_{}_obj.txt".format(task_name))
-
-    def write_traj_to_file(self, f_out, bin_feats, task_name, traj_idx):
+        f_out = os.path.join(path, "task_{}_traj_{}.bfout".
+                             format(task_name, traj_idx))
         # if os.path.isfile(f_out) is False:
         np.savetxt(f_out, bin_feats, fmt=str("%d"))
         # else:
@@ -833,8 +833,10 @@ class HierarchicalTask(object):
             task_name = "jdoe"
             if self.name:
                 task_name = self.name
-            path = os.path.join(path_sim_train, task_name)
-            self.write_task_dict_to_file(path, task_name)
+            #path = os.path.join(path_sim_train, task_name)
+            if WRITE_TO_FILE is True:
+                self.write_task_dict_to_file(path_sim_obj, task_name)
+            path_train = os.path.join(path_sim_train, task_name)
             for traj_idx, traj in enumerate(trajectories):
                 bin_feats = np.tile(bin_feats_init,
                                     (len(set(traj)) + 1, 1))
@@ -851,16 +853,16 @@ class HierarchicalTask(object):
                                                         .name[:re.search(regexp, traj[node_idx].name).start()])
                         bin_feats[node_idx + 1, action] = 1
                 #bin_feats = unique_rows(bin_feats)
-                f_out = os.path.join(path, "task_{}_traj_{}.bfout".
-                                        format(task_name, traj_idx))
                 self.bin_trajectories.append(bin_feats)
-                self.write_traj_to_file(f_out, bin_feats, task_name, traj_idx)
+                if WRITE_TO_FILE is True:
+                    self.write_traj_to_file(path_train, bin_feats, task_name, traj_idx)
             self.bin_trajectories = np.array(self.bin_trajectories)
             path_test = os.path.join(path_sim_test, task_name)
-            make_sure_path_exists(path_test)
-            self.gen_bin_feats_test_set(path, path_test, task_name, 6)
-            # for i in range(6):
-            #     shutil.copy2(os.path.join(path, "task_{}_traj_{}.bfout".format(task_name, i)), path_test)
+            if WRITE_TO_FILE is True:
+                make_sure_path_exists(path_test)
+                self.gen_bin_feats_test_set(path_train, path_test, task_name, 6)
+                # for i in range(6):
+                #     shutil.copy2(os.path.join(path, "task_{}_traj_{}.bfout".format(task_name, i)), path_test)
         else:
             raise ValueError("Cannot generate bin feats before generating all trajectories.")
 
@@ -903,8 +905,9 @@ class HierarchicalTask(object):
         task_name = "jdoe"
         if self.name:
             task_name = self.name
-        path = os.path.join(path_sim_local, task_name)
-        self.write_task_dict_to_file(path, task_name)
+
+        if WRITE_TO_FILE is True:
+            self.write_task_dict_to_file(path_sim_obj, task_name)
 
         if self.share_feats is True:
             traj_bin_feats_init = np.array([0] * self.num_feats_action)
@@ -943,9 +946,9 @@ class HierarchicalTask(object):
             #     [self.gen_object_bin_feats_sb(leaf.action.num_feats, leaf.action.feat_probs)
             #      for leaf in traj]
             #traj_bin_feats.insert(0, np.array([0] * self.num_feats_action))
-            f_out = os.path.join(path, "task_{}_traj_{}.bfout".
-                                 format(task_name, i))
-            self.write_traj_to_file(f_out, traj_bin_feats, task_name, i)
+            path = os.path.join(path_sim_local, task_name)
+            if WRITE_TO_FILE is True:
+                self.write_traj_to_file(path, traj_bin_feats, task_name, i)
             set_bin_feats.append(traj_bin_feats)
         return np.array(set_bin_feats), set_actions_traj_local
 
