@@ -1,14 +1,6 @@
 # coding: utf-8
 
 from __future__ import unicode_literals
-import numpy as np
-import itertools as iter
-import os
-import errno
-import logging
-import re
-import shutil
-import json
 
 """
 Tools for task representation.
@@ -17,13 +9,10 @@ These make no sense if states are not discrete (although they may be
 represented as continuous vectors).
 """
 
+import numpy as np
 from itertools import permutations
-
-from task_models.state import State
-from task_models.action import Action
-
-# from task_models import State
-# from .action import Action
+from .state import State
+from .action import Action
 
 
 def check_path(path):
@@ -85,6 +74,7 @@ def _bron_kerbosch(graph, r, p, x):
 
 
 class BaseGraph(object):
+
     """Transitions (s, l, d) are stored as {s: {(l, d), ...}, ...}, that is
     a dictionary of sets of pairs.
     """
@@ -151,6 +141,7 @@ class BaseGraph(object):
 
 
 class TaskGraph(BaseGraph):
+
     """Represents valid transitions in a task model.
     """
 
@@ -210,6 +201,7 @@ class TaskGraph(BaseGraph):
 
 
 class AbstractAction(Action):
+
     def __hash__(self):
         return hash(self.name)
 
@@ -223,47 +215,8 @@ class AbstractAction(Action):
         return AbstractAction(rename_format.format(self.name))
 
 
-class PredAction(AbstractAction):
-    """Action abstraction to be used for the prediction project.
-
-    :param name: str (must be unique)
-    :param durations: (float: human, float: robot, float: error)
-        Duration for human and robot to perform the action as well as error
-        time when robot starts action at wrong moment (the error time includes
-        the time of acting before interruption as well as the recovery time).
-    :param human_probability: float
-        Probability that the human would take care of this action. If not
-        defined, will have to be estimated.
-    :param fail_probability: float
-        Probability that the robot action fails.
-    :param no_probability: float
-        Probability that the human answers no to the robot asking if he can
-        take the action.
-    """
-
-    def __init__(self, name, num_feats, feat_probs):
-        super(PredAction, self).__init__(name=name)
-        self.num_feats = num_feats
-        self.feat_probs = feat_probs
-
-        @property
-        def feat_probs(self):
-            return self.__feat_probs
-
-        @feat_probs.setter
-        def feat_probs(self, feat_probs):
-            if self.num_feats != len(feat_probs):
-                raise ValueError("num_feats != len(feat_probs). "
-                                 "Should have prob values for each feature.")
-            else:
-                self.__feat_probs = feat_probs
-
-    def copy(self, rename_format='{}'):
-        return PredAction(rename_format.
-                          format(self.name), self.num_feats, self.feat_probs)
-
-
 class ConjugateTaskGraph(BaseGraph):
+
     initial = AbstractAction('initial')
     terminal = AbstractAction('terminal')
 
@@ -323,7 +276,7 @@ class ConjugateTaskGraph(BaseGraph):
                     explore_successors(node)
             else:
                 node = chain[-1]
-                assert (len(unique_transitions[node]) == 1)
+                assert len(unique_transitions[node]) == 1
                 next_node = list(unique_transitions[node])[0]
                 done = False
                 if in_degree[next_node] == 1:
@@ -358,6 +311,7 @@ class ConjugateTaskGraph(BaseGraph):
 # Hierarchical task definition
 
 class MetaAction(AbstractAction):
+
     SEP = {'sequence': '→',
            'parallel': '||',
            'alternative': '∨',
@@ -402,28 +356,13 @@ def int_generator():
         yield i
 
 
-class Combination(object):
+class BaseCombination(object):
+
     kind = 'Undefined'
 
-    def __init__(self, children, name='unnamed', highlighted=False,
-                 probabilities=None):
-        self.children = children  # Actions or combinations
+    def __init__(self, name='unnamed', highlighted=False):
         self.name = name
         self.highlighted = highlighted
-        self.proba = probabilities
-
-    @property
-    def proba(self):
-        return self.__proba
-
-    @proba.setter
-    def proba(self, probabilities):
-        num_children = len(self.children)
-        if len(probabilities) != num_children:
-            raise ValueError("Length of probabilities array should be equal \
-                             to number of children of combination.")
-        else:
-            self.__proba = probabilities
 
     def _meta_dictionary(self, parent_id, id_generator):
         attr = []
@@ -435,6 +374,17 @@ class Combination(object):
                 'combination': self.kind,
                 'attributes': attr,
                 }
+
+
+class Combination(BaseCombination):
+
+    kind = 'Undefined'
+
+    def __init__(self, children, name='unnamed', highlighted=False,
+                 probabilities=None):
+        super(Combination, self).__init__(name, highlighted)
+        self.children = children  # Actions or combinations
+        self.proba = probabilities
 
     def as_dictionary(self, parent_id, id_generator):
         d = self._meta_dictionary(parent_id, id_generator)
@@ -449,7 +399,8 @@ class Combination(object):
                 for c in self.children]
 
 
-class LeafCombination(Combination):
+class LeafCombination(BaseCombination):
+
     kind = None
 
     def __init__(self, action, highlighted=False):
@@ -473,30 +424,11 @@ class LeafCombination(Combination):
 
 
 class SequentialCombination(Combination):
+
     kind = 'Sequence'
 
     def __init__(self, children, **xargs):
         super(SequentialCombination, self).__init__(children, **xargs)
-
-    @property
-    def proba(self):
-        return super(SequentialCombination, self).proba
-        # return self.__proba
-
-    @proba.setter
-    def proba(self, probabilities):
-        correct = False
-        num_children = len(self.children)
-        if probabilities is None:
-            correct = True
-        elif all(prob == 1 for prob in probabilities):
-            correct = True
-        if correct is True:
-            return super(SequentialCombination, self.__class__). \
-                proba.fset(self, [1] * num_children)
-        else:
-            raise ValueError("Sequential combinations have default probs \
-                             set to [1] * num children.")
 
     def deep_copy(self, rename_format='{}'):
         return SequentialCombination(
@@ -506,23 +438,27 @@ class SequentialCombination(Combination):
             highlighted=self.highlighted)
 
 
+# TODO: Unless we want to validate the proba inputs
+# in __init__, I'm open to an alternative for
+# how to do this without using properties
 class AlternativeCombination(Combination):
+
     kind = 'Alternative'
 
     def __init__(self, children, **xargs):
         super(AlternativeCombination, self).__init__(children, **xargs)
+        self.proba = None
 
     @property
     def proba(self):
-        return super(AlternativeCombination, self).proba
+        return self._proba
 
     @proba.setter
     def proba(self, probabilities):
         if probabilities is None:
             num_children = len(self.children)
             prob = float(1) / num_children
-            return super(AlternativeCombination, self.__class__). \
-                proba.fset(self, [prob] * num_children)
+            self._proba = [prob] * num_children
         elif np.min(probabilities) < 0:
             raise ValueError("At least one prob value is < 0.")
         elif np.max(probabilities) > 1:
@@ -530,8 +466,7 @@ class AlternativeCombination(Combination):
         elif not (np.isclose(np.sum(probabilities), 1)):
             raise ValueError("Probs should sum to 1.")
         else:
-            return super(AlternativeCombination, self.__class__). \
-                proba.fset(self, probabilities)
+            self._proba = probabilities
 
     def deep_copy(self, rename_format='{}'):
         return AlternativeCombination(
@@ -542,29 +477,11 @@ class AlternativeCombination(Combination):
 
 
 class ParallelCombination(Combination):
+
     kind = 'Parallel'
 
     def __init__(self, children, **xargs):
         super(ParallelCombination, self).__init__(children, **xargs)
-
-    @property
-    def proba(self):
-        return super(ParallelCombination, self).proba
-
-    @proba.setter
-    def proba(self, probabilities):
-        correct = False
-        if probabilities is None:
-            correct = True
-        elif all(prob is None for prob in probabilities):
-            correct = True
-        if correct is True:
-            num_children = len(self.children)
-            return super(ParallelCombination, self.__class__). \
-                proba.fset(self, [None] * num_children)
-        else:
-            raise ValueError("Parallel combinations shouldn't have \
-            probs specified.")
 
     def deep_copy(self, rename_format='{}'):
         return ParallelCombination(
@@ -584,30 +501,8 @@ class ParallelCombination(Combination):
                                       highlighted=self.highlighted)
 
 
-class TrajectoryElement(object):
-    """Objects out of which we build trajectories.
-    Trajectories are sequences of leaves generated from an HTM.
-    """
-
-    def __init__(self, node, prob):
-        self.node = node
-        self.prob = prob
-
-    @property
-    def prob(self):
-        return self.__prob
-
-    @prob.setter
-    def prob(self, prob):
-        if prob < 0:
-            raise ValueError("Prob < 0.")
-        elif prob > 1:
-            raise ValueError("Prob > 1.")
-        else:
-            self.__prob = prob
-
-
 class HierarchicalTask(object):
+
     """Tree representing a hierarchy of tasks which leaves are actions."""
 
     def __init__(self, root=None):

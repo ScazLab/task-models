@@ -1,17 +1,11 @@
 from unittest import TestCase
-from types import GeneratorType
-
 import numpy as np
 import math
-
-from task_models.action import Condition, PrePostConditionAction
-from task_models.state import NDimensionalState
-from task_models.task import (check_path, split_path, TaskGraph,
-                              ConjugateTaskGraph, AbstractAction, PredAction,
+from task_models.task import (AbstractAction,
                               LeafCombination,
-                              AlternativeCombination, SequentialCombination, ParallelCombination,
-                              max_cliques,
-                              HierarchicalTask)
+                              AlternativeCombination,
+                              SequentialCombination,
+                              ParallelCombination)
 from task_models.task_hmm import HierarchicalTaskHMM
 
 
@@ -205,9 +199,9 @@ class TestGenAllTrajectoriesWithProbs(TestCase):
                             and len(traj[1]) == 3
                             and isinstance(el, LeafCombination)
                             for traj in trajectories for el in traj[1]))
-        self.assertEqual(np.isclose([list(zip(*trajectories))[0]],
-                                    [0.56, 0.14, 0.03, 0.27]).sum(), 4)
-        self.assertTrue(np.isclose([np.sum(list(zip(*trajectories))[0])], [1]))
+        # TODO: self.assertRaises doesn't work
+        # with self.assertRaises(ValueError):
+        #     AlternativeCombination([a, b], probabilities=[-2, 0.2])
 
     def test_complex_task(self):
         mount_central = SequentialCombination([

@@ -2,16 +2,14 @@ from unittest import TestCase
 from types import GeneratorType
 
 import numpy as np
-import math
 
 from task_models.action import Condition, PrePostConditionAction
 from task_models.state import NDimensionalState
 from task_models.task import (check_path, split_path, TaskGraph,
-                              ConjugateTaskGraph, AbstractAction, PredAction,
+                              ConjugateTaskGraph, AbstractAction,
                               LeafCombination,
                               AlternativeCombination, SequentialCombination, ParallelCombination,
-                              max_cliques,
-                              HierarchicalTask)
+                              max_cliques)
 
 
 class DummyState(NDimensionalState):
