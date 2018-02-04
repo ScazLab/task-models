@@ -31,13 +31,13 @@ class HierarchicalTaskHMM(HierarchicalTask):
     _metaclass_ = ABCMeta
 
     def __init__(self, root=None, name=None, num_feats_action=None,
-                 share_feats=False, supp_bhvs=None):
+                 feats='cum', supp_bhvs=None):
         super(HierarchicalTaskHMM, self).__init__(root)
         self.name = name
         self.num_obj = 0
         self.obj_names = dict()
         self.feat_names = dict()
-        self.share_feats = share_feats
+        self.feats = feats
         self.num_feats_action = num_feats_action
         self.supp_bhvs = supp_bhvs
         self.all_trajectories = []
@@ -58,7 +58,7 @@ class HierarchicalTaskHMM(HierarchicalTask):
     def gen_dict(self):
         regexp = r'( order)'
         self._gen_dict_rec(self.root, regexp)
-        if self.share_feats is True:
+        if self.feats == 'cum' or self.feats == 'shared':
             for feat_idx in range(self.num_feats_action):
                 self.feat_names["feat_" + str(feat_idx)] = feat_idx
         else:
@@ -76,6 +76,13 @@ class HierarchicalTaskHMM(HierarchicalTask):
         else:
             for child in node.children:
                 self._gen_dict_rec(child, regexp)
+
+    def _get_cum_feats_keys(self, traj):
+        regexp = r'( order)'
+        keys = [self.obj_names.get(key.name) if re.search(regexp, key.name) is None
+                else self.obj_names.get(key.name[:re.search(regexp, key.name).start()])
+                for key in traj]
+        return keys
 
     @staticmethod
     def base_name(name):
@@ -127,7 +134,7 @@ class HierarchicalTaskHMM(HierarchicalTask):
             self.bin_trajectories_test.append(self.bin_trajectories[i])
         self.bin_trajectories_test = np.array(self.bin_trajectories_test)
 
-    def gen_bin_feats_traj(self, cum_feats=False):
+    def gen_bin_feats_traj(self):
         """Generates binary features for all possible trajectories from an HTM
         and writes them to file.
         Should only be called after calling gen_all_trajectories().
@@ -140,10 +147,11 @@ class HierarchicalTaskHMM(HierarchicalTask):
                 bin_feats = np.tile(bin_feats_init,
                                     (len(set(traj)) + 1, 1))
                 for node_idx, node in enumerate(traj):
-                    if cum_feats is True:
-                        keys = [self.obj_names.get(key.name) if re.search(regexp, key.name) is None
-                                else self.obj_names.get(key.name[:re.search(regexp, key.name).start()])
-                                for key in traj[:node_idx + 1]]
+                    if self.feats == 'cum':
+                        # keys = [self.obj_names.get(key.name) if re.search(regexp, key.name) is None
+                        #         else self.obj_names.get(key.name[:re.search(regexp, key.name).start()])
+                        #         for key in traj[:node_idx + 1]]
+                        keys = self._get_cum_feats_keys(traj[:node_idx + 1])
                         bin_feats[node_idx + 1, keys] = 1
                     else:
                         action = self.obj_names.get(traj[node_idx].name)
@@ -194,7 +202,7 @@ class HierarchicalTaskHMM(HierarchicalTask):
         set_bin_feats = []
         regexp = r'( order)'
 
-        if self.share_feats is True:
+        if self.feats == 'cum' or self.feats == 'shared':
             traj_bin_feats_init = np.array([0] * self.num_feats_action)
         else:
             traj_bin_feats_init = np.array([0] * (self.num_obj*self.num_feats_action))
@@ -213,24 +221,28 @@ class HierarchicalTaskHMM(HierarchicalTask):
                 bias_progress += 1
             set_traj_local.append(traj)
             traj_bin_feats = np.tile(traj_bin_feats_init,
-                                (len(set(traj)) + 1, 1))
+                                     (len(set(traj)) + 1, 1))
             for node_idx, node in enumerate(traj):
-                node_bin_feats_sb = self.gen_object_bin_feats_sb(
-                    node.action.num_feats, node.action.feat_probs)
-                if self.share_feats is True:
-                    traj_bin_feats[node_idx + 1, :] = node_bin_feats_sb
+                if self.feats == 'cum':
+                    keys = self._get_cum_feats_keys(traj[:node_idx + 1])
+                    traj_bin_feats[node_idx + 1, keys] = 1
                 else:
-                    action = self.obj_names.get(traj[node_idx].name)
-                    if action is None:
-                        action = self.obj_names.get(traj[node_idx].name[:re.
-                                                    search(regexp, traj[node_idx].name).start()])
-                    start_idx = action * self.num_feats_action
-                    end_idx = start_idx + self.num_feats_action
-                    traj_bin_feats[node_idx + 1, start_idx:end_idx] = node_bin_feats_sb
-            # traj_bin_feats = \
-            #     [self.gen_object_bin_feats_sb(leaf.action.num_feats, leaf.action.feat_probs)
-            #      for leaf in traj]
-            #traj_bin_feats.insert(0, np.array([0] * self.num_feats_action))
+                    node_bin_feats_sb = self.gen_object_bin_feats_sb(
+                        node.action.num_feats, node.action.feat_probs)
+                    if self.feats == 'shared':
+                        traj_bin_feats[node_idx + 1, :] = node_bin_feats_sb
+                    else:
+                        action = self.obj_names.get(traj[node_idx].name)
+                        if action is None:
+                            action = self.obj_names.get(traj[node_idx].name[:re.
+                                                        search(regexp, traj[node_idx].name).start()])
+                        start_idx = action * self.num_feats_action
+                        end_idx = start_idx + self.num_feats_action
+                        traj_bin_feats[node_idx + 1, start_idx:end_idx] = node_bin_feats_sb
+                # traj_bin_feats = \
+                #     [self.gen_object_bin_feats_sb(leaf.action.num_feats, leaf.action.feat_probs)
+                #      for leaf in traj]
+                #traj_bin_feats.insert(0, np.array([0] * self.num_feats_action))
             set_bin_feats.append(traj_bin_feats)
         return np.array(set_bin_feats), set_traj_local
 
@@ -445,7 +457,7 @@ class PredAction(AbstractAction):
 
         @property
         def feat_probs(self):
-            return self.__feat_probs
+            return self._feat_probs
 
         @feat_probs.setter
         def feat_probs(self, feat_probs):
@@ -453,7 +465,7 @@ class PredAction(AbstractAction):
                 raise ValueError("num_feats != len(feat_probs). "
                                  "Should have prob values for each feature.")
             else:
-                self.__feat_probs = feat_probs
+                self._feat_probs = feat_probs
 
     def copy(self, rename_format='{}'):
         return PredAction(rename_format.
