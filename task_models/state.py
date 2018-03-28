@@ -1,4 +1,10 @@
-"""Environment state models."""
+"""
+Models for states of the environment.
+
+The state objects are meant to abstract environment state. For compatibility
+with the `task.py` module, states must be hashable and implement a method
+that yield a feature vector from the state.
+"""
 
 
 class State(object):
@@ -9,6 +15,7 @@ class State(object):
     """
 
     def get_features(self):
+        """Returns a feature vector corresponding to the state."""
         raise NotImplemented
 
     def __hash__(self):
@@ -19,6 +26,7 @@ class State(object):
 
 
 class NDimensionalState(State):
+    """Represents states that are N-dimensional vectors."""
 
     def __init__(self, vector):
         self.features = vector

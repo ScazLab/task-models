@@ -6,7 +6,22 @@ from __future__ import unicode_literals
 Tools for task representation.
 
 These make no sense if states are not discrete (although they may be
-represented as continuous vectors).
+represented as continuous vectors). To enforce this states are required
+to be hashable.
+
+The first part of this module implements Graph based task representations
+that encode valid transitions between states, and conjugate task graphs
+as introduced by [Hayes2016]_. It also provides the algorithmic basis to
+extract hierarchical task representations from such conjugate graphs (see
+[Hayes2016])_.
+
+The second part of the module implements classes to represent hierarchical
+task models based on the *simultaneous*, *alternative*, and *parallel*
+combination.
+
+.. [Hayes2016] Hayes, Bradley and Scassellati, Brian *Autonomously constructing
+   hierarchical task networks for planning and human-robot collaboration*, IEEE
+   International Conference on Robotics and Automation (ICRA 2016)
 """
 
 
@@ -17,7 +32,7 @@ from .action import Action
 
 
 def check_path(path):
-    """Validates a path. Raises error on invalid path.
+    """Validates a path of actions and states. Raises error on invalid path.
 
     A valid path is a list of alternate states and actions. It must start
     and finish by a state. In all successive (s, a, s'), s must validate

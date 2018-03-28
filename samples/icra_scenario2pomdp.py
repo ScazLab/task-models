@@ -1,3 +1,6 @@
+"""HTM to POMDP to policy for the task used in [Roncone2017]."""
+
+
 import os
 
 from task_models.task_to_pomdp import HTMToPOMDP

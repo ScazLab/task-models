@@ -1,4 +1,4 @@
-var defaultjsonfile = 'icra.json';
+var defaultjsonfile = 'iros_2018.json';
 
 loadhtm('');
 

@@ -1,3 +1,13 @@
+"""This module provides classes to represent actions that can only account for
+specific state transitions. These action objects implement a `check` method
+that informs whether a transition is plausible for a given action.
+
+The module implements one flavor of such actions (and associated conditions)
+for which the check is true when a pre-condition and a post-condition are
+simultaneously satisfied.
+"""
+
+
 import numpy as np
 
 
@@ -43,6 +53,7 @@ class MatchAllCondition(Condition):
 
 
 class Action(object):
+    """Base class for actions that provide a check method."""
 
     def __init__(self, name="unnamed-action"):
         self.name = name
@@ -54,10 +65,16 @@ class Action(object):
         return self.name
 
     def check(self, before, after):
+        """Checks whether the action can explain a transition from the before
+        and after states.
+        """
         raise NotImplementedError
 
 
 class PrePostConditionAction(Action):
+    """Action which can apply to states verifying the pre-condition and can
+    produce states that verify the post-condition.
+    """
 
     def __init__(self, pre_condition, post_condition, name="unnamed-action"):
         super(PrePostConditionAction, self).__init__(name=name)

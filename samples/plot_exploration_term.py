@@ -1,3 +1,8 @@
+"""Evaluation of the values of the exploration factor used in POMCP for various
+parameters.
+"""
+
+
 import numpy as np
 import matplotlib.pyplot as plt
 

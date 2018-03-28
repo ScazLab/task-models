@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 
-"""Compares behavior on various tasks.
+"""Compares behavior of the supportive POMDP on various tasks.
 """
 
 import os

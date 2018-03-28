@@ -1,3 +1,8 @@
+"""Code to test and visualize the HTM to POMDP transformation of a basic
+task.
+"""
+
+
 import os
 
 from task_models.task import (HierarchicalTask, SequentialCombination,
