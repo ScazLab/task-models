@@ -19,6 +19,10 @@ recommend you to cite the following paper:
    `[PDF] <http://alecive.github.io/papers/[Roncone%20et%20al.%202017]%20Transparent%20Role%20Assignment%20and%20Task%20Allocation%20in%20Human%20Robot%20Collaboration.pdf>`_
    `[BIB] <http://alecive.github.io/papers/[Roncone%20et%20al.%202017]%20Transparent%20Role%20Assignment%20and%20Task%20Allocation%20in%20Human%20Robot%20Collaboration.bib>`_
 
+
+Repository overview
+-------------------
+
 The top-level directories contain the following code:
 
 - :code:`samples`: scripts,
@@ -71,4 +75,4 @@ Make sure that :code:`~/.local/bin` is in yout path and now you should have :cod
 ICRA 2017
 ---------
 
-To generate the policy from the experiment in [Roncone2017], please use the script :code:`samples/icra_scenario2pomdp.py`. The script will generate the corresponding POMDP model, solve it with Anthony Cassandra's POMDP solver, and store the corresponding policy under :code:`visualization/policy/json/icra.json`. To run the full experiment on the baxter robot, please refer to `github.com/ScazLab/baxter_collaboration <https://github.com/ScazLab/baxter_collaboration>`_.
+To generate the policy from the experiment in [Roncone2017]_, please use the script :code:`samples/icra_scenario2pomdp.py`. The script will generate the corresponding POMDP model, solve it with Anthony Cassandra's POMDP solver, and store the corresponding policy under :code:`visualization/policy/json/icra.json`. To run the full experiment on the baxter robot, please refer to `github.com/ScazLab/baxter_collaboration <https://github.com/ScazLab/baxter_collaboration>`_.
