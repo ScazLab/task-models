@@ -43,7 +43,7 @@ function loadhtm(file)
      .attr('text-anchor','middle')
      .text(file.replace('.json','').replace('_',' '));
 
-  var vis = svg.append('svg:g');
+  var vis  = svg.append('svg:g');
 
   var draw = vis.append('svg:g')
                 .attr('transform', 'translate(' + (width-rectW)/2 + ',' + 100 + ')');
@@ -124,7 +124,7 @@ function loadhtm(file)
                    .attr('text-anchor', 'middle')
                    .text(function (d) {
                       if (d.combination=='Parallel') {return '||';}
-                      if (d.combination=='Sequence') {return '→';}
+                      if (d.combination=='Sequential') {return '→';}
                       if (d.combination=='Alternative') {return 'v';}
                       return ''
                     });

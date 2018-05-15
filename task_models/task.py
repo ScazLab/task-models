@@ -429,7 +429,7 @@ class LeafCombination(Combination):
 
 class SequentialCombination(Combination):
 
-    kind = 'Sequence'
+    kind = 'Sequential'
 
     def deep_copy(self, rename_format='{}'):
         return SequentialCombination(
