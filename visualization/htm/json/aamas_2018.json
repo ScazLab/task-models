@@ -2,7 +2,7 @@
   "nodes": {
     "parent": null,
     "name": "Chair Assembly",
-    "combination": "Sequence",
+    "combination": "Sequential",
     "id": 0,
     "attributes": [],
     "children": [
@@ -15,7 +15,7 @@
         "children": [
           {
             "attributes": [],
-            "combination": "Sequence",
+            "combination": "Sequential",
             "name": "Mount Leg 1",
             "parent": 1,
             "id": 2,
@@ -38,7 +38,7 @@
           },
                     {
             "attributes": [],
-            "combination": "Sequence",
+            "combination": "Sequential",
             "name": "Mount Leg 2",
             "parent": 1,
             "id": 5,
@@ -61,7 +61,7 @@
           },
                     {
             "attributes": [],
-            "combination": "Sequence",
+            "combination": "Sequential",
             "name": "Mount Leg 3",
             "parent": 1,
             "id": 8,
@@ -84,7 +84,7 @@
           },
                     {
             "attributes": [],
-            "combination": "Sequence",
+            "combination": "Sequential",
             "name": "Mount Leg 4",
             "parent": 1,
             "id": 11,
@@ -116,7 +116,7 @@
         "children": [
           {
             "attributes": [],
-            "combination": "Sequence",
+            "combination": "Sequential",
             "name": "Mount Seat",
             "parent": 14,
             "id": 15,
@@ -139,7 +139,7 @@
           },
                     {
             "attributes": [],
-            "combination": "Sequence",
+            "combination": "Sequential",
             "name": "Mount Back",
             "parent": 14,
             "id": 18,

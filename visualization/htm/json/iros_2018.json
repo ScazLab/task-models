@@ -8,7 +8,7 @@
     "children": [
       {
         "attributes": [],
-        "combination": "Sequence",
+        "combination": "Sequential",
         "name": "Mount legs",
         "parent": 0,
         "id": 1,
@@ -67,7 +67,7 @@
         ]
       },
       { "attributes": [],
-        "combination": "Sequence",
+        "combination": "Sequential",
         "name": "Mount back",
         "parent": 0,
         "id": 9,

@@ -34,7 +34,7 @@
                 "combination": null
               }
             ],
-            "combination": "Sequence",
+            "combination": "Sequential",
             "parent": 2,
             "id": 3
           },
@@ -57,7 +57,7 @@
                 "combination": null
               }
             ],
-            "combination": "Sequence",
+            "combination": "Sequential",
             "parent": 2,
             "id": 6
           },
@@ -80,7 +80,7 @@
                 "combination": null
               }
             ],
-            "combination": "Sequence",
+            "combination": "Sequential",
             "parent": 2,
             "id": 9
           },
@@ -103,7 +103,7 @@
                 "combination": null
               }
             ],
-            "combination": "Sequence",
+            "combination": "Sequential",
             "parent": 2,
             "id": 12
           }
@@ -133,12 +133,12 @@
             "combination": null
           }
         ],
-        "combination": "Sequence",
+        "combination": "Sequential",
         "parent": 0,
         "id": 15
       }
     ],
-    "combination": "Sequence",
+    "combination": "Sequential",
     "parent": null,
     "id": 0
   }
