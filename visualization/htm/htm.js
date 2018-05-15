@@ -1,4 +1,4 @@
-var defaultjsonfile = 'iros_2018.json';
+var defaultjsonfile = 'icra.json';
 
 loadhtm('');
 
@@ -34,7 +34,7 @@ function loadhtm(file)
               //class to make it responsive
               .classed('svg-content-responsive', true);
 
-  svg.call(d3.behavior.zoom().scaleExtent([0.4, 3]).on('zoom', redraw));
+  svg.call(d3.behavior.zoom().scaleExtent([0.2, 5]).on('zoom', redraw));
 
   svg.append('text')
      .attr('dx', width/2)
@@ -79,13 +79,12 @@ function loadhtm(file)
     // Normalize for fixed-depth.
     nodes.forEach(function(d) { d.y = d.depth * 100; });
 
-    // Declare the nodes...
+    // Declare the nodes.
     var node = draw.selectAll('g.node')
-                  .data(nodes, function(d) { return d.id; }); // { return d.id || (d.id = ++i); });
+                   .data(nodes, function(d) { return d.id; }); // { return d.id || (d.id = ++i); });
 
     // Enter the nodes.
-    var nodeEnter = node.enter()
-                        .append('g')
+    var nodeLabel = node.enter().append('g')
                         .attr('class', function(d) {
                           var res='node';
                           if (d.attributes) {res=res+' '+d.attributes.join(' ');}
@@ -94,20 +93,21 @@ function loadhtm(file)
                         .attr('transform', function(d) { return 'translate(' + source.x0 + ',' + source.y0 + ')'; })
                         .on('click', click);
 
-    nodeEnter.append('rect')
+    nodeLabel.append('rect')
              .attr('width', rectW)
              .attr('height', rectH)
              .attr('class', 'label');
 
-    nodeEnter.append('text')
+    nodeLabel.append('text')
              .attr('x', rectW / 2)
              .attr('y', rectH / 2)
              .attr('dy', '.35em')
              .attr('text-anchor', 'middle')
              .text(function (d) { return d.name; });
 
+
     // Add combination if there is a combination and the node is not collapsed
-    nodeCombination = nodeEnter.filter(function(d,i){ return d.combination; }) // && !d._children && d.children; })
+    nodeCombination = nodeLabel.filter(function(d,i){ return d.combination; }) // && !d._children && d.children; })
                                .append('g')
                                .attr('class','combination');
 
@@ -120,7 +120,7 @@ function loadhtm(file)
     nodeCombination.append('text')
                    .attr('x', rectW / 2)
                    .attr('y', rectH / 2 - 12)
-                   .attr('dy', '3.5em')
+                   .attr('dy', '2.2em')
                    .attr('text-anchor', 'middle')
                    .text(function (d) {
                       if (d.combination=='Parallel') {return '||';}

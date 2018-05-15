@@ -21,7 +21,7 @@
         "attributes": [],
         "children": [
           {
-            "attributes": [],
+            "attributes": ["robot"],
             "combination": null,
             "name": "Take central frame",
             "parent": 2,
@@ -42,14 +42,14 @@
                 "attributes": [],
                 "children": [
                   {
-                    "attributes": [],
+                    "attributes": ["robot", "highlighted"],
                     "combination": null,
                     "name": "Take left leg",
                     "parent": 5,
                     "id": 6
                   },
                   {
-                    "attributes": [],
+                    "attributes": ["human"],
                     "combination": null,
                     "name": "Snap left leg",
                     "parent": 5,
@@ -65,14 +65,14 @@
                 "attributes": [],
                 "children": [
                   {
-                    "attributes": [],
+                    "attributes": ["robot"],
                     "combination": null,
                     "name": "Take right leg",
                     "parent": 8,
                     "id": 9
                   },
                   {
-                    "attributes": [],
+                    "attributes": ["human"],
                     "combination": null,
                     "name": "Snap right leg",
                     "parent": 8,
@@ -90,16 +90,14 @@
             "attributes": [],
             "children": [
               {
-                "attributes": [
-                  "highlighted"
-                ],
+                "attributes": ["robot"],
                 "combination": null,
                 "name": "Take  top",
                 "parent": 11,
                 "id": 12
               },
               {
-                "attributes": [],
+                "attributes": ["human"],
                 "combination": null,
                 "name": "Place top",
                 "parent": 11,
