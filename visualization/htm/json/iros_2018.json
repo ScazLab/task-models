@@ -1,0 +1,116 @@
+{
+  "nodes": {
+    "parent": null,
+    "name": "Chair Assembly Task",
+    "combination": "Parallel",
+    "id": 0,
+    "attributes": [],
+    "children": [
+      {
+        "attributes": [],
+        "combination": "Sequence",
+        "name": "Mount legs",
+        "parent": 0,
+        "id": 1,
+        "children": [
+          {
+            "attributes": [],
+            "combination": "Parallel",
+            "name": "Gather parts legs",
+            "parent": 1,
+            "id": 2,
+            "children": [
+              {
+                "attributes": [],
+                "combination": null,
+                "name": "Gather parts leg 1",
+                "parent": 2,
+                "id": 3
+              },
+              {
+                "attributes": [],
+                "combination": null,
+                "name": "Gather parts leg 2",
+                "parent": 2,
+                "id": 4
+              },
+              {
+                "attributes": [],
+                "combination": null,
+                "name": "Gather parts leg 3",
+                "parent": 2,
+                "id": 5
+              },
+              {
+                "attributes": [],
+                "combination": null,
+                "name": "Gather parts leg 4",
+                "parent": 2,
+                "id": 6
+              }
+            ]
+          },
+          {
+                "attributes": [],
+                "combination": null,
+                "name": "Gather parts seat",
+                "parent": 1,
+                "id": 7
+          },
+          {
+                "attributes": [],
+                "combination": null,
+                "name": "Assemble seat",
+                "parent": 1,
+                "id": 8
+          }
+        ]
+      },
+      { "attributes": [],
+        "combination": "Sequence",
+        "name": "Mount back",
+        "parent": 0,
+        "id": 9,
+        "children": [
+          {
+            "attributes": [],
+            "combination": "Parallel",
+            "name": "Gather parts back sides",
+            "parent": 9,
+            "id": 10,
+            "children": [
+                {
+                "attributes": [],
+                "combination": null,
+                "name": "Gather parts back left",
+                "parent": 10,
+                "id": 12
+              },
+                              {
+                "attributes": [],
+                "combination": null,
+                "name": "Gather parts back right",
+                "parent": 10,
+                "id": 13
+              }
+            ]
+          },
+          {
+            "attributes": [],
+            "combination": null,
+            "name": "Gather parts back top",
+            "parent": 9,
+            "id": 14
+          },
+          {
+            "attributes": [],
+            "combination": null,
+            "name": "Assemble back",
+            "parent": 9,
+            "id": 15
+          }
+        ]
+      }
+    ]
+  }
+}
