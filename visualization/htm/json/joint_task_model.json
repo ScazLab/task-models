@@ -1,0 +1,225 @@
+{
+  "nodes": {
+    "parent": null,
+    "name": "Available Tasks",
+    "combination": "Alternative",
+    "id": 0,
+    "attributes": [],
+    "children": [
+      {
+        "parent": 0,
+        "name": "Mount Stool",
+        "combination": "Sequence",
+        "id": 2,
+        "attributes": [],
+        "children": [
+          {
+            "attributes": [],
+            "combination": null,
+            "name": "Take Central Frame",
+            "parent": 2,
+            "id": 3
+          },
+          {
+            "parent": 2,
+            "name": "Mount Legs",
+            "combination": "Parallel",
+            "id": 4,
+            "attributes": [],
+            "children": [
+              {
+                "parent": 4,
+                "name": "Mount Left Leg",
+                "combination": "Sequence",
+                "id": 5,
+                "attributes": [],
+                "children": [
+                  {
+                    "attributes": [],
+                    "combination": null,
+                    "name": "Take Left Leg",
+                    "parent": 5,
+                    "id": 6
+                  },
+                  {
+                    "attributes": [],
+                    "combination": null,
+                    "name": "Snap Left Leg",
+                    "parent": 5,
+                    "id": 7
+                  }
+                ]
+              },
+              {
+                "parent": 4,
+                "name": "Mount Right Leg",
+                "combination": "Sequence",
+                "id": 8,
+                "attributes": [],
+                "children": [
+                  {
+                    "attributes": [],
+                    "combination": null,
+                    "name": "Take Right Leg",
+                    "parent": 8,
+                    "id": 9
+                  },
+                  {
+                    "attributes": [],
+                    "combination": null,
+                    "name": "Snap Right Leg",
+                    "parent": 8,
+                    "id": 10
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "parent": 2,
+            "name": "Mount Top",
+            "combination": "Sequence",
+            "id": 11,
+            "attributes": [],
+            "children": [
+              {
+                "attributes": [
+                  "highlighted"
+                ],
+                "combination": null,
+                "name": "Take  Top",
+                "parent": 11,
+                "id": 12
+              },
+              {
+                "attributes": [],
+                "combination": null,
+                "name": "Place Top",
+                "parent": 11,
+                "id": 13
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "attributes": [],
+        "combination": null,
+        "name": "Mount Bench",
+        "parent": 0,
+        "id": 1
+      },
+      {
+        "attributes": [],
+        "combination": null,
+        "name": "Mount Chair",
+        "parent": 0,
+        "id": 27
+      },
+      {
+        "name": "Mount Table",
+        "id": 14,
+        "parent": 0,
+        "combination": "Parallel",
+        "attributes": [],
+        "children": [
+          {
+            "name": "Assemble Leg-0",
+            "id": 15,
+            "parent": 14,
+            "combination": "Sequence",
+            "attributes": [],
+            "children": [
+              {
+                "name": "Leg-0 to Foot",
+                "id": 16,
+                "parent": 15,
+                "combination": null,
+                "attributes": []
+              },
+              {
+                "name": "Leg-0 to Top",
+                "id": 17,
+                "parent": 15,
+                "combination": null,
+                "attributes": []
+              }
+            ]
+          },
+          {
+            "name": "Assemble Leg-1",
+            "id": 18,
+            "parent": 14,
+            "combination": "Sequence",
+            "attributes": [],
+            "children": [
+              {
+                "name": "Leg-1 to Foot",
+                "id": 19,
+                "parent": 18,
+                "combination": null,
+                "attributes": []
+              },
+              {
+                "name": "Leg-1 to Top",
+                "id": 20,
+                "parent": 18,
+                "combination": null,
+                "attributes": []
+              }
+            ]
+          },
+          {
+            "name": "Assemble Leg-2",
+            "id": 21,
+            "parent": 14,
+            "combination": "Sequence",
+            "attributes": [],
+            "children": [
+              {
+                "name": "Leg-2 to Foot",
+                "id": 22,
+                "parent": 21,
+                "combination": null,
+                "attributes": []
+              },
+              {
+                "name": "Leg-2 to Top",
+                "id": 23,
+                "parent": 21,
+                "combination": null,
+                "attributes": [
+                  "highlighted"
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Assemble Leg-3",
+            "id": 24,
+            "parent": 14,
+            "combination": "Sequence",
+            "attributes": [],
+            "children": [
+              {
+                "name": "Leg-3 to Foot",
+                "id": 25,
+                "parent": 24,
+                "combination": null,
+                "attributes": []
+              },
+              {
+                "name": "Leg-3 to Top",
+                "id": 26,
+                "parent": 24,
+                "combination": null,
+                "attributes": []
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "name": "Hierarchical task tree"
+}
