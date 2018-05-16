@@ -33,6 +33,7 @@ combination.
 
 
 
+
 def check_path(path):
     """Validates a path of actions and states. Raises error on invalid path.
 
@@ -497,16 +498,13 @@ class HierarchicalTask:
 
     def as_dictionary(self, name=None):
         return {
-            'name':
-            'Hierarchical task tree' if name is None else name,
-            'nodes':
-            None if self.is_empty() else self.root.as_dictionary(
+            'name': 'Hierarchical task tree' if name is None else name,
+            'nodes': None if self.is_empty() else self.root.as_dictionary(
                 None, int_generator()),
         }
 
 
-COMBINATION_CLASSES = {
-    'Sequential': SequentialCombination,
-    'Parallel': ParallelCombination,
-    'Alternative': AlternativeCombination,
-}
+COMBINATION_CLASSES = {'Sequential': SequentialCombination,
+                       'Parallel': ParallelCombination,
+                       'Alternative': AlternativeCombination,
+                       }
