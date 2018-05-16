@@ -86,72 +86,89 @@ function loadhtm(file)
     // Enter the nodes.
     var nodeLabel = node.enter().append('g')
                         .attr('class', function(d) {
-                          var res='node';
-                          if (d.attributes) {res=res+' '+d.attributes.join(' ');}
-                          if (d._children)  {res=res+' collapsed';}
-                          return res; })
-                        .attr('transform', function(d) { return 'translate(' + source.x0 + ',' + source.y0 + ')'; })
+                            var res='node';
+                            if (d.attributes) {res=res+' '+d.attributes.join(' ');}
+                            if (d._children)  {res=res+' collapsed';}
+                            return res; })
+                        .attr('transform', function(d) {
+                            return 'translate(' + source.x0 + ',' + source.y0 + ')'; })
                         .on('click', click);
 
-    nodeLabel.append('rect')
-             .attr('width', rectW)
-             .attr('height', rectH)
-             .attr('class', 'label');
+    var nodeRect = nodeLabel.append('rect')
+                            .attr( 'width',   rectW)
+                            .attr('height',   rectH)
+                            .attr( 'class', 'label');
 
-    nodeLabel.append('text')
-             .attr('x', rectW / 2)
-             .attr('y', rectH / 2)
-             .attr('dy', '.35em')
-             .attr('text-anchor', 'middle')
-             .text(function (d) { return d.name; });
+    var nodeText = nodeLabel.append('text')
+                            .attr('x', rectW / 2)
+                            .attr('y', rectH / 2)
+                            .attr('dy', '.35em')
+                            .attr('text-anchor', 'middle')
+                            .text(function (d) { return d.name; });
 
+    nodeRect.attr("width", function(d) {
+        d.rectWidth = this.nextSibling.getComputedTextLength() + 20;
+        return d.rectWidth;
+    })
+
+    nodeText.attr('x', function(d) {
+        return (d.rectWidth)/2;
+    })
 
     // Add combination if there is a combination and the node is not collapsed
-    nodeCombination = nodeLabel.filter(function(d,i){ return d.combination; }) // && !d._children && d.children; })
+    nodeCombination = nodeLabel.filter(function(d){ return d.combination; })
                                .append('g')
                                .attr('class','combination');
 
     nodeCombination.append('rect')
                    .attr('width', 36)
                    .attr('height', 36)
-                   .attr('x', (rectW-36)/2)
+                   .attr('x', function(d) {return (d.rectWidth-36)/2})
                    .attr('y', rectH + 1);
 
     nodeCombination.append('text')
-                   .attr('x', rectW / 2)
+                   .attr('x', function(d) {return (d.rectWidth)/2})
                    .attr('y', rectH / 2 - 12)
                    .attr('dy', '2.2em')
                    .attr('text-anchor', 'middle')
                    .text(function (d) {
-                      if (d.combination=='Parallel') {return '||';}
-                      if (d.combination=='Sequential') {return '→';}
-                      if (d.combination=='Alternative') {return 'v';}
+                      if (d.combination==   'Parallel') {return '||';}
+                      if (d.combination== 'Sequential') {return  '→';}
+                      if (d.combination=='Alternative') {return  'v';}
                       return ''
                     });
 
     // Transition nodes to their new position.
     var nodeUpdate = node.transition()
                          .duration(duration)
-                         .attr('transform', function (d) {return 'translate(' + d.x + ',' + d.y + ')';});
+                         .attr('transform', function (d) {
+                             return 'translate(' + d.x + ',' + d.y + ')';
+                         });
 
     var gUpdate = nodeUpdate.attr('class', function(d) {
-                              var cl=d3.select(this).attr('class');
-                              // console.log(cl,d);
-                              if (d._children) { if (cl.indexOf(' collapsed')==-1) { return cl+' collapsed'; } }
-                              else { if (cl.indexOf(' collapsed')!=-1) return cl.replace(' collapsed',''); }
-                              return cl;
+                                var cl=d3.select(this).attr('class');
+                                if (d._children) {
+                                    if (cl.indexOf(' collapsed')==-1) { return cl+' collapsed';}
+                                }
+                                else {
+                                    if (cl.indexOf(' collapsed')!=-1) {
+                                        return cl.replace(' collapsed','');
+                                    }
+                                }
+                                return cl;
                             });
 
 
     // Transition exiting nodes to the parent's new position.
     var nodeExit = node.exit().transition()
                               .duration(duration)
-                              .attr('transform', function (d) {return 'translate(' + source.x + ',' + source.y + ')';})
-                              .remove();
+                              .attr('transform', function (d) {
+                                  return 'translate(' + source.x + ',' + source.y + ')';
+                              }).remove();
 
     // Declare the links...
     var link = draw.selectAll('path.link')
-                  .data(links, function(d) { return d.target.id; });
+                   .data(links, function(d) { return d.target.id; });
 
     // console.log(link);
     // Enter any new links at the parent's previous position.
