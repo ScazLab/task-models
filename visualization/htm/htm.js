@@ -133,7 +133,9 @@ function loadhtm(file)
                             .attr('y', rectH / 2)
                             .attr('dy', '.35em')
                             .attr('text-anchor', 'middle')
-                            .text(function (d) { return d.name; });
+                            .text(function (d) { return d.name.replace('REQUEST-ACTION',' ')
+                                                              .replace('-OF-OBJECT',' ')
+                                                              .replace('Parallelized Subtasks of ',' '); });
 
     nodeRect.attr('width',  function(d) {
               d.rectWidth = this.nextSibling.getComputedTextLength() + 20;
