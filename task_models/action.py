@@ -55,8 +55,9 @@ class MatchAllCondition(Condition):
 class Action(object):
     """Base class for actions that provide a check method."""
 
-    def __init__(self, name="unnamed-action"):
+    def __init__(self, name="unnamed-action", agent = "robot"):
         self.name = name
+        self.agent = agent
 
     def __repr__(self):
         return "{}<{}>".format(self.__class__.__name__, self.name)
