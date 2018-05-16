@@ -7,6 +7,7 @@ for which the check is true when a pre-condition and a post-condition are
 simultaneously satisfied.
 """
 
+
 import numpy as np
 
 
@@ -26,9 +27,9 @@ class Condition(object):
         return hash((self.mask.tostring(), self.value.tostring()))
 
     def __eq__(self, other):
-        return (isinstance(other, Condition)
-                and np.array_equal(self.mask, other.mask)
-                and np.array_equal(self.value, other.value))
+        return (isinstance(other, Condition) and
+                np.array_equal(self.mask, other.mask) and
+                np.array_equal(self.value, other.value))
 
     def check(self, state):
         return (state.get_features() * self.mask == self.value).all()
@@ -54,7 +55,7 @@ class MatchAllCondition(Condition):
 class Action(object):
     """Base class for actions that provide a check method."""
 
-    def __init__(self, name="unnamed-action", agent='robot'):
+    def __init__(self, name="unnamed-action", agent="robot"):
         self.name = name
         self.agent = agent
 
@@ -85,8 +86,9 @@ class PrePostConditionAction(Action):
         return hash((self.pre, self.post))
 
     def __eq__(self, other):
-        return (isinstance(other, Action) and self.pre == other.pre
-                and self.post == other.post)
+        return (isinstance(other, Action) and
+                self.pre == other.pre and
+                self.post == other.post)
 
     def check(self, before, after):
         return self.pre.check(before) and self.post.check(after)
