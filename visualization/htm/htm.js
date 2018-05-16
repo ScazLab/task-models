@@ -18,6 +18,10 @@ function loadhtm(file)
       rectW = 140,
       rectH =  40;
 
+  var legClass  = d3.scale.ordinal().domain(['subtask', 'human', 'robot', 'highlighted']);
+      legRSize  = 24;
+      legRSpace = 10;
+
   var tree = d3.layout.tree()
                .nodeSize([rectW+20, rectH])
                .separation(function separation(a, b) {
@@ -42,6 +46,29 @@ function loadhtm(file)
      .attr('class', 'title filename')
      .attr('text-anchor','middle')
      .text(file.replace('.json','').replace('_',' '));
+
+  var legendcontainer = svg.append('g')
+                           .attr('class','legendcontainer')
+                           .attr('transform','translate(20,20)')
+
+  var legend = legendcontainer.selectAll('.legend')
+                              .data(legClass.domain())
+                              .enter()
+                              .append('g')
+                              .attr('class', function(d) { return 'legend ' + d; })
+                              .attr('transform', function(d, i) {
+                                return 'translate(0,' + i * (legRSize + legRSpace) + ')';
+                              });
+
+  legend.append('rect')
+        .attr( 'width', legRSize)
+        .attr('height', legRSize)
+        .attr( 'class',  'label');
+
+  legend.append('text')
+        .attr('x', legRSize + legRSpace/2)
+        .attr('y', legRSize - legRSpace/2)
+        .text(function(d) { return d; });
 
   var vis  = svg.append('svg:g');
 
@@ -108,11 +135,11 @@ function loadhtm(file)
                             .attr('text-anchor', 'middle')
                             .text(function (d) { return d.name; });
 
-    nodeRect.attr("width",  function(d) {
+    nodeRect.attr('width',  function(d) {
               d.rectWidth = this.nextSibling.getComputedTextLength() + 20;
               return d.rectWidth;
             })
-            .attr("x",  function(d) {
+            .attr('x',  function(d) {
               return (rectW - d.rectWidth)/2;
             })
 

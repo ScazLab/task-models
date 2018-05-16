@@ -85,7 +85,8 @@ h6,
   cursor: pointer;
 }
 
-.node rect {
+.node rect,
+.legend rect {
   stroke-width: 2px;
   stroke: #404040;
   fill: #fff;
@@ -119,6 +120,11 @@ h6,
 .robot text,
 .human text {
   fill: #ffffff;
+  font-weight: bold;
+}
+
+.legend text {
+  fill: #000000;
   font-weight: bold;
 }
 
