@@ -2,6 +2,12 @@
 
 from __future__ import unicode_literals
 
+from itertools import permutations
+
+from .action import Action
+from .state import State
+
+
 """
 Tools for task representation.
 
@@ -25,10 +31,6 @@ combination.
 """
 
 
-from itertools import permutations
-
-from .state import State
-from .action import Action
 
 
 def check_path(path):
@@ -41,21 +43,19 @@ def check_path(path):
     """
     try:
         return (len(path) == 0 or  # Empty path
-                isinstance(path[0], State) and (
-                    len(path) == 1 or (  # [s] or [s, a, s, ...]
-                        isinstance(path[1], Action) and
-                        isinstance(path[2], State) and
-                        path[1].check(path[0], path[2]) and  # pre/post
-                        check_path(path[2:])
-                    ))
-                )
+                isinstance(path[0], State) and
+                (len(path) == 1 or (  # [s] or [s, a, s, ...]
+                    isinstance(path[1], Action) and isinstance(path[2], State)
+                    and path[1].check(path[0], path[2]) and  # pre/post
+                    check_path(path[2:]))))
     except IndexError:
         return False
 
 
 def split_path(path):
     return [(path[i], path[i + 1], path[i + 2])
-            for i in range(0, len(path) - 2, 2)]
+            for i in range(0,
+                           len(path) - 2, 2)]
 
 
 def max_cliques(graph):
@@ -98,8 +98,8 @@ class BaseGraph(object):
         self.transitions = {}
 
     def __eq__(self, other):
-        return (isinstance(other, BaseGraph) and
-                self.transitions == other.transitions)
+        return (isinstance(other, BaseGraph)
+                and self.transitions == other.transitions)
 
     def add_transition(self, source, label, destination):
         if source not in self.transitions:
@@ -107,8 +107,8 @@ class BaseGraph(object):
         self.transitions[source].add((label, destination))
 
     def has_transition(self, source, label, destination):
-        return (source in self.transitions and
-                (label, destination) in self.transitions[source])
+        return (source in self.transitions
+                and (label, destination) in self.transitions[source])
 
     def all_transitions(self):
         for s in self.transitions:
@@ -128,13 +128,20 @@ class BaseGraph(object):
     def as_dictionary(self, name=''):
         d = {'name': name}
         all_nodes = list(enumerate(self.all_nodes()))
-        d['nodes'] = [{'id': i, 'value': {'label': str(node)}}
-                      for i, node in all_nodes]
+        d['nodes'] = [{
+            'id': i,
+            'value': {
+                'label': str(node)
+            }
+        } for i, node in all_nodes]
         nodes_ids = dict([(n, i) for i, n in all_nodes])
-        d['links'] = [{'u': nodes_ids[u],
-                       'v': nodes_ids[v],
-                       'value': {'label': str(l)}}
-                      for u, l, v in self.all_transitions()]
+        d['links'] = [{
+            'u': nodes_ids[u],
+            'v': nodes_ids[v],
+            'value': {
+                'label': str(l)
+            }
+        } for u, l, v in self.all_transitions()]
         return d
 
     def compact(self, nodes, new_node):
@@ -151,8 +158,8 @@ class BaseGraph(object):
             if sin or din:
                 self.remove_transition(s, l, d)
                 if not (sin and din):  # not an inner node
-                    self.add_transition(
-                        new_node if sin else s, '', new_node if din else d)
+                    self.add_transition(new_node if sin else s, '', new_node
+                                        if din else d)
 
 
 class TaskGraph(BaseGraph):
@@ -165,10 +172,9 @@ class TaskGraph(BaseGraph):
         self.terminal = set()
 
     def __eq__(self, other):
-        return (super().__eq__(other) and
-                isinstance(other, TaskGraph) and
-                self.initial == other.initial and
-                self.terminal == other.terminal)
+        return (super().__eq__(other) and isinstance(other, TaskGraph)
+                and self.initial == other.initial
+                and self.terminal == other.terminal)
 
     def add_path(self, path):
         if not check_path(path):
@@ -184,22 +190,19 @@ class TaskGraph(BaseGraph):
         """
         if not check_path(path):
             raise ValueError('Invalid path.')
-        return ((len(path) == 0) or
-                (path[0] in self.initial and
-                 path[-1] in self.terminal and
-                 all([self.has_transition(s1, a, s2)
-                      for (s1, a, s2) in split_path(path)
-                      ])
-                 ))
+        return ((len(path) == 0) or (path[0] in self.initial
+                                     and path[-1] in self.terminal and all([
+                                         self.has_transition(s1, a, s2)
+                                         for (s1, a, s2) in split_path(path)
+                                     ])))
 
     def check_only_deterministic_transitions_from_state(self, s):
         """See get_deterministic_transitions."""
         outgoing_actions = set()
         for (a, sn) in self.transitions[s]:
             if a in outgoing_actions:
-                raise ValueError(
-                    "Non-deterministic transition from state {} "
-                    "for action {}.".format(s, a))
+                raise ValueError("Non-deterministic transition from state {} "
+                                 "for action {}.".format(s, a))
             outgoing_actions.add(a)
 
     def check_only_deterministic_transitions(self):
@@ -215,7 +218,6 @@ class TaskGraph(BaseGraph):
 
 
 class AbstractAction(Action):
-
     def __hash__(self):
         return hash(self.name)
 
@@ -290,7 +292,7 @@ class ConjugateTaskGraph(BaseGraph):
                     explore_successors(node)
             else:
                 node = chain[-1]
-                assert(len(unique_transitions[node]) == 1)
+                assert (len(unique_transitions[node]) == 1)
                 next_node = list(unique_transitions[node])[0]
                 done = False
                 if in_degree[next_node] == 1:
@@ -324,12 +326,14 @@ class ConjugateTaskGraph(BaseGraph):
 
 # Hierarchical task definition
 
+
 class MetaAction(AbstractAction):
 
-    SEP = {'sequence': '→',
-           'parallel': '||',
-           'alternative': '∨',
-           }
+    SEP = {
+        'sequence': '→',
+        'parallel': '||',
+        'alternative': '∨',
+    }
 
     def __init__(self, kind, actions):
         super(MetaAction, self).__init__(self._name(kind, actions))
@@ -337,9 +341,8 @@ class MetaAction(AbstractAction):
         self.actions = actions
 
     def __eq__(self, other):
-        return (isinstance(other, MetaAction) and
-                self.kind == other.kind and
-                self.actions == other.actions)
+        return (isinstance(other, MetaAction) and self.kind == other.kind
+                and self.actions == other.actions)
 
     def __hash__(self):
         return hash(self.name)
@@ -354,8 +357,10 @@ class MetaAction(AbstractAction):
 
     def to_combination(self):
         children = [
-            a.to_combination() if isinstance(a, MetaAction) else LeafCombination(a)
-            for a in self.actions]
+            a.to_combination()
+            if isinstance(a, MetaAction) else LeafCombination(a)
+            for a in self.actions
+        ]
         return COMBINATION_CLASSES[self.kind](children)
 
     @classmethod
@@ -383,24 +388,25 @@ class Combination(object):
         attr = []
         if self.highlighted:
             attr.append('highlighted')
-        return {'name': self.name,
-                'id': next(id_generator),
-                'parent': parent_id,
-                'combination': self.kind,
-                'attributes': attr,
-                }
+        return {
+            'name': self.name,
+            'id': next(id_generator),
+            'parent': parent_id,
+            'combination': self.kind,
+            'attributes': attr,
+        }
 
     def as_dictionary(self, parent_id, id_generator):
         d = self._meta_dictionary(parent_id, id_generator)
         d['children'] = [
-            c.as_dictionary(d['id'], id_generator)
-            for c in self.children
+            c.as_dictionary(d['id'], id_generator) for c in self.children
         ]
         return d
 
     def _deep_copy_children(self, rename_format='{}'):
-        return [c.deep_copy(rename_format=rename_format)
-                for c in self.children]
+        return [
+            c.deep_copy(rename_format=rename_format) for c in self.children
+        ]
 
 
 class LeafCombination(Combination):
@@ -423,8 +429,9 @@ class LeafCombination(Combination):
         return self._meta_dictionary(parent, id_generator)
 
     def deep_copy(self, rename_format='{}'):
-        return LeafCombination(self.action.copy(rename_format=rename_format),
-                               highlighted=self.highlighted)
+        return LeafCombination(
+            self.action.copy(rename_format=rename_format),
+            highlighted=self.highlighted)
 
 
 class SequentialCombination(Combination):
@@ -475,8 +482,8 @@ class ParallelCombination(Combination):
                 name='{} order-{}'.format(self.name, i))
             for i, p in enumerate(permutations(self.children))
         ]
-        return AlternativeCombination(sequences, name=self.name,
-                                      highlighted=self.highlighted)
+        return AlternativeCombination(
+            sequences, name=self.name, highlighted=self.highlighted)
 
 
 class HierarchicalTask:
@@ -490,13 +497,16 @@ class HierarchicalTask:
 
     def as_dictionary(self, name=None):
         return {
-            'name': 'Hierarchical task tree' if name is None else name,
-            'nodes': None if self.is_empty() else self.root.as_dictionary(
+            'name':
+            'Hierarchical task tree' if name is None else name,
+            'nodes':
+            None if self.is_empty() else self.root.as_dictionary(
                 None, int_generator()),
         }
 
 
-COMBINATION_CLASSES = {'sequence': SequentialCombination,
-                       'parallel': ParallelCombination,
-                       'alternative': AlternativeCombination,
-                       }
+COMBINATION_CLASSES = {
+    'Sequential': SequentialCombination,
+    'Parallel': ParallelCombination,
+    'Alternative': AlternativeCombination,
+}
