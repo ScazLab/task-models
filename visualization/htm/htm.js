@@ -14,9 +14,9 @@ function loadhtm(file)
       height =  645;
 
   var i = 0,
-      duration = 500,
+      time  = 500,
       rectW = 140,
-      rectH = 40;
+      rectH =  40;
 
   var tree = d3.layout.tree()
                .nodeSize([rectW+20, rectH])
@@ -86,12 +86,14 @@ function loadhtm(file)
     // Enter the nodes.
     var nodeLabel = node.enter().append('g')
                         .attr('class', function(d) {
-                            var res='node';
-                            if (d.attributes) {res=res+' '+d.attributes.join(' ');}
-                            if (d._children)  {res=res+' collapsed';}
-                            return res; })
+                          var res='node';
+                          if (d.attributes) {res=res+' '+d.attributes.join(' ');}
+                          if (d._children)  {res=res+' collapsed';}
+                          return res;
+                        })
                         .attr('transform', function(d) {
-                            return 'translate(' + source.x0 + ',' + source.y0 + ')'; })
+                          return 'translate(' + source.x0 + ',' + source.y0 + ')';
+                        })
                         .on('click', click);
 
     var nodeRect = nodeLabel.append('rect')
@@ -106,13 +108,16 @@ function loadhtm(file)
                             .attr('text-anchor', 'middle')
                             .text(function (d) { return d.name; });
 
-    nodeRect.attr("width", function(d) {
-        d.rectWidth = this.nextSibling.getComputedTextLength() + 20;
-        return d.rectWidth;
-    })
+    nodeRect.attr("width",  function(d) {
+              d.rectWidth = this.nextSibling.getComputedTextLength() + 20;
+              return d.rectWidth;
+            })
+            .attr("x",  function(d) {
+              return (rectW - d.rectWidth)/2;
+            })
 
     nodeText.attr('x', function(d) {
-        return (d.rectWidth)/2;
+        return (rectW)/2;
     })
 
     // Add combination if there is a combination and the node is not collapsed
@@ -123,11 +128,11 @@ function loadhtm(file)
     nodeCombination.append('rect')
                    .attr('width', 36)
                    .attr('height', 36)
-                   .attr('x', function(d) {return (d.rectWidth-36)/2})
+                   .attr('x', function(d) {return (rectW-36)/2})
                    .attr('y', rectH + 1);
 
     nodeCombination.append('text')
-                   .attr('x', function(d) {return (d.rectWidth)/2})
+                   .attr('x', function(d) {return (rectW)/2})
                    .attr('y', rectH / 2 - 12)
                    .attr('dy', '2.2em')
                    .attr('text-anchor', 'middle')
@@ -140,7 +145,7 @@ function loadhtm(file)
 
     // Transition nodes to their new position.
     var nodeUpdate = node.transition()
-                         .duration(duration)
+                         .duration(time)
                          .attr('transform', function (d) {
                              return 'translate(' + d.x + ',' + d.y + ')';
                          });
@@ -161,7 +166,7 @@ function loadhtm(file)
 
     // Transition exiting nodes to the parent's new position.
     var nodeExit = node.exit().transition()
-                              .duration(duration)
+                              .duration(time)
                               .attr('transform', function (d) {
                                   return 'translate(' + source.x + ',' + source.y + ')';
                               }).remove();
@@ -186,12 +191,12 @@ function loadhtm(file)
 
     // Transition links to their new position.
     link.transition()
-        .duration(duration)
+        .duration(time)
         .attr('d', diagonal);
 
     // Transition exiting nodes to the parent's new position.
     link.exit().transition()
-        .duration(duration)
+        .duration(time)
         .attr('d', function (d) {
           var o = {
               x: source.x,
