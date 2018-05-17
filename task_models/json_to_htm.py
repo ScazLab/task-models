@@ -6,10 +6,6 @@ from task_models.task import (COMBINATION_CLASSES, AlternativeCombination,
                               HierarchicalTask, LeafCombination,
                               ParallelCombination, SequentialCombination)
 
-test_json = "/home/jake/Code/rpi_integration/tests/out/full_chair.json"
-
-j = json.load(open(test_json, "r", encoding="utf-8"))
-
 
 def build_htm_recursively(root):
     """Recursively traverses input json file and builds HTM"""
