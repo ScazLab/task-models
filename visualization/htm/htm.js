@@ -140,6 +140,7 @@ function loadhtm(file)
                             .text(function (d) { return d.name.replace('REQUEST-ACTION',' ')
                                                               .replace('-OF-OBJECT',' ')
                                                               .replace('ARTIFACT-',' ')
+                                                              .replace(' ARTIFACT',' ')
                                                               .replace('Parallelized Subtasks of ',' '); });
 
     nodeRect.attr('width',  function(d) {
@@ -248,14 +249,14 @@ function loadhtm(file)
 
   };
 
-  //Redraw for zoom
+  // Redraw for zoom
   function redraw() {
     vis.attr('transform',
              'translate(' + d3.event.translate + ')'
               + ' scale(' + d3.event.scale + ')');
   };
 
-
+  // Function to handle mouse click events
   function click(d) {
     console.log('Pressed item: '+d.name+'\tdepth: '+d.depth+'\tattr: '+d.attributes);
     // console.log(tree.links(d).toString());
