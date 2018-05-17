@@ -10,14 +10,15 @@ function loadhtm(file)
   file = file.replace('C:\\fakepath\\', '');
   console.log('Loading file: '+file);
 
-  var width  = 1270,
-      height =  645;
+  var width  = 2000,
+      height =  800;
 
   var i = 0,
       time  = 500,
       rectW = 140,
       rectH =  40;
 
+  // Legend-related variables
   var legClass  = d3.scale.ordinal().domain(['subtask', 'human', 'robot', 'highlighted']);
       legRSize  = 24;
       legRSpace = 10;
@@ -40,6 +41,7 @@ function loadhtm(file)
 
   svg.call(d3.behavior.zoom().scaleExtent([0.2, 5]).on('zoom', redraw));
 
+  // Title
   svg.append('text')
      .attr('dx', width/2)
      .attr('dy', height/15)
@@ -47,6 +49,7 @@ function loadhtm(file)
      .attr('text-anchor','middle')
      .text(file.replace('.json','').replace('_',' '));
 
+  // Legend
   var legendcontainer = svg.append('g')
                            .attr('class','legendcontainer')
                            .attr('transform','translate(20,20)')
@@ -55,7 +58,7 @@ function loadhtm(file)
                               .data(legClass.domain())
                               .enter()
                               .append('g')
-                              .attr('class', function(d) { return 'legend ' + d; })
+                              .attr('class',     function(d)    { return 'legend ' + d; })
                               .attr('transform', function(d, i) {
                                 return 'translate(0,' + i * (legRSize + legRSpace) + ')';
                               });
@@ -70,6 +73,7 @@ function loadhtm(file)
         .attr('y', legRSize - legRSpace/2)
         .text(function(d) { return d; });
 
+  // HTM visualization
   var vis  = svg.append('svg:g');
 
   var draw = vis.append('svg:g')
@@ -135,6 +139,7 @@ function loadhtm(file)
                             .attr('text-anchor', 'middle')
                             .text(function (d) { return d.name.replace('REQUEST-ACTION',' ')
                                                               .replace('-OF-OBJECT',' ')
+                                                              .replace('ARTIFACT-',' ')
                                                               .replace('Parallelized Subtasks of ',' '); });
 
     nodeRect.attr('width',  function(d) {
