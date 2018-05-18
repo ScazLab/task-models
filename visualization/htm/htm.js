@@ -88,15 +88,9 @@ function loadhtm(file)
     root.x0 = 0;
     root.y0 = 0;
 
-    function collapse(d) {
-        if (d.children) {
-            d._children = d.children;
-            d._children.forEach(collapse);
-            d.children = null;
-        }
-    }
-
     // root.children.forEach(collapse);
+    update(root);
+    collapse(root, 2);
     update(root);
   });
 
@@ -206,11 +200,10 @@ function loadhtm(file)
                                   return 'translate(' + source.x + ',' + source.y + ')';
                               }).remove();
 
-    // Declare the links...
+    // Declare the links
     var link = draw.selectAll('path.link')
                    .data(links, function(d) { return d.target.id; });
 
-    // console.log(link);
     // Enter any new links at the parent's previous position.
     link.enter().insert('path', 'g')
         .attr('class', 'link')
@@ -246,11 +239,26 @@ function loadhtm(file)
         d.x0 = d.x;
         d.y0 = d.y;
     });
+  };
 
+  function collapse(d, level) {
+    console.log('Collapsing tree');
+
+    if (d.children) {
+      if (d.depth>level) {
+        d._children = d.children;
+        d._children.forEach(collapse);
+        d.children = null;
+      }
+      else {
+        d.children.forEach(collapse);
+      }
+    }
   };
 
   // Redraw for zoom
   function redraw() {
+    // console.log('d3 event. Translate: '+d3.event.translate+'\tScale: '+d3.event.scale);
     vis.attr('transform',
              'translate(' + d3.event.translate + ')'
               + ' scale(' + d3.event.scale + ')');
