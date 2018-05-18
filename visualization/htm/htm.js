@@ -10,8 +10,8 @@ function loadhtm(file)
   file = file.replace('C:\\fakepath\\', '');
   console.log('Loading file: '+file);
 
-  var width  = 2000,
-      height =  800;
+  var width  = 1500,
+      height =  600;
 
   var i = 0,
       time  = 500,
@@ -39,7 +39,8 @@ function loadhtm(file)
               //class to make it responsive
               .classed('svg-content-responsive', true);
 
-  svg.call(d3.behavior.zoom().scaleExtent([0.2, 5]).on('zoom', redraw));
+  zoombehavior = d3.behavior.zoom().scaleExtent([0.2, 5]).on('zoom', redraw);
+  svg.call(zoombehavior);
 
   // Title
   svg.append('text')
@@ -50,18 +51,17 @@ function loadhtm(file)
      .text(file.replace('.json','').replace('_',' '));
 
   // Legend
-  var legendcontainer = svg.append('g')
-                           .attr('class','legendcontainer')
-                           .attr('transform','translate(20,20)')
+  var legendcnt = svg.append('g')
+                     .attr('class','legendcnt')
+                     .attr('transform','translate(20,20)')
 
-  var legend = legendcontainer.selectAll('.legend')
-                              .data(legClass.domain())
-                              .enter()
-                              .append('g')
-                              .attr('class',     function(d)    { return 'legend ' + d; })
-                              .attr('transform', function(d, i) {
-                                return 'translate(0,' + i * (legRSize + legRSpace) + ')';
-                              });
+  var legend = legendcnt.selectAll('.legend')
+                        .data(legClass.domain())
+                        .enter().append('g')
+                        .attr('class',     function(d)    { return 'legend ' + d; })
+                        .attr('transform', function(d, i) {
+                          return 'translate(0,' + i * (legRSize + legRSpace) + ')';
+                        });
 
   legend.append('rect')
         .attr( 'width', legRSize)
@@ -74,9 +74,9 @@ function loadhtm(file)
         .text(function(d) { return d; });
 
   // HTM visualization
-  var vis  = svg.append('svg:g');
+  var vis  = svg.append('svg:g').attr('class', 'vis');
 
-  var draw = vis.append('svg:g')
+  var draw = vis.append('svg:g').attr('class', 'draw')
                 .attr('transform', 'translate(' + (width-rectW)/2 + ',' + 100 + ')');
 
   // load the external data
