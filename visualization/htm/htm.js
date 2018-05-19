@@ -88,9 +88,8 @@ function loadhtm(file)
     root.x0 = 0;
     root.y0 = 0;
 
-    // root.children.forEach(collapse);
     update(root);
-    collapse(root, 2);
+    collapse(root, 2); // collapse up to level 2 [need to reupdate later on]
     update(root);
   });
 
@@ -242,16 +241,28 @@ function loadhtm(file)
   };
 
   function collapse(d, level) {
-    console.log('Collapsing tree');
+    console.log('Collapsing tree to level', level);
 
     if (d.children) {
-      if (d.depth>level) {
+
+      if (d.depth>=level) {
+        // console.log("Collapsing", d.name, "to level", level,
+        //             "depth", d.depth, "no. children", d.children.length);
+
         d._children = d.children;
-        d._children.forEach(collapse);
         d.children = null;
+
+        for (i = 0; i < d._children.length; i++) {
+            collapse(d._children[i], level);
+        }
       }
       else {
-        d.children.forEach(collapse);
+        // console.log("Not collapsing", d.name, "to level", level,
+        //             "depth", d.depth, "no. children", d.children.length);
+
+        for (j = 0; j < d.children.length; ++j) {
+            collapse(d.children[j], level);
+        }
       }
     }
   };
