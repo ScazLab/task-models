@@ -89,12 +89,11 @@ function loadhtm(file) {
     return;
   }
 
-  if (file == '') {console.log('Loading from topic with depth '+treedepth);}
-  else            {console.log('Loading file: '+file+' with depth '+treedepth);}
-
   svg.call(zoombehavior);
 
   if (defaultjsondata == '') {
+    console.log('Loading file: '+file+' with depth '+treedepth);
+
     // load the external data
     d3.json('json/'+file, function(error, json)
     {
@@ -113,6 +112,8 @@ function loadhtm(file) {
     });
   }
   else {
+    console.log('Loading from'+defaultjsondata+' with depth '+treedepth);
+
     root = JSON.parse(defaultjsondata).nodes;
     root.x0 = 0;
     root.y0 = 0;
@@ -303,6 +304,7 @@ function loadhtm(file) {
     console.log('Scaling to fit')
 
     dr = document.getElementsByClassName('draw');
+
     var bounds = dr[0].getBBox();
 
     var w = bounds.width,

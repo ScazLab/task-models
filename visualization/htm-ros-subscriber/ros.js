@@ -54,8 +54,8 @@ var jsonTopic = new ROSLIB.Topic({
 });
 
 jsonTopic.subscribe(function(message) {
-    console.log('Received message on ' + jsonTopic.name + ': ' + message.data);
+    // console.log('Received message on ' + jsonTopic.name + ': ' + message.data);
     defaultjsondata = message.data;
-    d3.select('svg').selectAll('*').remove();
+    // d3.select('svg').selectAll('*').remove();
     loadhtm('');
   });

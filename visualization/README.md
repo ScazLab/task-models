@@ -16,3 +16,7 @@ To test `htm-ros-publisher`, do the following:
 ```
 rostopic pub /web_interface/json std_msgs/String '{data: "{ \"nodes\": { \"id\": 0, \"parent\": null, \"name\": \"Start\", \"combination\": \"Sequential\", \"attributes\": [], \"children\": [ { \"id\": 1, \"parent\": 0, \"name\": \"BUILD CHAIR\", \"combination\": \"Sequential\", \"attributes\": [], \"children\": [ { \"id\": 2, \"parent\": 1, \"name\": \"ROBOT GET(screwdriver)\", \"combination\": \"Sequential\", \"attributes\": [], \"children\": [] }] }]} }"}'
 ```
+
+```
+rostopic pub /web_interface/json std_msgs/String '{data: "{ \"nodes\": { \"id\": 0, \"parent\": null, \"name\": \"Start\", \"combination\": \"Sequential\", \"attributes\": [], \"children\": [ { \"id\": 1, \"parent\": 0, \"name\": \"BUILD CHAIR\", \"combination\": \"Sequential\", \"attributes\": [], \"children\": [ { \"id\": 2, \"parent\": 1, \"name\": \"ROBOT GET(screwdriver)\", \"combination\": \"Sequential\", \"attributes\": [], \"children\": [] }, { \"id\": 3, \"parent\": 1, \"name\": \"ROBOT GET(dowel)\", \"combination\": \"Sequential\", \"attributes\": [], \"children\": [] }] }]} }"}'
+```
