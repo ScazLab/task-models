@@ -1,0 +1,196 @@
+@font-face {
+  font-family: 'Montserrat';
+  src: url("fonts/Montserrat-Light.otf") format("opentype");
+  font-weight: 300;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url("fonts/Montserrat-UltraLight.otf") format("opentype");
+  font-weight: 100;
+}
+
+html {
+  font-size: 18px;
+}
+
+body {
+  font-size: 16px;
+  background-color: #edeeef;
+  color: #505050;
+  font-family: 'Lato', sans-serif;
+}
+
+a,
+a:hover,
+a:focus,
+a:active,
+a.active {
+  outline: 0;
+  color: inherit;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.interface .btn,
+#get_file,
+.title.filename,
+.message.error,
+.legend {
+  text-transform: uppercase;
+  font-family: Montserrat,"Helvetica Neue",Helvetica,Arial,sans-serif;
+  font-weight: 100;
+}
+
+.row>div {
+  padding-top: 20px;
+}
+
+.btn-group .btn {
+  margin-bottom: 0;
+}
+
+.svg-container {
+  display: inline-block;
+  position: relative;
+  width: 100%;
+  padding-bottom: 40%; /* aspect ratio */
+  vertical-align: top;
+  overflow: hidden;
+}
+
+.svg-content-responsive {
+  display: inline-block;
+  position: absolute;
+  top: 10px;
+  left: 0;
+  background-color: #fff;
+}
+
+.mouse-down {
+  cursor: move;
+}
+
+.message.error,
+.title.filename {
+  font-size: 2rem;
+  font-weight: 300;
+}
+
+.node {
+  cursor: pointer;
+}
+
+.node rect,
+.legend rect {
+  stroke-width: 2px;
+  stroke: #404040;
+  fill: #fff;
+}
+
+.node text {
+  font: sans-serif;
+}
+
+.node .combination rect {
+  stroke-width: 0px;
+}
+
+.node .combination text {
+  font-size: 1.4rem;
+  font-weight: bold;
+  fill: red;
+}
+
+.link {
+  fill: none;
+  stroke: #ccc;
+  stroke-width: 2px;
+}
+
+.human rect.label {
+  fill: #31b0d5;
+  stroke: #1e7994;
+}
+
+.robot text,
+.human text {
+  fill: #ffffff;
+  font-weight: bold;
+}
+
+.legend text {
+  fill: #000000;
+  font-weight: bold;
+}
+
+.robot rect.label {
+  fill: #449d44;
+  stroke: #2f6a2f;
+}
+
+.highlighted text {
+  font-weight: bold;
+}
+
+.highlighted rect.label {
+  fill: #eb9947;
+}
+
+.collapsed rect.label {
+  stroke: #1e7994;
+}
+
+#status .alert,
+#status .btn-group,
+#status button {
+    width: 100%;
+}
+
+#status button {
+    font-size: 1.2rem;
+    min-height: 60px;
+}
+
+#status .dropdown-item {
+    white-space: normal;
+}
+
+#status .dropdown-menu,
+#status .dropdown-item {
+    max-width: 100%;
+}
+
+#my_file {
+  display: none;
+}
+
+#get_file {
+  font-weight: 300;
+}
+
+@media (max-width: 1600px) {
+  .input-group {
+    max-width: 750px;
+  }
+}
+
+@media (min-width:1500px) {
+  .container {
+      max-width: 80%;
+  }
+}
+
+@media(max-width:650px) {
+  .input-wrapper {
+    display: none;
+  }
+}
+
+.text-center {
+  text-align: center;
+}

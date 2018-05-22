@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Task Representation</title>
+    <meta name="viewport"    content="width=device-width">
+    <meta name="description" content="">
+    <meta name="author"      content="Alessandro Roncone">
+
+    <!-- Custom CSS & Bootstrap Core CSS - Uses Bootswatch Flatly Theme: http://bootswatch.com/flatly/ -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="./style-ros-subscriber.css">
+
+    <!-- Custom Fonts -->
+    <script src="https://use.fontawesome.com/ebd2d08b0e.js"></script>
+</head>
+
+<body id="page-top" class="index">
+<section>
+    <div class="container">
+        <div class="row">
+            <div class="input-wrapper col-sm-9 text-center">
+                <div class="input-group">
+                    <span class="input-group-prepend">
+                        <input class="btn btn-info" type="button" value="Select file*" id="get_file">
+                        <input type="file" id="my_file">
+                    </span>
+                    <div class="form-control" id="customfileupload">[*] Target file should be in the same folder of the original</div>
+                </div>
+            </div>
+            <div class="col-sm-1 text-center">
+                <a id="htm-expand" href="#" class="btn btn-light"><i class="fa fa-fw fa-expand"></i></a>
+            </div>
+            <div class="col-sm-1 text-center">
+                <a id="htm-collapse" href="#" class="btn btn-light"><i class="fa fa-fw fa-compress"></i></a>
+            </div>
+            <div class="col-sm-1 text-center">
+                <a id="htm-refresh" href="#" class="btn btn-light"><i class="fa fa-fw fa-refresh"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 text-center">
+                <div id="svg-container" class="svg-container">
+                    <svg></svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="status" class="container">
+        <div class="row">
+            <div class="col-md-12 text-xs-center">
+                <div id="connecting" class="alert alert-info" role="alert">
+                  ROS STATUS: Connecting to rosbridge...
+                </div>
+                <div id="connected" style="display:none;" class="alert alert-success" role="alert">
+                  ROS STATUS: Connected!
+                </div>
+                <div id="error" style="display:none;" class="alert alert-warning" role="alert">
+                  ROS STATUS: Error in the backend!
+                </div>
+                <div id="closed" style="display:none;" class="alert alert-danger" role="alert">
+                  ROS STATUS: Connection closed.
+                </div>
+            </div>
+            <div class="col-md-12 text-xs-center">
+                <div class="btn-group" id="troubleshooting" style="display:none;">
+                    <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Troubleshooting</button>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="#">0. Check the IP of the baxter's robot by looking for the <code>eth1</code> interface in <code>sudo ifconfig</code></a>
+                        <a class="dropdown-item" href="#">0. Copy this address into the <code>ros.js</code> file at line <code>33</code>, and in <code>rosbridge_websocket.launch</code> file at line <code>3</code></a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="#">1. Run <code>roslaunch rosbridge_server rosbridge_websocket.launch</code></a>
+                        <a class="dropdown-item" href="#">2. Reload this page</a>
+                        <a class="dropdown-item" href="#">3. Run <code>rostopic echo /web_interface</code></a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="#">4. At every press of the yes/no buttons, a message is sent on the topic <code>/web_interface</code> with some information on the button that has been pressed</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- load the d3.js library -->
+<script type="text/javascript" src="http://d3js.org/d3.v3.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/1.13.0/d3-legend.min.js"></script>
+<!-- load the roslib.js libraries -->
+<script type="text/javascript" src="https://static.robotwebtools.org/EventEmitter2/current/eventemitter2.min.js"></script>
+<script type="text/javascript" src="https://static.robotwebtools.org/roslibjs/current/roslib.min.js"></script>
+<!-- jQuery Version 3.2.1 -->
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<!-- Popper for Bootstrap -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<!-- Bootstrap Core JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+<script src="../htm/htm.js"></script>
+
+<script type="text/javascript">
+    var defaultjsonfile = '';
+    var treedepth = 2;
+    var defaultjsondata = '';
+
+    loadhtm('');
+
+    document.getElementById('get_file').onclick = function() {
+        document.getElementById('my_file').click();
+    };
+
+    $('input[type=file]').change(function (e) {
+        $('#customfileupload').html($(this).val());
+        loadnewhtm($(this).val());
+    });
+
+    document.getElementById('htm-refresh').onclick = function(e) {
+        loadnewhtm('');
+    }
+
+    document.getElementById('htm-collapse').onclick = function(e) {
+        treedepth= 2;
+        loadnewhtm('');
+    }
+
+    document.getElementById('htm-expand').onclick = function(e) {
+        treedepth= 2000;
+        loadnewhtm('');
+    }
+
+    function loadnewhtm(file) {
+        d3.select('svg').selectAll('*').remove();
+        loadhtm(file);
+    };
+</script>
+
+<script src="ros.js"></script>
+
+<script type="text/javascript">
+    $("#svg-container").on("mousedown", function (e)
+                        {
+                            e.preventDefault();
+                            $(this).addClass("mouse-down");
+                        })
+                       .on("mouseup", function ()
+                        {
+                            $(this).removeClass("mouse-down");
+                        });
+</script>
+</body>
+</html>
