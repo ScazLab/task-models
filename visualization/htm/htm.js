@@ -1,9 +1,11 @@
 var defaultjsonfile = 'icra.json';
 
-loadhtm('');
+loadhtm('', 2);
 
-function loadhtm(file)
-{
+function loadhtm(file, treedepth) {
+
+  console.log(file, treedepth);
+
   if (file == '') { file = defaultjsonfile;}
   else            { defaultjsonfile = file;};
 
@@ -89,7 +91,7 @@ function loadhtm(file)
     root.y0 = 0;
 
     update(root);
-    collapse(root, 2); // collapse up to level 2 [need to reupdate later on]
+    collapse(root, treedepth); // collapse up to level [need to re-update later on]
     update(root);
   });
 
