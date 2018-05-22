@@ -1,16 +1,15 @@
 var defaultjsonfile = 'icra.json';
+var treedepth = 2;
 
-loadhtm('', 2);
+loadhtm('');
 
-function loadhtm(file, treedepth) {
-
-  // console.log('file', file, 'tree depth', treedepth);
+function loadhtm(file) {
 
   if (file == '') { file = defaultjsonfile;}
   else            { defaultjsonfile = file;};
 
   file = file.replace('C:\\fakepath\\', '');
-  console.log('Loading file: '+file);
+  console.log('Loading file: '+file+' with depth '+treedepth);
 
   var width  = 1500,
       height =  600;
@@ -81,8 +80,8 @@ function loadhtm(file, treedepth) {
   // HTM visualization
   var vis  = svg.append('svg:g').attr('class', 'vis');
 
-  var draw = vis.append('svg:g').attr('class', 'draw')
-                .attr('transform', 'translate(' + (width-rectW)/2 + ',' + 100 + ')');
+  var draw = vis.append('svg:g').attr('class', 'draw');
+                // .attr('transform', 'translate(' + (width-rectW)/2 + ',' + 100 + ')');
 
   svg.call(zoombehavior);
 
@@ -95,8 +94,10 @@ function loadhtm(file, treedepth) {
     root.x0 = 0;
     root.y0 = 0;
 
-    update(root);
-    collapse(root, treedepth); // collapse up to level [need to re-update later on]
+    var nodes = tree.nodes(root).reverse(),
+        links = tree.links(nodes);
+
+    root.children.forEach(collapseLevel);
     update(root);
 
   });
@@ -110,6 +111,13 @@ function loadhtm(file, treedepth) {
 
     // Normalize for fixed-depth.
     nodes.forEach(function(d) { d.y = d.depth * 100; });
+
+    // Cleanup names
+    nodes.forEach(function(d) { d.name = d.name.replace('REQUEST-ACTION',' ')
+                                               .replace('-OF-OBJECT',' ')
+                                               .replace('ARTIFACT-',' ')
+                                               .replace(' ARTIFACT',' ')
+                                               .replace('Parallelized Subtasks of ',' '); });
 
     // Declare the nodes.
     var node = draw.selectAll('g.node')
@@ -138,11 +146,7 @@ function loadhtm(file, treedepth) {
                             .attr('y', rectH / 2)
                             .attr('dy', '.35em')
                             .attr('text-anchor', 'middle')
-                            .text(function (d) { return d.name.replace('REQUEST-ACTION',' ')
-                                                              .replace('-OF-OBJECT',' ')
-                                                              .replace('ARTIFACT-',' ')
-                                                              .replace(' ARTIFACT',' ')
-                                                              .replace('Parallelized Subtasks of ',' '); });
+                            .text(function (d) { return d.name; });
 
     nodeRect.attr('width',  function(d) {
               d.rectWidth = this.nextSibling.getComputedTextLength() + 20;
@@ -152,34 +156,34 @@ function loadhtm(file, treedepth) {
               return (rectW - d.rectWidth)/2;
             })
 
-    nodeText.attr('x', function(d) {
-        return (rectW)/2;
-    })
+    nodeText.attr('x', function(d) { return (rectW)/2; })
 
-    // Add label if there is a combination and the node is not collapsed
-    nodeLabel.filter(function(d){ return d.combination; })
-             .append('g')
-             .attr('class','combination')
-             .append('rect')
-             .attr('width', 36)
-             .attr('height', 36)
-             .attr('x', function(d) {return (rectW-36)/2})
-             .attr('y', rectH + 1)
-             .append('text')
-             .attr('x', function(d) {return (rectW)/2})
-             .attr('y', rectH / 2 - 12)
-             .attr('dy', '2.2em')
-             .attr('text-anchor', 'middle')
-             .text(function (d) {
-                if (d.combination==   'Parallel') {return '||';}
-                if (d.combination== 'Sequential') {return  '→';}
-                if (d.combination=='Alternative') {return  'v';}
-                return ''
-              });
+    // Add combination if there is a combination and the node is not collapsed
+    nodeComb = nodeLabel.filter(function(d){ return d.combination; })
+                        .append('g')
+                        .attr('class','combination');
+
+    nodeComb.append('rect')
+            .attr('width', 36)
+            .attr('height', 36)
+            .attr('x', function(d) {return (rectW-36)/2})
+            .attr('y', rectH + 1);
+
+    nodeComb.append('text')
+            .attr('x', function(d) {return (rectW)/2})
+            .attr('y', rectH / 2 - 12)
+            .attr('dy', '2.2em')
+            .attr('text-anchor', 'middle')
+            .text(function (d) {
+              if (d.combination==   'Parallel') {return '||';}
+              if (d.combination== 'Sequential') {return  '→';}
+              if (d.combination=='Alternative') {return  'v';}
+              return ''
+            });
 
     // Transition nodes to their new position.
-    node.transition()
-        .duration(time)
+    node.call( function setupupdate(sel) { upcnt = sel.size(); })
+        .transition().duration(time)
         .attr('transform', function(d) { return 'translate(' + d.x + ',' + d.y + ')'; })
         .attr(    'class', function(d) {
             var cl=d3.select(this).attr('class');
@@ -192,15 +196,18 @@ function loadhtm(file, treedepth) {
                 }
             }
             return cl;
-        });
+        })
+        .each('end', onUpdate);
 
 
     // Transition exiting nodes to the parent's new position.
-    node.exit().transition()
-               .duration(time)
+    node.exit().call( function setupremove(sel) { remcnt = sel.size(); })
+               .transition().duration(time)
                .attr('transform', function (d) {
                    return 'translate(' + source.x + ',' + source.y + ')';
-               }).remove();
+               })
+               .remove()
+               .each('end', onRemove);
 
     // Declare the links
     var link = draw.selectAll('path.link')
@@ -244,39 +251,59 @@ function loadhtm(file, treedepth) {
 
   };
 
-  function collapse(d, level) {
-    console.log('Collapsing tree to level', level);
-
-    if (d.children) {
-
-      if (d.depth>=level) {
-        // console.log("Collapsing", d.name, "to level", level,
-        //             "depth", d.depth, "no. children", d.children.length);
-
-        d._children = d.children;
-        d.children = null;
-
-        for (i = 0; i < d._children.length; i++) {
-            collapse(d._children[i], level);
-        }
-      }
-      else {
-        // console.log("Not collapsing", d.name, "to level", level,
-        //             "depth", d.depth, "no. children", d.children.length);
-
-        for (j = 0; j < d.children.length; ++j) {
-            collapse(d.children[j], level);
-        }
-      }
+  function onUpdate() {
+    // console.log('up', upcnt)
+    upcnt--;
+    if(upcnt == 0) {
+      scaletofit();
     }
+  }
+
+  function onRemove() {
+    // console.log('rem', remcnt)
+    remcnt--;
+    if(remcnt == 0) {
+      scaletofit();
+    }
+  }
+
+  function collapseLevel(d) {
+      // console.log(d.name, d.depth);
+      if (d.children && d.depth >= treedepth) {
+          d._children = d.children;
+          d._children.forEach(collapseLevel);
+          d.children = null;
+      } else if (d.children) {
+          d.children.forEach(collapseLevel);
+      }
   };
 
-  // Redraw for zoom
-  function redraw() {
+  function scaletofit() {
+    console.log('Scaling to fit')
+
+    dr = document.getElementsByClassName('draw');
+    var bounds = dr[0].getBBox();
+
+    var w = bounds.width,
+        h = bounds.height;
+    var mX = bounds.x + w / 2,
+        mY = bounds.y + h / 2;
+    if (w == 0 || h == 0) return; // nothing to fit
+    var scale = 0.95 / Math.max(w / width, h / (height-100));
+    var translate = [width / 2 - scale * mX - 0, height / 2 - scale * mY];
+
+    draw
+      .transition()
+      .duration(time || 0) // milliseconds
+      .call(zoombehavior.translate(translate).scale(scale).event);
+  };
+
+  // zoomed for zoom
+  function zoomed() {
     // console.log('d3 event. Translate: '+d3.event.translate+'\tScale: '+d3.event.scale);
     vis.attr('transform',
              'translate(' + d3.event.translate + ')'
-              + ' scale(' + d3.event.scale + ')');
+              + ' scale(' + d3.event.scale     + ')');
   };
 
   // Function to handle mouse click events

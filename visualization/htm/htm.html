@@ -70,24 +70,25 @@
 
     $('input[type=file]').change(function (e) {
         $('#customfileupload').html($(this).val());
-        loadhtm({file: $(this).val(), treedepth: 2});
+        loadnewhtm($(this).val());
     });
 
     document.getElementById('htm-refresh').onclick = function(e) {
-        loadhtm({file: '', treedepth: 2});
+        loadnewhtm('');
     }
 
     document.getElementById('htm-collapse').onclick = function(e) {
-        loadhtm({file: '', treedepth: 2});
+        treedepth= 2;
+        loadnewhtm('');
     }
 
     document.getElementById('htm-expand').onclick = function(e) {
-        loadhtm({file: '', treedepth: 2000});
+        treedepth= 2000;
+        loadnewhtm('');
     }
 
     function loadnewhtm(file) {
-        var svg = d3.select('svg');
-        svg.selectAll('*').remove();
+        d3.select('svg').selectAll('*').remove();
         loadhtm(file);
     };
 </script>
