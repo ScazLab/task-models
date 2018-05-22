@@ -4,7 +4,7 @@ loadhtm('', 2);
 
 function loadhtm(file, treedepth) {
 
-  console.log(file, treedepth);
+  // console.log('file', file, 'tree depth', treedepth);
 
   if (file == '') { file = defaultjsonfile;}
   else            { defaultjsonfile = file;};
@@ -41,8 +41,11 @@ function loadhtm(file, treedepth) {
               //class to make it responsive
               .classed('svg-content-responsive', true);
 
-  zoombehavior = d3.behavior.zoom().scaleExtent([0.2, 5]).on('zoom', redraw);
-  svg.call(zoombehavior);
+  zoombehavior = d3.behavior.zoom()
+                   .translate([0, 0])
+                   .scale(1)
+                   .scaleExtent([0.2, 5])
+                   .on('zoom', zoomed);
 
   // Title
   svg.append('text')
@@ -81,6 +84,8 @@ function loadhtm(file, treedepth) {
   var draw = vis.append('svg:g').attr('class', 'draw')
                 .attr('transform', 'translate(' + (width-rectW)/2 + ',' + 100 + ')');
 
+  svg.call(zoombehavior);
+
   // load the external data
   d3.json('json/'+file, function(error, json)
   {
@@ -93,6 +98,7 @@ function loadhtm(file, treedepth) {
     update(root);
     collapse(root, treedepth); // collapse up to level [need to re-update later on]
     update(root);
+
   });
 
   function update(source) {
@@ -150,56 +156,51 @@ function loadhtm(file, treedepth) {
         return (rectW)/2;
     })
 
-    // Add combination if there is a combination and the node is not collapsed
-    nodeCombination = nodeLabel.filter(function(d){ return d.combination; })
-                               .append('g')
-                               .attr('class','combination');
-
-    nodeCombination.append('rect')
-                   .attr('width', 36)
-                   .attr('height', 36)
-                   .attr('x', function(d) {return (rectW-36)/2})
-                   .attr('y', rectH + 1);
-
-    nodeCombination.append('text')
-                   .attr('x', function(d) {return (rectW)/2})
-                   .attr('y', rectH / 2 - 12)
-                   .attr('dy', '2.2em')
-                   .attr('text-anchor', 'middle')
-                   .text(function (d) {
-                      if (d.combination==   'Parallel') {return '||';}
-                      if (d.combination== 'Sequential') {return  '→';}
-                      if (d.combination=='Alternative') {return  'v';}
-                      return ''
-                    });
+    // Add label if there is a combination and the node is not collapsed
+    nodeLabel.filter(function(d){ return d.combination; })
+             .append('g')
+             .attr('class','combination')
+             .append('rect')
+             .attr('width', 36)
+             .attr('height', 36)
+             .attr('x', function(d) {return (rectW-36)/2})
+             .attr('y', rectH + 1)
+             .append('text')
+             .attr('x', function(d) {return (rectW)/2})
+             .attr('y', rectH / 2 - 12)
+             .attr('dy', '2.2em')
+             .attr('text-anchor', 'middle')
+             .text(function (d) {
+                if (d.combination==   'Parallel') {return '||';}
+                if (d.combination== 'Sequential') {return  '→';}
+                if (d.combination=='Alternative') {return  'v';}
+                return ''
+              });
 
     // Transition nodes to their new position.
-    var nodeUpdate = node.transition()
-                         .duration(time)
-                         .attr('transform', function (d) {
-                             return 'translate(' + d.x + ',' + d.y + ')';
-                         });
-
-    var gUpdate = nodeUpdate.attr('class', function(d) {
-                                var cl=d3.select(this).attr('class');
-                                if (d._children) {
-                                    if (cl.indexOf(' collapsed')==-1) { return cl+' collapsed';}
-                                }
-                                else {
-                                    if (cl.indexOf(' collapsed')!=-1) {
-                                        return cl.replace(' collapsed','');
-                                    }
-                                }
-                                return cl;
-                            });
+    node.transition()
+        .duration(time)
+        .attr('transform', function(d) { return 'translate(' + d.x + ',' + d.y + ')'; })
+        .attr(    'class', function(d) {
+            var cl=d3.select(this).attr('class');
+            if (d._children) {
+                if (cl.indexOf(' collapsed')==-1) { return cl+' collapsed';}
+            }
+            else {
+                if (cl.indexOf(' collapsed')!=-1) {
+                    return cl.replace(' collapsed','');
+                }
+            }
+            return cl;
+        });
 
 
     // Transition exiting nodes to the parent's new position.
-    var nodeExit = node.exit().transition()
-                              .duration(time)
-                              .attr('transform', function (d) {
-                                  return 'translate(' + source.x + ',' + source.y + ')';
-                              }).remove();
+    node.exit().transition()
+               .duration(time)
+               .attr('transform', function (d) {
+                   return 'translate(' + source.x + ',' + source.y + ')';
+               }).remove();
 
     // Declare the links
     var link = draw.selectAll('path.link')
@@ -240,6 +241,7 @@ function loadhtm(file, treedepth) {
         d.x0 = d.x;
         d.y0 = d.y;
     });
+
   };
 
   function collapse(d, level) {
