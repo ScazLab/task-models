@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Task Representation</title>
+    <title>Task Representation with ROS subscriber</title>
     <meta name="viewport"    content="width=device-width">
     <meta name="description" content="">
     <meta name="author"      content="Alessandro Roncone">
@@ -102,8 +102,6 @@
 
 <script type="text/javascript">
     var defaultjsonfile = '';
-    var treedepth = 2;
-    var defaultjsondata = '';
 
     loadhtm('');
 
@@ -131,7 +129,7 @@
     }
 
     function loadnewhtm(file) {
-        d3.select('svg').selectAll('*').remove();
+        // d3.select('svg').selectAll('*').remove();
         loadhtm(file);
     };
 </script>

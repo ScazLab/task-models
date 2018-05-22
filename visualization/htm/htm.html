@@ -64,10 +64,6 @@
 <script src="htm.js"></script>
 
 <script type="text/javascript">
-    var defaultjsonfile = 'icra.json';
-    var treedepth = 2;
-    var defaultjsondata = '';
-
     loadhtm('');
 
     document.getElementById('get_file').onclick = function() {
@@ -94,7 +90,7 @@
     }
 
     function loadnewhtm(file) {
-        d3.select('svg').selectAll('*').remove();
+        // d3.select('svg').selectAll('*').remove();
         loadhtm(file);
     };
 </script>

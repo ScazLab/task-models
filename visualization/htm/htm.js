@@ -1,3 +1,80 @@
+// Initialize global variables (I know , it's bad)
+var defaultjsonfile = 'icra.json',
+    treedepth = 2,
+    defaultjsondata = '';
+
+var width  = 1500,
+    height =  600;
+
+var i = 0,
+    time  = 500,
+    rectW = 140,
+    rectH =  40;
+
+// Legend-related variables
+var legClass  = d3.scale.ordinal().domain(['subtask', 'human', 'robot', 'highlighted']);
+    legRSize  = 24;
+    legRSpace = 10;
+
+var tree = d3.layout.tree()
+             .nodeSize([rectW+20, rectH])
+             .separation(function separation(a, b) {
+                return (a.parent == b.parent ? 1 : 1.4);
+              });
+
+var diagonal = d3.svg.diagonal()
+                 .projection(function(d) { return [d.x+rectW/2, d.y+rectH/2]; });
+
+var svg = d3.select('svg')
+            //responsive SVG needs these 2 attributes and no width and height attr
+            .attr('preserveAspectRatio', 'xMidYMid meet')
+            .attr('viewBox', '0 0 ' + width + ' ' + height)
+            //class to make it responsive
+            .classed('svg-content-responsive', true);
+
+zoombehavior = d3.behavior.zoom()
+                 .translate([0, 0])
+                 .scale(1)
+                 .scaleExtent([0.2, 5])
+                 .on('zoom', zoomed);
+
+// Title
+// svg.append('text')
+//    .attr('dx', width/2)
+//    .attr('dy', height/15)
+//    .attr('class', 'title filename')
+//    .attr('text-anchor','middle')
+//    .text(file.replace('.json','').replace('_',' '));
+
+// Legend
+var legendcnt = svg.append('g')
+                   .attr('class','legendcnt')
+                   .attr('transform','translate(20,20)')
+
+var legend = legendcnt.selectAll('.legend')
+                      .data(legClass.domain())
+                      .enter().append('g')
+                      .attr('class',     function(d)    { return 'legend ' + d; })
+                      .attr('transform', function(d, i) {
+                        return 'translate(0,' + i * (legRSize + legRSpace) + ')';
+                      });
+
+legend.append('rect')
+      .attr( 'width', legRSize)
+      .attr('height', legRSize)
+      .attr( 'class',  'label');
+
+legend.append('text')
+      .attr('x', legRSize + legRSpace/2)
+      .attr('y', legRSize - legRSpace/2)
+      .text(function(d) { return d; });
+
+// HTM visualization
+var vis  = svg.append('svg:g').attr('class', 'vis');
+
+var draw = vis.append('svg:g').attr('class', 'draw');
+              // .attr('transform', 'translate(' + (width-rectW)/2 + ',' + 100 + ')');
+
 function loadhtm(file) {
 
   if (file == '') { file = defaultjsonfile;}
@@ -12,79 +89,8 @@ function loadhtm(file) {
     return;
   }
 
-  console.log('Loading file: '+file+' with depth '+treedepth);
-
-  var width  = 1500,
-      height =  600;
-
-  var i = 0,
-      time  = 500,
-      rectW = 140,
-      rectH =  40;
-
-  // Legend-related variables
-  var legClass  = d3.scale.ordinal().domain(['subtask', 'human', 'robot', 'highlighted']);
-      legRSize  = 24;
-      legRSpace = 10;
-
-  var tree = d3.layout.tree()
-               .nodeSize([rectW+20, rectH])
-               .separation(function separation(a, b) {
-                  return (a.parent == b.parent ? 1 : 1.4);
-                });
-
-  var diagonal = d3.svg.diagonal()
-                   .projection(function(d) { return [d.x+rectW/2, d.y+rectH/2]; });
-
-  var svg = d3.select('svg')
-              //responsive SVG needs these 2 attributes and no width and height attr
-              .attr('preserveAspectRatio', 'xMidYMid meet')
-              .attr('viewBox', '0 0 ' + width + ' ' + height)
-              //class to make it responsive
-              .classed('svg-content-responsive', true);
-
-  zoombehavior = d3.behavior.zoom()
-                   .translate([0, 0])
-                   .scale(1)
-                   .scaleExtent([0.2, 5])
-                   .on('zoom', zoomed);
-
-  // Title
-  // svg.append('text')
-  //    .attr('dx', width/2)
-  //    .attr('dy', height/15)
-  //    .attr('class', 'title filename')
-  //    .attr('text-anchor','middle')
-  //    .text(file.replace('.json','').replace('_',' '));
-
-  // Legend
-  var legendcnt = svg.append('g')
-                     .attr('class','legendcnt')
-                     .attr('transform','translate(20,20)')
-
-  var legend = legendcnt.selectAll('.legend')
-                        .data(legClass.domain())
-                        .enter().append('g')
-                        .attr('class',     function(d)    { return 'legend ' + d; })
-                        .attr('transform', function(d, i) {
-                          return 'translate(0,' + i * (legRSize + legRSpace) + ')';
-                        });
-
-  legend.append('rect')
-        .attr( 'width', legRSize)
-        .attr('height', legRSize)
-        .attr( 'class',  'label');
-
-  legend.append('text')
-        .attr('x', legRSize + legRSpace/2)
-        .attr('y', legRSize - legRSpace/2)
-        .text(function(d) { return d; });
-
-  // HTM visualization
-  var vis  = svg.append('svg:g').attr('class', 'vis');
-
-  var draw = vis.append('svg:g').attr('class', 'draw');
-                // .attr('transform', 'translate(' + (width-rectW)/2 + ',' + 100 + ')');
+  if (file == '') {console.log('Loading from topic with depth '+treedepth);}
+  else            {console.log('Loading file: '+file+' with depth '+treedepth);}
 
   svg.call(zoombehavior);
 
@@ -222,8 +228,7 @@ function loadhtm(file) {
                .attr('transform', function (d) {
                    return 'translate(' + source.x + ',' + source.y + ')';
                })
-               .remove()
-               .each('end', onRemove);
+               .remove();
 
     // Declare the links
     var link = draw.selectAll('path.link')
@@ -314,14 +319,6 @@ function loadhtm(file) {
       .call(zoombehavior.translate(translate).scale(scale).event);
   };
 
-  // zoomed for zoom
-  function zoomed() {
-    // console.log('d3 event. Translate: '+d3.event.translate+'\tScale: '+d3.event.scale);
-    vis.attr('transform',
-             'translate(' + d3.event.translate + ')'
-              + ' scale(' + d3.event.scale     + ')');
-  };
-
   // Function to handle mouse click events
   function click(d) {
     console.log('Pressed item: '+d.name+'\tdepth: '+d.depth+'\tattr: '+d.attributes);
@@ -337,4 +334,12 @@ function loadhtm(file) {
     update(d);
   };
 
+};
+
+// zoomed for zoom
+function zoomed() {
+  // console.log('d3 event. Translate: '+d3.event.translate+'\tScale: '+d3.event.scale);
+  vis.attr('transform',
+           'translate(' + d3.event.translate + ')'
+            + ' scale(' + d3.event.scale     + ')');
 };
