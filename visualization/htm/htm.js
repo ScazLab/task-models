@@ -34,7 +34,7 @@ function loadhtm(file)
 
   var svg = d3.select('svg')
               //responsive SVG needs these 2 attributes and no width and height attr
-              .attr('preserveAspectRatio', 'xMinYMin meet')
+              .attr('preserveAspectRatio', 'xMidYMid meet')
               .attr('viewBox', '0 0 ' + width + ' ' + height)
               //class to make it responsive
               .classed('svg-content-responsive', true);
