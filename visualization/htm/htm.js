@@ -1,14 +1,17 @@
-var defaultjsonfile = 'icra.json';
-var treedepth = 2;
-
-loadhtm('');
-
 function loadhtm(file) {
 
   if (file == '') { file = defaultjsonfile;}
   else            { defaultjsonfile = file;};
 
   file = file.replace('C:\\fakepath\\', '');
+
+  // If the file is still empty, it means that there is nothing to display
+  // because also defaultjsonfile is empty
+  if (file == '' && defaultjsondata == '') {
+    console.log('No file to load. Returning.');
+    return;
+  }
+
   console.log('Loading file: '+file+' with depth '+treedepth);
 
   var width  = 1500,
@@ -47,12 +50,12 @@ function loadhtm(file) {
                    .on('zoom', zoomed);
 
   // Title
-  svg.append('text')
-     .attr('dx', width/2)
-     .attr('dy', height/15)
-     .attr('class', 'title filename')
-     .attr('text-anchor','middle')
-     .text(file.replace('.json','').replace('_',' '));
+  // svg.append('text')
+  //    .attr('dx', width/2)
+  //    .attr('dy', height/15)
+  //    .attr('class', 'title filename')
+  //    .attr('text-anchor','middle')
+  //    .text(file.replace('.json','').replace('_',' '));
 
   // Legend
   var legendcnt = svg.append('g')
@@ -85,12 +88,26 @@ function loadhtm(file) {
 
   svg.call(zoombehavior);
 
-  // load the external data
-  d3.json('json/'+file, function(error, json)
-  {
-    if (error) {throw error;}
+  if (defaultjsondata == '') {
+    // load the external data
+    d3.json('json/'+file, function(error, json)
+    {
+      if (error) {throw error;}
 
-    root = json.nodes;
+      root = json.nodes;
+      root.x0 = 0;
+      root.y0 = 0;
+
+      var nodes = tree.nodes(root).reverse(),
+          links = tree.links(nodes);
+
+      root.children.forEach(collapseLevel);
+      update(root);
+
+    });
+  }
+  else {
+    root = JSON.parse(defaultjsondata).nodes;
     root.x0 = 0;
     root.y0 = 0;
 
@@ -99,8 +116,7 @@ function loadhtm(file) {
 
     root.children.forEach(collapseLevel);
     update(root);
-
-  });
+  };
 
   function update(source) {
     // console.log(root);
@@ -319,6 +335,6 @@ function loadhtm(file) {
       d._children = null;
     }
     update(d);
-  }
+  };
 
 };
