@@ -1,6 +1,6 @@
 // Initialize global variables (I know , it's bad)
 var defaultjsonfile = 'icra.json',
-    treedepth = 2,
+    treedepth = 3,
     defaultjsondata = '';
 
 var width  = 1500,
@@ -144,7 +144,8 @@ function loadhtm(file) {
                                                .replace('-OF-OBJECT',' ')
                                                .replace('ARTIFACT-',' ')
                                                .replace(' ARTIFACT',' ')
-                                               .replace('Parallelized Subtasks of ',' '); });
+                                               .replace('Parallelized Subtasks of ',' ')
+                                               .replace('FOOT_BRACKET','bracket-foot'); });
 
     // Declare the nodes.
     var node = draw.selectAll('g.node')
