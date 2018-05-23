@@ -12,9 +12,12 @@ var i = 0,
     rectH =  40;
 
 // Legend-related variables
-var legClass  = d3.scale.ordinal().domain(['subtask', 'human', 'robot', 'highlighted']);
-    legRSize  = 24;
+var legClass  = d3.scale.ordinal().domain(['human', 'robot', 'highlighted',
+                                           'collapsed', 'subtask']);
+var legRSize  = 24,
     legRSpace = 10;
+
+var origtranslate = [(width-rectW)/2, 100]
 
 var tree = d3.layout.tree()
              .nodeSize([rectW+20, rectH])
@@ -72,8 +75,9 @@ legend.append('text')
 // HTM visualization
 var vis  = svg.append('svg:g').attr('class', 'vis');
 
-var draw = vis.append('svg:g').attr('class', 'draw');
-              // .attr('transform', 'translate(' + (width-rectW)/2 + ',' + 100 + ')');
+var draw = vis.append('svg:g').attr('class', 'draw')
+              .attr('transform', 'translate(' + origtranslate[0] + ',' +
+                                                origtranslate[1] + ')');
 
 function loadhtm(file) {
 
@@ -121,7 +125,7 @@ function loadhtm(file) {
     var nodes = tree.nodes(root).reverse(),
         links = tree.links(nodes);
 
-    root.children.forEach(collapseLevel);
+    if (root.children) { root.children.forEach(collapseLevel); }
     update(root);
   };
 
@@ -144,7 +148,8 @@ function loadhtm(file) {
 
     // Declare the nodes.
     var node = draw.selectAll('g.node')
-                   .data(nodes, function(d) { return d.id; }); // { return d.id || (d.id = ++i); });
+                   .data(nodes, function(d) { return d.id; });
+                                         // { return d.id || (d.id = ++i); });
 
     // Enter the nodes.
     var nodeLabel = node.enter().append('g')
@@ -181,8 +186,9 @@ function loadhtm(file) {
 
     nodeText.attr('x', function(d) { return (rectW)/2; })
 
-    // Add combination if there is a combination and the node is not collapsed
-    nodeComb = nodeLabel.filter(function(d){ return d.combination; })
+    // Add combination if there is a combination and the node is not
+    // a terminal node (i.e. it does have children)
+    nodeComb = nodeLabel.filter(function(d){ return d.combination && d.children; })
                         .append('g')
                         .attr('class','combination');
 
@@ -313,12 +319,11 @@ function loadhtm(file) {
         mY = bounds.y + h / 2;
     if (w == 0 || h == 0) return; // nothing to fit
     var scale = 0.95 / Math.max(w / width, h / (height-100));
-    var translate = [width / 2 - scale * mX - 0, height / 2 - scale * mY];
+    var translate = [width / 2 - scale * (mX + origtranslate[0]),
+                    height / 2 - scale * (mY + origtranslate[1])];
 
-    draw
-      .transition()
-      .duration(time || 0) // milliseconds
-      .call(zoombehavior.translate(translate).scale(scale).event);
+    draw.transition().duration(time)
+        .call(zoombehavior.translate(translate).scale(scale).event);
   };
 
   // Function to handle mouse click events
