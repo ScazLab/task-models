@@ -34,9 +34,13 @@ rostopic pub /web_interface/json std_msgs/String '{data: "{ \"nodes\": { \"id\":
 #### Example 2
 
 ```
-rostopic pub /web_interface/json std_msgs/String '{data: "{ \"nodes\": { \"id\": 0, \"parent\": null, \"name\": \"Start\", \"combination\": \"Sequential\", \"attributes\": [], \"children\": [ { \"id\": 1, \"parent\": 0, \"name\": \"BUILD CHAIR\", \"combination\": \"Sequential\", \"attributes\": [], \"children\": [ { \"id\": 2, \"parent\": 1, \"name\": \"REQUEST-ACTION GIVE SCREWDRIVER\", \"combination\": \"Sequential\", \"attributes\": [], \"children\": [ { \"id\": 3, \"parent\": 2, \"name\": \"GET(screwdriver)\", \"combination\": \"\", \"attributes\": [ \"robot\" ], \"children\": []}]}]}]}}"}'
+rostopic pub /web_interface/json std_msgs/String '{data: "{ \"nodes\": { \"id\": 0, \"parent\": null, \"name\": \"Start\", \"combination\": \"Sequential\", \"attributes\": [], \"children\": [ { \"id\": 1, \"parent\": 0, \"name\": \"BUILD CHAIR\", \"combination\": \"Sequential\", \"attributes\": [], \"children\": []}]}}"}'
 ```
 
 ```
 rostopic pub /web_interface/json std_msgs/String '{data: "{ \"nodes\": { \"id\": 0, \"parent\": null, \"name\": \"Start\", \"combination\": \"Sequential\", \"attributes\": [], \"children\": [ { \"id\": 1, \"parent\": 0, \"name\": \"BUILD CHAIR\", \"combination\": \"Sequential\", \"attributes\": [], \"children\": [ { \"id\": 2, \"parent\": 1, \"name\": \"REQUEST-ACTION GIVE SCREWDRIVER\", \"combination\": \"Sequential\", \"attributes\": [], \"children\": []}]}]}}"}'
+```
+
+```
+rostopic pub /web_interface/json std_msgs/String '{data: "{ \"nodes\": { \"id\": 0, \"parent\": null, \"name\": \"Start\", \"combination\": \"Sequential\", \"attributes\": [], \"children\": [ { \"id\": 1, \"parent\": 0, \"name\": \"BUILD CHAIR\", \"combination\": \"Sequential\", \"attributes\": [], \"children\": [ { \"id\": 2, \"parent\": 1, \"name\": \"REQUEST-ACTION GIVE SCREWDRIVER\", \"combination\": \"Sequential\", \"attributes\": [], \"children\": [ { \"id\": 3, \"parent\": 2, \"name\": \"GET(screwdriver)\", \"combination\": \"\", \"attributes\": [ \"robot\" ], \"children\": []}]}]}]}}"}'
 ```
