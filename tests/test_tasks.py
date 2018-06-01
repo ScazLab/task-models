@@ -7,8 +7,8 @@ from task_models.action import Condition, PrePostConditionAction
 from task_models.state import NDimensionalState
 from task_models.task import (check_path, split_path, TaskGraph,
                               ConjugateTaskGraph, AbstractAction,
-                              ParallelCombination, LeafCombination,
-                              AlternativeCombination, SequentialCombination,
+                              LeafCombination,
+                              AlternativeCombination, SequentialCombination, ParallelCombination,
                               max_cliques)
 
 
@@ -47,7 +47,6 @@ class DummyState(NDimensionalState):
 
 
 class TestDummyState(TestCase):
-
     def test_raises_value_error(self):
         with self.assertRaises(ValueError):
             DummyState.to_array(64)
@@ -73,7 +72,6 @@ def get_action(pre, post, name=""):
 
 
 class TestPathCheck(TestCase):
-
     def test_empty_path_is_valid(self):
         self.assertTrue(check_path([]))
 
@@ -154,7 +152,6 @@ class TestPathCheck(TestCase):
 
 
 class TestSplitPath(TestCase):
-
     def test_split_empty_path(self):
         self.assertEqual(split_path([]), [])
 
@@ -176,7 +173,6 @@ class TestSplitPath(TestCase):
 
 
 class TestMaxClique(TestCase):
-
     def setUp(self):
         self.g = {1: set([2, 5]),
                   2: set([1, 3, 5]),
@@ -199,7 +195,6 @@ class TestMaxClique(TestCase):
 
 
 class TestTaskGraph(TestCase):
-
     def setUp(self):
         self.path = [DummyState(0),
                      get_action((1, 0), (1, 1)),
@@ -335,7 +330,6 @@ class TestTaskGraph(TestCase):
 
 
 class TestConjugateTaskGraph(TestCase):
-
     def setUp(self):
         self.s0 = DummyState(0)
         self.s1 = DummyState(1 + 4)
@@ -515,7 +509,6 @@ class TestConjugateTaskGraph(TestCase):
 
 
 class TestParallelToAlternatives(TestCase):
-
     def test_is_correct(self):
         a = LeafCombination(AbstractAction('a'))
         b = LeafCombination(AbstractAction('b'))
@@ -526,3 +519,22 @@ class TestParallelToAlternatives(TestCase):
         self.assertEqual(len(alt.children), 6)
         self.assertIsInstance(alt.children[0], SequentialCombination)
         self.assertTrue(all([len(c.children) == 3 for c in alt.children]))
+
+    def test_complex(self):
+        a = LeafCombination(AbstractAction('a'))
+        b = LeafCombination(AbstractAction('b'))
+        c = LeafCombination(AbstractAction('c'))
+        p1 = ParallelCombination([a, b])
+        p2 = ParallelCombination([p1, c])
+        alt = p2.to_alternative()
+        self.assertIsInstance(alt, AlternativeCombination)
+        self.assertEqual(len(alt.children), 2)
+        self.assertTrue(all(isinstance(child, SequentialCombination)
+                            and len(child.children) == 2
+                            for child in alt.children))
+        self.assertTrue(isinstance(alt.children[0].children[0], ParallelCombination)
+                        and isinstance(alt.children[0].children[1], LeafCombination))
+        self.assertTrue(isinstance(alt.children[1].children[0], LeafCombination)
+                        and isinstance(alt.children[1].children[1], ParallelCombination))
+
+

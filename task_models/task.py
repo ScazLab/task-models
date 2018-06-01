@@ -24,9 +24,8 @@ combination.
    International Conference on Robotics and Automation (ICRA 2016)
 """
 
-
+import numpy as np
 from itertools import permutations
-
 from .state import State
 from .action import Action
 
@@ -90,6 +89,7 @@ def _bron_kerbosch(graph, r, p, x):
 
 
 class BaseGraph(object):
+
     """Transitions (s, l, d) are stored as {s: {(l, d), ...}, ...}, that is
     a dictionary of sets of pairs.
     """
@@ -156,6 +156,7 @@ class BaseGraph(object):
 
 
 class TaskGraph(BaseGraph):
+
     """Represents valid transitions in a task model.
     """
 
@@ -165,7 +166,7 @@ class TaskGraph(BaseGraph):
         self.terminal = set()
 
     def __eq__(self, other):
-        return (super().__eq__(other) and
+        return (super(TaskGraph, self).__eq__(other) and
                 isinstance(other, TaskGraph) and
                 self.initial == other.initial and
                 self.terminal == other.terminal)
@@ -290,7 +291,8 @@ class ConjugateTaskGraph(BaseGraph):
                     explore_successors(node)
             else:
                 node = chain[-1]
-                assert(len(unique_transitions[node]) == 1)
+                if len(unique_transitions[node]) != 1:
+                    raise AssertionError()
                 next_node = list(unique_transitions[node])[0]
                 done = False
                 if in_degree[next_node] == 1:
@@ -370,12 +372,11 @@ def int_generator():
         yield i
 
 
-class Combination(object):
+class BaseCombination(object):
 
     kind = 'Undefined'
 
-    def __init__(self, children, name='unnamed', highlighted=False):
-        self.children = children  # Actions or combinations
+    def __init__(self, name='unnamed', highlighted=False):
         self.name = name
         self.highlighted = highlighted
 
@@ -390,6 +391,17 @@ class Combination(object):
                 'attributes': attr,
                 }
 
+
+class Combination(BaseCombination):
+
+    kind = 'Undefined'
+
+    def __init__(self, children, name='unnamed', highlighted=False,
+                 probabilities=None):
+        super(Combination, self).__init__(name, highlighted)
+        self.children = children  # Actions or combinations
+        self.proba = probabilities
+
     def as_dictionary(self, parent_id, id_generator):
         d = self._meta_dictionary(parent_id, id_generator)
         d['children'] = [
@@ -403,7 +415,7 @@ class Combination(object):
                 for c in self.children]
 
 
-class LeafCombination(Combination):
+class LeafCombination(BaseCombination):
 
     kind = None
 
@@ -431,20 +443,46 @@ class SequentialCombination(Combination):
 
     kind = 'Sequential'
 
+    def __init__(self, children, **xargs):
+        super(SequentialCombination, self).__init__(children, **xargs)
+
     def deep_copy(self, rename_format='{}'):
         return SequentialCombination(
             self._deep_copy_children(rename_format=rename_format),
+            probabilities=self.proba,
             name=rename_format.format(self.name),
             highlighted=self.highlighted)
 
 
+# TODO: Unless we want to validate the proba inputs
+# in __init__, I'm open to an alternative for
+# how to do this without using properties
 class AlternativeCombination(Combination):
 
     kind = 'Alternative'
 
-    def __init__(self, children, probabilities=None, **xargs):
+    def __init__(self, children, **xargs):
         super(AlternativeCombination, self).__init__(children, **xargs)
-        self.proba = probabilities
+        self.proba = None
+
+    @property
+    def proba(self):
+        return self._proba
+
+    @proba.setter
+    def proba(self, probabilities):
+        if probabilities is None:
+            num_children = len(self.children)
+            prob = float(1) / num_children
+            self._proba = [prob] * num_children
+        elif np.min(probabilities) < 0:
+            raise ValueError("At least one prob value is < 0.")
+        elif np.max(probabilities) > 1:
+            raise ValueError("At least one prob value is > 1.")
+        elif not (np.isclose(np.sum(probabilities), 1)):
+            raise ValueError("Probs should sum to 1.")
+        else:
+            self._proba = probabilities
 
     def deep_copy(self, rename_format='{}'):
         return AlternativeCombination(
@@ -479,7 +517,8 @@ class ParallelCombination(Combination):
                                       highlighted=self.highlighted)
 
 
-class HierarchicalTask:
+class HierarchicalTask(object):
+
     """Tree representing a hierarchy of tasks which leaves are actions."""
 
     def __init__(self, root=None):
