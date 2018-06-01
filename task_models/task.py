@@ -276,7 +276,8 @@ class ConjugateTaskGraph(BaseGraph):
                     explore_successors(node)
             else:
                 node = chain[-1]
-                assert len(unique_transitions[node]) == 1
+                if len(unique_transitions[node]) != 1:
+                    raise AssertionError()
                 next_node = list(unique_transitions[node])[0]
                 done = False
                 if in_degree[next_node] == 1:
