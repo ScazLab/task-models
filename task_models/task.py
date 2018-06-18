@@ -376,9 +376,15 @@ class BaseCombination(object):
 
     kind = 'Undefined'
 
-    def __init__(self, name='unnamed', highlighted=False):
-        self.name = name
+    def __init__(self, idx, parent, name='unnamed', highlighted=False):
+        self._name = name
         self.highlighted = highlighted
+        self.idx = idx
+        self.parent = parent
+
+    @property
+    def name(self):
+        return self._name
 
     def _meta_dictionary(self, parent_id, id_generator):
         attr = []
@@ -396,9 +402,9 @@ class Combination(BaseCombination):
 
     kind = 'Undefined'
 
-    def __init__(self, children, name='unnamed', highlighted=False,
+    def __init__(self, children, idx=None, parent=None, name='unnamed', highlighted=False,
                  probabilities=None):
-        super(Combination, self).__init__(name, highlighted)
+        super(Combination, self).__init__(idx, parent, name, highlighted)
         self.children = children  # Actions or combinations
         self.proba = probabilities
 
@@ -419,13 +425,17 @@ class LeafCombination(BaseCombination):
 
     kind = None
 
-    def __init__(self, action, highlighted=False):
-        self.highlighted = highlighted
+    def __init__(self, action, idx=None, parent=None, highlighted=False):
+        super(LeafCombination, self).__init__(idx, parent, action.name, highlighted)
         self.action = action
 
     @property
     def name(self):
         return self.action.name
+
+    @name.setter
+    def name(self, value):
+        self._name = value
 
     @property
     def children(self):
