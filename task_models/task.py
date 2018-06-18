@@ -544,6 +544,63 @@ class HierarchicalTask(object):
                 None, int_generator()),
         }
 
+    def find_parent_node(self, node, idx):
+        """
+        Given a node and a node id, will return the parent of the node.
+        """
+        # rospy.loginfo("idx: {} curr act id: {}, curr name: {}".format(idx, node.idx, node.name))
+
+        if node.kind is None:
+            # rospy.loginfo('Node does not have any children')
+            return None
+
+        for c in node.children:
+            if idx == c.idx:
+                parent = node
+                # rospy.loginfo('Returning with parent: {} {}'.format(parent.name, parent.idx))
+                return parent
+            else:
+                # rospy.loginfo("not found. idx: {} child id: {}, child name: {}".format(idx, c.idx, c.name))
+                parent = self.find_parent_node(c, idx)
+
+                if parent is not None:
+                    # rospy.loginfo('Returning with parent: {} {}'.format(parent.name, parent.idx))
+                    return parent
+
+    def find_next_human_action(self, node, curr_idx):
+        """
+        Finds the next possible action for the human to do.
+        """
+        if node.kind is None:
+            return None
+
+        for c in node.children:
+            # Checks for next biggest id thats also a leafnode and is a human action
+            if c.idx > curr_idx and c.kind == None and c.action.agent == "human":
+                next_act = c
+                return next_act
+            else:
+                next_act = self.find_next_human_action(c, curr_idx)
+                if next_act is not None:
+                    return next_act
+
+    def find_node_by_name(self, node, name):
+        """
+        Returns node based on its name.
+        """
+        if node.kind is None:
+            return None
+
+        for c in node.children:
+            # Checks for next biggest id thats also a leafnode and is a human action
+            if name in c.name.lower():
+                node = c
+                return node
+            else:
+                node = self.find_node_by_name(c, name)
+                if node is not None:
+                    return node
+
 
 COMBINATION_CLASSES = {'Sequential': SequentialCombination,
                        'Parallel': ParallelCombination,
