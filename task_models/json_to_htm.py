@@ -15,7 +15,7 @@ def build_htm(node):
     parent = node['parent']
 
     # Base case, if no children than node is an action
-    if not node['children']:
+    if node['attributes']:
         agent = [a for a in node['attributes'] if not a == 'highlighted']
         return LeafCombination(Action(name=name, agent=agent[0]), idx=idx, parent=parent)
 

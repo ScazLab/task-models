@@ -1,5 +1,5 @@
 // Initialize global variables (I know , it's bad)
-var defaultjsonfile = 'icra.json',
+var defaultjsonfile = 'full_chair.json',
     treedepth = 3,
     defaultjsondata = '';
 
